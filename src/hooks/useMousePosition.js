@@ -6,16 +6,13 @@ export function useMousePosition(viewerRef, onMouseMove) {
     const viewer = viewerRef.current?.cesiumElement;
     if (!viewer) return;
 
-    const canvas = viewer.scene.canvas;
+    let canvas = null;
+    let attached = false;
 
-    const handleMouseMove = (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const pos = new Cartesian2(e.clientX - rect.left, e.clientY - rect.top);
+    const handleMove = (e) => {
+      const pos = new Cartesian2(e.offsetX, e.offsetY);
       const cartesian = viewer.camera.pickEllipsoid(pos, Ellipsoid.WGS84);
-      if (!cartesian) {
-        onMouseMove(null);
-        return;
-      }
+      if (!cartesian) { onMouseMove(null); return; }
       const cart = Cartographic.fromCartesian(cartesian, Ellipsoid.WGS84);
       onMouseMove({
         lat: CesiumMath.toDegrees(cart.latitude).toFixed(4),
@@ -23,13 +20,25 @@ export function useMousePosition(viewerRef, onMouseMove) {
       });
     };
 
-    const handleMouseLeave = () => onMouseMove(null);
+    const handleLeave = () => onMouseMove(null);
 
-    canvas.addEventListener('mousemove', handleMouseMove);
-    canvas.addEventListener('mouseleave', handleMouseLeave);
+    const attach = () => {
+      if (attached) return;
+      attached = true;
+      viewer.scene.postRender.removeEventListener(attach);
+      canvas = viewer.scene.canvas;
+      canvas.addEventListener('mousemove', handleMove);
+      canvas.addEventListener('mouseleave', handleLeave);
+    };
+
+    viewer.scene.postRender.addEventListener(attach);
+
     return () => {
-      canvas.removeEventListener('mousemove', handleMouseMove);
-      canvas.removeEventListener('mouseleave', handleMouseLeave);
+      viewer.scene.postRender.removeEventListener(attach);
+      if (canvas) {
+        canvas.removeEventListener('mousemove', handleMove);
+        canvas.removeEventListener('mouseleave', handleLeave);
+      }
     };
   }, [viewerRef, onMouseMove]);
 }
