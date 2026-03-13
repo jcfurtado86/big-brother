@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { JulianDate, CameraEventType } from 'cesium';
+import { CameraEventType, ClockStep } from 'cesium';
 
 export function useSceneConfig(viewerRef, { lighting } = {}) {
   useEffect(() => {
@@ -37,7 +37,11 @@ export function useSceneConfig(viewerRef, { lighting } = {}) {
     if (!viewer) return;
     viewer.scene.globe.enableLighting = !!lighting;
     if (lighting) {
-      viewer.clock.currentTime = JulianDate.now();
+      viewer.clock.clockStep = ClockStep.SYSTEM_CLOCK;
+      viewer.clock.shouldAnimate = true;
+    } else {
+      viewer.clock.clockStep = ClockStep.SYSTEM_CLOCK_MULTIPLIER;
+      viewer.clock.shouldAnimate = false;
     }
   }, [viewerRef, lighting]);
 }
