@@ -52,9 +52,9 @@ export default function AirportToggle({ activeTypes, onChange }) {
       <button
         className={`${nightStyles.btn} ${styles.btn} ${hasAny ? nightStyles.active : ''}`}
         onClick={() => setOpen(v => !v)}
-        title="Aeroportos"
+        title="Exibir aeroportos"
       >
-        ⊞
+        <span className={nightStyles.icon}>🛫</span>
       </button>
     </div>
   );

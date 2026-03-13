@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styles from './SearchBox.module.css';
+import { SEARCH_LIMIT, NOMINATIM_URL } from '../providers/constants';
 
 export default function SearchBox({ onSelect }) {
   const [query, setQuery] = useState('');
@@ -18,8 +19,8 @@ export default function SearchBox({ onSelect }) {
 
   async function fetchLocations(q) {
     try {
-      const limit = import.meta.env.VITE_SEARCH_LIMIT ?? 6;
-      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=${limit}`;
+      const limit = SEARCH_LIMIT;
+      const url = `${NOMINATIM_URL}?q=${encodeURIComponent(q)}&format=json&limit=${limit}`;
       const res = await fetch(url, { headers: { 'Accept-Language': 'pt-BR,pt' } });
       setResults(await res.json());
     } catch (e) {

@@ -3,7 +3,6 @@ import {
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
   Cartesian3,
-  Color,
   ColorMaterialProperty,
   CallbackProperty,
   defined,
@@ -11,10 +10,7 @@ import {
 import { fetchTrack }      from '../providers/flightService';
 import { deadReckon }      from '../utils/geoMath';
 import { useCameraFollow } from './useCameraFollow';
-
-const FLIGHT_ALTITUDE = Number(import.meta.env.VITE_FLIGHT_ALTITUDE_M ?? 10000);
-const TRACK_COLOR     = Color.fromCssColorString(import.meta.env.VITE_TRACK_COLOR || '#A020F0')
-                          .withAlpha(Number(import.meta.env.VITE_TRACK_OPACITY ?? 0.9));
+import { FLIGHT_ALTITUDE, TRACK_COLOR } from '../providers/constants';
 
 export function useFlightSelection(viewer, flightStateRef, setSelected, airportDataRef, onAirportSelect) {
   const selectionRef    = useRef(null); // { entity, icao24 }

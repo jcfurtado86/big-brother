@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Math as CesiumMath } from 'cesium';
+import { CAMERA_CHANGE_PCT } from '../providers/constants';
 
 export function useCamera(viewer, onCameraChange) {
   useEffect(() => {
@@ -15,7 +16,7 @@ export function useCamera(viewer, onCameraChange) {
       });
     };
 
-    viewer.camera.percentageChanged = Number(import.meta.env.VITE_CAMERA_CHANGE_THRESHOLD ?? 0.01);
+    viewer.camera.percentageChanged = CAMERA_CHANGE_PCT;
     viewer.camera.changed.addEventListener(update);
     viewer.camera.moveEnd.addEventListener(update);
     update();

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { CameraEventType, ClockStep } from 'cesium';
+import { ZOOM_MIN, ZOOM_MAX, ZOOM_SENSITIVITY } from '../providers/constants';
 
 export function useSceneConfig(viewer, { lighting } = {}) {
   useEffect(() => {
@@ -9,8 +10,8 @@ export function useSceneConfig(viewer, { lighting } = {}) {
     viewer.scene.fog.enabled = true;
 
     const ctrl = viewer.scene.screenSpaceCameraController;
-    ctrl.minimumZoomDistance = Number(import.meta.env.VITE_ZOOM_MIN_M  ?? 100);
-    ctrl.maximumZoomDistance = Number(import.meta.env.VITE_ZOOM_MAX_M  ?? 30000000);
+    ctrl.minimumZoomDistance = ZOOM_MIN;
+    ctrl.maximumZoomDistance = ZOOM_MAX;
     ctrl.inertiaZoom = 0;
     ctrl.zoomEventTypes = [CameraEventType.RIGHT_DRAG, CameraEventType.PINCH];
 
@@ -18,8 +19,10 @@ export function useSceneConfig(viewer, { lighting } = {}) {
     const onWheel = (e) => {
       e.preventDefault();
       const height = viewer.camera.positionCartographic?.height ?? 1000;
-      const clamped = Math.max(100, height);
-      const amount = (Math.abs(e.deltaY) / 100) * clamped * Number(import.meta.env.VITE_ZOOM_SENSITIVITY ?? 0.12);
+      if (e.deltaY > 0 && height >= ZOOM_MAX) return;
+      if (e.deltaY < 0 && height <= ZOOM_MIN) return;
+      const clamped = Math.max(ZOOM_MIN, height);
+      const amount = (Math.abs(e.deltaY) / 100) * clamped * ZOOM_SENSITIVITY;
       if (e.deltaY > 0) {
         viewer.camera.zoomOut(amount);
       } else {

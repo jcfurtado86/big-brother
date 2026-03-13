@@ -27,6 +27,7 @@ import a7Raw      from '../assets/svg/planes/a7.svg?raw';
 import b0Raw      from '../assets/svg/planes/b0.svg?raw';
 
 import { TYPE_CATEGORY, TYPE_SVG } from './modelCategories';
+import { VEL_HEAVY, VEL_REGIONAL, VEL_LIGHT, ALT_HEAVY } from './constants';
 
 // Strip all fill attributes and set fill="white" on the root <svg> element so
 // Cesium can tint the icon via billboard.color (mustard normally, red when selected).
@@ -91,13 +92,9 @@ export function getCategoryType(cat, velocity = 0, altitude = 0) {
   if (cat === 3)  return 'regional';
   if (cat === 2)  return 'light';
 
-  const velHeavy    = Number(import.meta.env.VITE_VEL_HEAVY_MS    ?? 210);
-  const velRegional = Number(import.meta.env.VITE_VEL_REGIONAL_MS ?? 130);
-  const velLight    = Number(import.meta.env.VITE_VEL_LIGHT_MS    ?? 30);
-  const altHeavy    = Number(import.meta.env.VITE_ALT_HEAVY_M     ?? 9000);
-  if (velocity > velHeavy)    return altitude > altHeavy ? 'heavy' : 'large';
-  if (velocity > velRegional) return 'regional';
-  if (velocity > velLight)    return 'light';
+  if (velocity > VEL_HEAVY)    return altitude > ALT_HEAVY ? 'heavy' : 'large';
+  if (velocity > VEL_REGIONAL) return 'regional';
+  if (velocity > VEL_LIGHT)    return 'light';
   return 'helicopter';
 }
 
@@ -119,15 +116,6 @@ export const CATEGORY_SIZE = {
   uav:        { w: 28, h: 28 },
   unknown:    { w: 26, h: 26 },
 };
-
-/**
- * Returns the best SVG URL for a flight:
- *  1. Specific model SVG if typeCode maps to one
- *  2. Generic category SVG
- */
-export function getPlaneImage(category) {
-  return CATEGORY_SVG_URLS[category] ?? CATEGORY_SVG_URLS.unknown;
-}
 
 export function getIconForTypeCode(typeCode, fallbackCategory = 'unknown') {
   if (typeCode) {

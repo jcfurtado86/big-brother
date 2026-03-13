@@ -9,7 +9,7 @@ export default function FlightsToggle({ active, onToggle }) {
       onClick={onToggle}
       title={active ? 'Ocultar aviões' : 'Exibir aviões'}
     >
-      ✈
+      <span className={styles.icon}>✈️</span>
     </button>
   );
 }

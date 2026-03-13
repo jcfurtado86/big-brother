@@ -9,7 +9,7 @@ export default function WeatherToggle({ active, onToggle }) {
       onClick={onToggle}
       title={active ? 'Ocultar atmosfera' : 'Exibir atmosfera'}
     >
-      🌧
+      <span className={styles.icon}>🌧️</span>
     </button>
   );
 }

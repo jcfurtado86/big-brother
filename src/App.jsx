@@ -13,11 +13,9 @@ import AirportToggle from './components/AirportToggle';
 import WeatherToggle from './components/WeatherToggle';
 import { useGeoIP } from './hooks/useGeoIP';
 import { layers } from './providers/layers';
+import { DEFAULT_ALT, DEFAULT_PITCH } from './providers/constants';
 
 const layerOptions = layers.map(({ id, label }) => ({ id, label }));
-
-const DEFAULT_ALT   = Number(import.meta.env.VITE_DEFAULT_ALT_M    ?? 10_000_000);
-const DEFAULT_PITCH = Number(import.meta.env.VITE_DEFAULT_PITCH_DEG ?? -90);
 
 export default function App() {
   const [layerId, setLayerId] = useState('satellite');

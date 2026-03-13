@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Rectangle as CesiumRectangle, ImageMaterialProperty, Color } from 'cesium';
+import { OWM_TILE_URL } from '../providers/constants';
 
 const OWM_KEY    = import.meta.env.VITE_OWM_API_KEY || '';
 const ZOOM       = 2;        // 4×4 = 16 tiles per layer
@@ -32,7 +33,7 @@ function addTileEntities(viewer, list, layerName, altitude, alpha) {
   for (let y = 0; y < N; y++) {
     for (let x = 0; x < N; x++) {
       const b = tileBounds(ZOOM, x, y);
-      const url = `https://tile.openweathermap.org/map/${layerName}/${ZOOM}/${x}/${y}.png?appid=${OWM_KEY}`;
+      const url = `${OWM_TILE_URL}/${layerName}/${ZOOM}/${x}/${y}.png?appid=${OWM_KEY}`;
       const entity = viewer.entities.add({
         rectangle: {
           coordinates: CesiumRectangle.fromDegrees(b.west, b.south, b.east, b.north),

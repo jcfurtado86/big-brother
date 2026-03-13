@@ -6,9 +6,9 @@ export default function NightToggle({ active, onToggle }) {
     <button
       className={`${styles.btn} ${active ? styles.active : ''}`}
       onClick={onToggle}
-      title={active ? 'Desativar visão noturna' : 'Ativar visão noturna'}
+      title={active ? 'Ocultar ciclo dia/noite' : 'Exibir ciclo dia/noite'}
     >
-      🌙
+      <span className={styles.icon}>🌙</span>
     </button>
   );
 }

@@ -9,8 +9,7 @@ for (const [path, url] of Object.entries(logos)) {
   _map[iata] = url;
 }
 
-// CDN fallback — Kiwi.com (64×64 PNG)
-const CDN_URL = (iata) => `https://images.kiwi.com/airlines/64/${iata}.png`;
+import { AIRLINE_LOGO_CDN as CDN_URL } from './constants';
 
 // IATAs que já falharam no CDN (evita tentar de novo)
 const _failed = new Set();

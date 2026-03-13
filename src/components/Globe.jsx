@@ -1,10 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Viewer, CameraFlyTo, ImageryLayer } from 'resium';
-import { EllipsoidTerrainProvider, Cartesian3, Cartesian2, Cartographic, Ellipsoid, Math as CesiumMath } from 'cesium';
+import { EllipsoidTerrainProvider, Cartesian3, Math as CesiumMath } from 'cesium';
 import { useCamera } from '../hooks/useCamera';
-
-const DEFAULT_ALT   = Number(import.meta.env.VITE_DEFAULT_ALT_M    ?? 10_000_000);
-const DEFAULT_PITCH = Number(import.meta.env.VITE_DEFAULT_PITCH_DEG ?? -90);
+import { DEFAULT_ALT, DEFAULT_PITCH } from '../providers/constants';
 import { useSceneConfig } from '../hooks/useSceneConfig';
 import { useMousePosition } from '../hooks/useMousePosition';
 import { useFlights } from '../hooks/useFlights';
@@ -13,45 +11,7 @@ import { useFlightSelection } from '../hooks/useFlightSelection';
 import { useFlyToMouse }      from '../hooks/useFlyToMouse';
 import { useAirportLayer }    from '../hooks/useAirportLayer';
 import { useWeatherLayer }    from '../hooks/useWeatherLayer';
-
-// Computes the visible bounding box from the current camera.
-// Uses corner picking when the globe edges are visible; falls back to the
-// arccos horizon formula for high-altitude views. Never returns null —
-// even at 10 000 km the user only sees ~half the globe, not the whole thing.
-function computeBboxFromViewer(viewer) {
-  const { clientWidth: w, clientHeight: h } = viewer.scene.canvas;
-  const corners = [
-    new Cartesian2(0, 0), new Cartesian2(w, 0),
-    new Cartesian2(w, h), new Cartesian2(0, h),
-  ];
-  const hits = corners
-    .map(c => viewer.camera.pickEllipsoid(c, Ellipsoid.WGS84))
-    .filter(Boolean);
-
-  if (hits.length >= 2) {
-    const carts = hits.map(p => Cartographic.fromCartesian(p, Ellipsoid.WGS84));
-    const lats = carts.map(c => CesiumMath.toDegrees(c.latitude));
-    const lons = carts.map(c => CesiumMath.toDegrees(c.longitude));
-    return {
-      south: Math.min(...lats), north: Math.max(...lats),
-      west:  Math.min(...lons), east:  Math.max(...lons),
-    };
-  }
-
-  // Arccos horizon formula — works at any altitude.
-  // At 10 000 km the visible cap is ~67°, so we fetch roughly one hemisphere.
-  const camCart = viewer.camera.positionCartographic;
-  const alt = camCart.height;
-  const R = 6_371_000;
-  const visAngleDeg = Math.acos(R / (R + alt)) * (180 / Math.PI);
-  const pad = Math.min(visAngleDeg * 1.5, 90);
-  const lat = CesiumMath.toDegrees(camCart.latitude);
-  const lon = CesiumMath.toDegrees(camCart.longitude);
-  return {
-    south: Math.max(lat - pad, -90), north: Math.min(lat + pad,  90),
-    west:  Math.max(lon - pad, -180), east: Math.min(lon + pad, 180),
-  };
-}
+import { computeBboxFromViewer } from '../utils/bboxUtils';
 
 export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, showFlights, airportTypes, showWeather }) {
   const viewerRef = useRef(null);

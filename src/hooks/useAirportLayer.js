@@ -1,11 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { BillboardCollection, Cartesian3, Cartesian2, NearFarScalar, Cartographic } from 'cesium';
+import { BillboardCollection, Cartesian3, Cartesian2, Cartographic } from 'cesium';
 import { getAirportIcon, AIRPORT_TYPE_META } from '../providers/airportIcons';
+import { LABEL_VISIBLE } from '../providers/constants';
 import AirportWorker from '../workers/airportWorker.js?worker';
-
-const LABEL_NEAR = Number(import.meta.env.VITE_LABEL_NEAR_M ?? 2e6);
-const LABEL_FAR  = Number(import.meta.env.VITE_LABEL_FAR_M  ?? 3e6);
-const LABEL_VISIBLE = () => new NearFarScalar(LABEL_NEAR, 1.0, LABEL_FAR, 0.0);
 
 function inBbox(lat, lon, bbox) {
   if (!bbox) return true;

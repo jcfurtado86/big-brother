@@ -1,104 +1,38 @@
 import { useEffect, useRef, useCallback } from 'react';
 import {
   BillboardCollection,
-  Color,
-  Cartesian2,
   NearFarScalar,
   Cartesian3,
   Math as CesiumMath,
 } from 'cesium';
 import { getCategoryType, getCategoryFromTypeCode, getIconForTypeCode, CATEGORY_SIZE } from '../providers/planeIcons';
 import { lookupAircraft, preloadAircraftDb } from '../providers/aircraftDb';
-import { getFlagImg } from '../providers/countryFlags';
-import { deadReckon } from '../utils/geoMath';
+import { buildCallsignBillboard } from '../utils/callsignCanvas';
+import { useDeadReckoning } from './useDeadReckoning';
+import {
+  FLIGHT_ALTITUDE, LABEL_VISIBLE,
+  PLANE_COLOR, SELECTED_PLANE_COLOR, PLANE_BATCH_SIZE, CALLSIGN_BATCH_SIZE,
+} from '../providers/constants';
 
-const DEAD_RECKONING_INTERVAL = Number(import.meta.env.VITE_DEAD_RECKONING_MS  ?? 1000);
-const FLIGHT_ALTITUDE = Number(import.meta.env.VITE_FLIGHT_ALTITUDE_M ?? 10000);
-const LABEL_NEAR      = Number(import.meta.env.VITE_LABEL_NEAR_M      ?? 2e6);
-const LABEL_FAR       = Number(import.meta.env.VITE_LABEL_FAR_M       ?? 3e6);
-const LABEL_ALWAYS   = new NearFarScalar(1, 1.0, 1e10, 1.0);
-const LABEL_VISIBLE  = () => new NearFarScalar(LABEL_NEAR, 1.0, LABEL_FAR, 0.0);
-const PLANE_COLOR          = Color.fromCssColorString(import.meta.env.VITE_PLANE_COLOR          || '#F2A800');
-const SELECTED_PLANE_COLOR = Color.fromCssColorString(import.meta.env.VITE_SELECTED_PLANE_COLOR || '#FF0000');
+const LABEL_ALWAYS = new NearFarScalar(1, 1.0, 1e10, 1.0);
 
-// ── Callsign + flag canvas ────────────────────────────────────────────────────
-
-const FONT_SIZE = 14;
-const FLAG_W = 34, FLAG_H = 23;
-const GAP = 5, PAD_X = 5, PAD_Y = 4;
-
-// Reusable context for text measurement — avoids creating a canvas per flight
-const _measureCtx = document.createElement('canvas').getContext('2d');
-
-function measureCallsignCanvas(callsign, hasFlag) {
-  _measureCtx.font = `${FONT_SIZE}px monospace`;
-  const textW = Math.ceil(_measureCtx.measureText(callsign).width);
-  const H = hasFlag ? FLAG_H : PAD_Y + FONT_SIZE + 4 + PAD_Y;
-  const W = (hasFlag ? FLAG_W + GAP : PAD_X) + textW + PAD_X;
-  return { W, H };
-}
-
-function drawCallsignCanvas(ctx, W, H, callsign, hasFlag, flagImg) {
-  ctx.clearRect(0, 0, W, H);
-
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-  ctx.beginPath();
-  if (ctx.roundRect) ctx.roundRect(0, 0, W, H, hasFlag ? [0, 3, 3, 0] : 3);
-  else ctx.rect(0, 0, W, H);
-  ctx.fill();
-
-  let x = 0;
-  if (hasFlag && flagImg) {
-    ctx.drawImage(flagImg, 0, 0, FLAG_W, FLAG_H);
-    x = FLAG_W + GAP;
-  } else {
-    x = PAD_X;
-  }
-
-  ctx.font = `${FONT_SIZE}px monospace`;
-  ctx.fillStyle = 'white';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(callsign, x, H / 2);
-}
-
-function buildCallsignBillboard(billboards, pos, h, callsign, flagImg) {
-  const hasFlag = !!flagImg;
-  const { W, H } = measureCallsignCanvas(callsign, hasFlag);
-
-  const c = document.createElement('canvas');
-  c.width = W; c.height = H;
-  drawCallsignCanvas(c.getContext('2d'), W, H, callsign, hasFlag, flagImg);
-
-  const labelY = h / 2 + H / 2 + 6;
-  return billboards.add({
-    position: pos,
-    image:  c,
-    width:  W,
-    height: H,
-    pixelOffset:            new Cartesian2(0, labelY),
-    scaleByDistance:        LABEL_VISIBLE(),
-    translucencyByDistance: LABEL_VISIBLE(),
-  });
-}
-
-// requestIdleCallback with RAF fallback
 const scheduleIdle = typeof requestIdleCallback === 'function'
   ? (cb) => requestIdleCallback(cb, { timeout: 2000 })
   : (cb) => requestAnimationFrame(cb);
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
-const PLANE_BATCH_SIZE    = Number(import.meta.env.VITE_PLANE_BATCH_SIZE    ?? 20);
-const CALLSIGN_BATCH_SIZE = Number(import.meta.env.VITE_CALLSIGN_BATCH_SIZE ?? 30);
-
 export function useFlightLayer(viewer, flightsMap) {
   const billboardsRef      = useRef(null);
   const stateRef           = useRef(new Map());
   const selectedIcaoRef    = useRef(null);
-  const planeQueueRef      = useRef([]);  // pending plane billboards
-  const callsignQueueRef   = useRef([]);  // pending callsign canvases
+  const planeQueueRef      = useRef([]);
+  const callsignQueueRef   = useRef([]);
   const planeRafRef        = useRef(null);
   const callsignIdleRef    = useRef(null);
+
+  // Dead reckoning (extracted hook)
+  useDeadReckoning(viewer, billboardsRef, stateRef);
 
   // Create / destroy billboard collection
   useEffect(() => {
@@ -119,7 +53,6 @@ export function useFlightLayer(viewer, flightsMap) {
     if (!billboards) return;
     const state = stateRef.current;
 
-    // Cancel pending plane batch from previous update
     if (planeRafRef.current) { cancelAnimationFrame(planeRafRef.current); planeRafRef.current = null; }
 
     // Remove stale
@@ -174,7 +107,7 @@ export function useFlightLayer(viewer, flightsMap) {
 
         state.set(icao, {
           billboard,
-          callsign:  null, // filled in pass 2
+          callsign:  null,
           lat:       flight.lat,
           lon:       flight.lon,
           heading:   flight.heading,
@@ -188,7 +121,6 @@ export function useFlightLayer(viewer, flightsMap) {
           _alt:      flight.altitude,
         });
 
-        // Enqueue callsign for idle pass
         callsignQueueRef.current.push(icao);
       }
 
@@ -196,7 +128,6 @@ export function useFlightLayer(viewer, flightsMap) {
         planeRafRef.current = requestAnimationFrame(processPlaneBatch);
       } else {
         planeRafRef.current = null;
-        // Start callsign pass once all planes are added
         if (callsignQueueRef.current.length > 0) {
           callsignIdleRef.current = scheduleIdle(processCallsignBatch);
         }
@@ -208,7 +139,6 @@ export function useFlightLayer(viewer, flightsMap) {
       if (billboards.isDestroyed()) return;
       const queue = callsignQueueRef.current;
 
-      // Process as many as possible within the idle slice (or fixed batch if no deadline API)
       let processed = 0;
       while (queue.length > 0 && processed < CALLSIGN_BATCH_SIZE) {
         const hasTime = deadline?.timeRemaining ? deadline.timeRemaining() > 1 : true;
@@ -216,12 +146,11 @@ export function useFlightLayer(viewer, flightsMap) {
 
         const icao  = queue.shift();
         const entry = state.get(icao);
-        if (!entry || entry.callsign) continue; // removed or already has callsign
+        if (!entry || entry.callsign) continue;
 
         entry.callsign = buildCallsignBillboard(
-          billboards, entry._pos, entry._h, entry._label, getFlagImg(entry._country)
+          billboards, entry._pos, entry._h, entry._label, entry._country
         );
-        // Apply selection style if this flight is currently selected
         if (selectedIcaoRef.current === icao) {
           entry.callsign.scaleByDistance        = LABEL_ALWAYS;
           entry.callsign.translucencyByDistance = LABEL_ALWAYS;
@@ -259,24 +188,6 @@ export function useFlightLayer(viewer, flightsMap) {
       }
     }).catch(() => { /* DB indisponível — mantém ícones atuais */ });
   }, [viewer]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Dead reckoning
-  useEffect(() => {
-    if (!viewer) return;
-    const id = setInterval(() => {
-      const billboards = billboardsRef.current;
-      if (!billboards || billboards.isDestroyed()) return;
-      const now = Date.now();
-      for (const [, entry] of stateRef.current) {
-        const dt = now - entry.fetchedAt;
-        const { lat, lon } = deadReckon(entry.lat, entry.lon, entry.heading, entry.velocity, dt);
-        const pos = Cartesian3.fromDegrees(lon, lat, FLIGHT_ALTITUDE);
-        entry.billboard.position = pos;
-        if (entry.callsign) entry.callsign.position = pos;
-      }
-    }, DEAD_RECKONING_INTERVAL);
-    return () => clearInterval(id);
-  }, [viewer]);
 
   // Selection highlight
   const setSelected = useCallback((icao) => {

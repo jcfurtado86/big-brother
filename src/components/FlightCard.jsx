@@ -5,6 +5,7 @@ import { getFlagImg } from '../providers/countryFlags';
 import { useAircraftMeta } from '../hooks/useAircraftMeta';
 import { getAirlineLogo, markLogoFailed } from '../providers/airlineLogos';
 import { getAirlineFromCallsign } from '../providers/airlineCodes';
+import { toKt, toFt, toCompass } from '../utils/unitConversion';
 
 const TYPE_LABEL = {
   heavy:      'Heavy (wide-body)',
@@ -15,12 +16,6 @@ const TYPE_LABEL = {
   uav:        'UAV / drone',
   unknown:    'Unknown',
 };
-
-const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-
-function toKt(ms)     { return Math.round(ms  * 1.94384); }
-function toFt(m)      { return Math.round(m   * 3.28084).toLocaleString(); }
-function toCompass(d) { return COMPASS[Math.round(d / 45) % 8]; }
 
 export default function FlightCard({ flight, onClose }) {
   const meta = useAircraftMeta(flight?.icao24 ?? null);
