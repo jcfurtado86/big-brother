@@ -108,7 +108,6 @@ export function useFlights(enabled = true, bbox = undefined) {
         age < POLL_INTERVAL
       ) {
         if (!cancelled) setFlights(fetchedMapRef.current);
-        console.log(`[flights] ${fetchedMapRef.current.size} voos (cache hit — zoom in)`);
         schedule(POLL_INTERVAL - age); // wait until data actually goes stale
         return;
       }
@@ -133,7 +132,6 @@ export function useFlights(enabled = true, bbox = undefined) {
 
         if (parsed === null) { schedule(RETRY_INTERVAL); return; }
 
-        console.log(`[flights] ${parsed.size} voos${fetchBbox ? ' (bbox)' : ' (global)'}`);
         if (USE_DEV_CACHE) devCache = parsed;
         if (fetchBbox !== null) saveCache(fetchBbox, parsed);
 

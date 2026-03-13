@@ -20,6 +20,20 @@
   justify-content: space-between;
 }
 
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.airlineLogo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
 .callsign {
   font-size: 22px;
   font-weight: bold;
@@ -27,10 +41,16 @@
   color: #F2A800;
 }
 
+.airline {
+  font-size: 11px;
+  color: #bbb;
+  margin-top: 1px;
+}
+
 .icao {
   font-size: 11px;
   color: #888;
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 .close {

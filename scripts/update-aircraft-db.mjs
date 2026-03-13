@@ -59,13 +59,14 @@ const idx = Object.fromEntries(header.map((h, i) => [h.trim().replace(/^"|"$/g, 
 
 // Campos que vamos extrair (índices robustos ao cabeçalho real)
 const F = {
-  icao24:       idx['icao24'],
-  registration: idx['registration'],
-  manufacturer: idx['manufacturername'],
-  model:        idx['model'],
-  operator:     idx['operator'],
-  built:        idx['built'],
-  typeCode:     idx['typecode'],
+  icao24:      idx['icao24'],
+  registration:idx['registration'],
+  manufacturer:idx['manufacturername'],
+  model:       idx['model'],
+  operator:    idx['operator'],
+  built:       idx['built'],
+  typeCode:    idx['typecode'],
+  airlineIata: idx['operatoriata'],
 };
 
 console.log('Colunas detectadas:', Object.entries(F).map(([k,v]) => `${k}=${v}`).join(', '));
@@ -83,17 +84,18 @@ for (let i = 1; i < lines.length; i++) {
   const icao24 = (f[F.icao24] || '').trim().toLowerCase();
   if (!icao24 || icao24.length !== 6) continue;
 
-  const reg      = (f[F.registration] || '').trim();
-  const mfr      = (f[F.manufacturer] || '').trim();
-  const model    = (f[F.model]        || '').trim();
-  const op       = (f[F.operator]     || '').trim();
-  const built    = (f[F.built]        || '').trim().substring(0, 4);
-  const typeCode = (f[F.typeCode]     || '').trim().toUpperCase();
+  const reg         = (f[F.registration] || '').trim();
+  const mfr         = (f[F.manufacturer] || '').trim();
+  const model       = (f[F.model]        || '').trim();
+  const op          = (f[F.operator]     || '').trim();
+  const built       = (f[F.built]        || '').trim().substring(0, 4);
+  const typeCode    = (f[F.typeCode]     || '').trim().toUpperCase();
+  const airlineIata = (f[F.airlineIata]  || '').trim().toUpperCase();
 
   // Só salva se tiver pelo menos um campo útil
-  if (!reg && !model && !mfr && !op && !typeCode) continue;
+  if (!reg && !model && !mfr && !op && !typeCode && !airlineIata) continue;
 
-  db[icao24] = [reg, model, mfr, op, built, typeCode];
+  db[icao24] = [reg, model, mfr, op, built, typeCode, airlineIata];
   kept++;
 }
 

@@ -3,6 +3,8 @@ import styles from './FlightCard.module.css';
 import { getCategoryType } from '../providers/planeIcons';
 import { getFlagImg } from '../providers/countryFlags';
 import { useAircraftMeta } from '../hooks/useAircraftMeta';
+import { getAirlineLogo, markLogoFailed } from '../providers/airlineLogos';
+import { getAirlineFromCallsign } from '../providers/airlineCodes';
 
 const TYPE_LABEL = {
   heavy:      'Heavy (wide-body)',
@@ -30,14 +32,31 @@ export default function FlightCard({ flight, onClose }) {
   const flagImg   = getFlagImg(flight.country);
   const flagSrc   = flagImg?.src ?? null;
 
+  // Fallback: inferir companhia pelo prefixo ICAO do callsign
+  const csAirline   = getAirlineFromCallsign(flight.callsign);
+  const airlineIata = meta?.airlineIata || csAirline?.iata || null;
+  const airlineName = meta?.operator    || csAirline?.name || null;
+  const logoUrl     = airlineIata ? getAirlineLogo(airlineIata) : null;
+
   return (
     <div className={styles.card}>
       <div className={styles.header}>
-        <div>
-          <div className={styles.callsign}>{callsign}</div>
-          <div className={styles.icao}>
-            {flight.icao24}
-            {meta?.registration && <span className={styles.reg}> · {meta.registration}</span>}
+        <div className={styles.headerLeft}>
+          {logoUrl && (
+            <img
+              src={logoUrl}
+              className={styles.airlineLogo}
+              alt=""
+              onError={(e) => { markLogoFailed(airlineIata); e.target.style.display = 'none'; }}
+            />
+          )}
+          <div>
+            <div className={styles.callsign}>{callsign}</div>
+            {airlineName && <div className={styles.airline}>{airlineName}</div>}
+            <div className={styles.icao}>
+              {flight.icao24}
+              {meta?.registration && <span className={styles.reg}> · {meta.registration}</span>}
+            </div>
           </div>
         </div>
         <button className={styles.close} onClick={onClose}>×</button>
@@ -51,11 +70,6 @@ export default function FlightCard({ flight, onClose }) {
           {flagSrc && <img src={flagSrc} className={styles.flag} alt="" />}
           {flight.country || '—'}
         </span>
-
-        {meta?.operator && <>
-          <span className={styles.label}>Operador</span>
-          <span className={styles.value}>{meta.operator}</span>
-        </>}
 
         {meta?.manufacturer && <>
           <span className={styles.label}>Fabricante</span>

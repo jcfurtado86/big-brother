@@ -29,6 +29,7 @@ export function lookupAircraft(icao24) {
     operator:     row[3] || null,
     built:        row[4] || null,
     typeCode:     row[5] || null,
+    airlineIata:  row[6] || null,
   };
 }
 

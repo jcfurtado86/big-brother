@@ -16,9 +16,8 @@ export function useAircraftMeta(icao24) {
 
   useEffect(() => {
     if (!icao24) { setMeta(null); return; }
-    if (_cache.has(icao24)) { setMeta(_cache.get(icao24)); return; }
 
-    // 1. Tenta DB local (síncrono se já carregado)
+    // Sempre tenta o DB local primeiro (pode ter carregado desde o último cache)
     const local = lookupAircraft(icao24);
     if (local) {
       _cache.set(icao24, local);
@@ -26,7 +25,10 @@ export function useAircraftMeta(icao24) {
       return;
     }
 
-    // 2. Fallback: API por aeronave (enquanto DB local não carregou ou icao24 ausente)
+    // Se cache existe (de API anterior), usa enquanto aguarda DB
+    if (_cache.has(icao24)) { setMeta(_cache.get(icao24)); return; }
+
+    // Fallback: API por aeronave (enquanto DB local não carregou ou icao24 ausente)
     let cancelled = false;
     fetchAircraftMeta(icao24).then(data => {
       if (cancelled) return;
