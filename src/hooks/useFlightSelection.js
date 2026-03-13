@@ -20,6 +20,8 @@ export function useFlightSelection(viewer, flightStateRef, setSelected) {
   const selectionRef    = useRef(null); // { entity, icao24 }
   const pendingRef      = useRef(0);
   const liveIntervalRef = useRef(null);
+  const setSelectedRef  = useRef(setSelected);
+  useEffect(() => { setSelectedRef.current = setSelected; }, [setSelected]);
 
   const { startFollow, stopFollow, updateFollow } = useCameraFollow(viewer);
 
@@ -73,7 +75,7 @@ export function useFlightSelection(viewer, flightStateRef, setSelected) {
       const token = ++pendingRef.current;
       clearSelection();
 
-      setSelected(isSame ? null : icao24);
+      setSelectedRef.current(isSame ? null : icao24);
       if (!icao24 || isSame) return;
 
       try {

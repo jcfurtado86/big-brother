@@ -10,10 +10,15 @@ const POLL_INTERVAL = HAS_AUTH
 const USE_CACHE = import.meta.env.VITE_FLIGHT_CACHE === 'true';
 let flightCache = null;
 
-export function useFlights() {
+export function useFlights(enabled = true) {
   const [flights, setFlights] = useState(new Map());
 
   useEffect(() => {
+    if (!enabled) {
+      setFlights(new Map());
+      return;
+    }
+
     let cancelled = false;
     let timerId   = null;
 
@@ -47,7 +52,7 @@ export function useFlights() {
       clearInterval(timerId);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, []);
+  }, [enabled]);
 
   return flights;
 }

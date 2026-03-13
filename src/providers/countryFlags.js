@@ -20,10 +20,22 @@ for (const [path, raw] of Object.entries(FLAG_RAWS)) {
   FLAG_IMGS[iso] = img;
 }
 
+// OpenSky sometimes returns official/formal country names that i18n-iso-countries
+// doesn't recognise by default. Map them to the library's canonical English name.
+const OPENSKY_NAME_MAP = {
+  'Kingdom of the Netherlands': 'Netherlands',
+  'Syria':                      'Syrian Arab Republic',
+  'Moldova':                    'Moldova, Republic of',
+  'Macedonia':                  'North Macedonia',
+  'Laos':                       "Lao People's Democratic Republic",
+  'Brunei':                     'Brunei Darussalam',
+};
+
 // Returns a fully-loaded HTMLImageElement, or null if not ready / not found.
 export function getFlagImg(countryName) {
   if (!countryName) return null;
-  const iso = countries.getAlpha2Code(countryName, 'en');
+  const normalized = OPENSKY_NAME_MAP[countryName] ?? countryName;
+  const iso = countries.getAlpha2Code(normalized, 'en');
   if (!iso) return null;
   const img = FLAG_IMGS[iso];
   return (img?.complete && img.naturalWidth > 0) ? img : null;

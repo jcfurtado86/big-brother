@@ -9,7 +9,7 @@ import { useFlightLayer } from '../hooks/useFlightLayer';
 import { useFlightSelection } from '../hooks/useFlightSelection';
 import { useFlyToMouse }      from '../hooks/useFlyToMouse';
 
-export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove }) {
+export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, showFlights }) {
   const viewerRef = useRef(null);
   const [viewer, setViewer] = useState(null);
 
@@ -26,9 +26,15 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
   useCamera(viewer, onCameraChange);
   useSceneConfig(viewer, { lighting });
   useMousePosition(viewer, onMouseMove);
-  const flights = useFlights();
+  const flights = useFlights(showFlights);
   const { stateRef: flightStateRef, setSelected } = useFlightLayer(viewer, flights);
-  useFlightSelection(viewer, flightStateRef, setSelected);
+
+  const handleFlightSelect = React.useCallback((icao24) => {
+    setSelected(icao24);
+    onFlightSelect?.(icao24 ? (flights.get(icao24) ?? null) : null);
+  }, [setSelected, flights, onFlightSelect]);
+
+  useFlightSelection(viewer, flightStateRef, handleFlightSelect);
   useFlyToMouse(viewer);
 
   useEffect(() => {

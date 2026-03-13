@@ -6,6 +6,8 @@ import InfoBar from './components/InfoBar';
 import ResetView from './components/ResetView';
 import NightToggle from './components/NightToggle';
 import ClockDisplay from './components/ClockDisplay';
+import FlightCard from './components/FlightCard';
+import FlightsToggle from './components/FlightsToggle';
 import { useGeoIP } from './hooks/useGeoIP';
 import { layers } from './providers/layers';
 
@@ -19,6 +21,8 @@ export default function App() {
   const [mouseCoords, setMouseCoords] = useState(null);
   const [lighting, setLighting] = useState(false);
   const [resetKey, setResetKey] = useState(0);
+  const [selectedFlight, setSelectedFlight] = useState(null);
+  const [showFlights, setShowFlights] = useState(true);
   const geoIP = useGeoIP();
 
   useEffect(() => {
@@ -49,6 +53,8 @@ export default function App() {
         resetKey={resetKey}
         onCameraChange={setCoords}
         onMouseMove={handleMouseMove}
+        onFlightSelect={setSelectedFlight}
+        showFlights={showFlights}
       />
       <SearchBox onSelect={handleLocationSelect} />
       <LayerToggle options={layerOptions} current={layerId} onChange={setLayerId} />
@@ -56,6 +62,8 @@ export default function App() {
       <ClockDisplay />
       <ResetView onReset={handleResetView} />
       <NightToggle active={lighting} onToggle={() => setLighting((v) => !v)} />
+      <FlightsToggle active={showFlights} onToggle={() => setShowFlights((v) => !v)} />
+      <FlightCard flight={selectedFlight} onClose={() => setSelectedFlight(null)} />
     </>
   );
 }
