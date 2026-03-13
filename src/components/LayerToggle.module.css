@@ -1,0 +1,32 @@
+.wrapper {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 10;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 20px;
+  background: rgba(20, 20, 30, 0.75);
+  color: #aaa;
+  font-size: 13px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  transition: background 0.2s, color 0.2s;
+}
+
+.active {
+  background: rgba(60, 130, 255, 0.85);
+  color: #fff;
+}
+
+.btn:hover:not(.active) {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+}

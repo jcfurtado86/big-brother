@@ -1,0 +1,18 @@
+.bar {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 24px;
+  padding: 8px 20px;
+  background: rgba(20, 20, 30, 0.75);
+  border-radius: 20px;
+  color: #ccc;
+  font-size: 12px;
+  font-family: monospace;
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  z-index: 10;
+}
