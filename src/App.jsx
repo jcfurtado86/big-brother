@@ -1,29 +1,61 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Globe from './components/Globe';
 import SearchBox from './components/SearchBox';
 import LayerToggle from './components/LayerToggle';
 import InfoBar from './components/InfoBar';
-import { imageryProviders, layerOptions } from './providers/imagery';
+import ResetView from './components/ResetView';
+import NightToggle from './components/NightToggle';
+import ClockDisplay from './components/ClockDisplay';
+import { useGeoIP } from './hooks/useGeoIP';
+import { layers } from './providers/layers';
+
+const layerOptions = layers.map(({ id, label }) => ({ id, label }));
 
 export default function App() {
   const [layerId, setLayerId] = useState('satellite');
   const [flyTarget, setFlyTarget] = useState(null);
+  const [initialView, setInitialView] = useState(null);
   const [coords, setCoords] = useState({ lat: null, lon: null, alt: null });
+  const [mouseCoords, setMouseCoords] = useState(null);
+  const [lighting, setLighting] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
+  const geoIP = useGeoIP();
+
+  useEffect(() => {
+    if (geoIP) {
+      setInitialView({ lat: geoIP.lat, lon: geoIP.lon, alt: 20000000, pitch: -90 });
+      setCoords({ lat: Number(geoIP.lat).toFixed(4), lon: Number(geoIP.lon).toFixed(4), alt: '20000' });
+    }
+  }, [geoIP]);
 
   function handleLocationSelect(lat, lon) {
     setFlyTarget({ lat, lon, ts: Date.now() });
   }
 
+  function handleResetView() {
+    setResetKey((k) => k + 1);
+  }
+
+  const handleMouseMove = useCallback((pos) => setMouseCoords(pos), []);
+
   return (
     <>
       <Globe
-        imageryProvider={imageryProviders[layerId]}
+        layers={layers}
+        activeLayerId={layerId}
+        lighting={lighting}
+        initialView={initialView}
         flyTarget={flyTarget}
+        resetKey={resetKey}
         onCameraChange={setCoords}
+        onMouseMove={handleMouseMove}
       />
       <SearchBox onSelect={handleLocationSelect} />
       <LayerToggle options={layerOptions} current={layerId} onChange={setLayerId} />
-      <InfoBar coords={coords} />
+      <InfoBar coords={coords} mouseCoords={mouseCoords} />
+      <ClockDisplay />
+      <ResetView onReset={handleResetView} />
+      <NightToggle active={lighting} onToggle={() => setLighting((v) => !v)} />
     </>
   );
 }

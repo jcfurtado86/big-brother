@@ -6,7 +6,7 @@ export function useCamera(viewerRef, onCameraChange) {
     const viewer = viewerRef.current?.cesiumElement;
     if (!viewer) return;
 
-    const handler = () => {
+    const update = () => {
       const cart = viewer.camera.positionCartographic;
       if (!cart) return;
       onCameraChange({
@@ -16,7 +16,14 @@ export function useCamera(viewerRef, onCameraChange) {
       });
     };
 
-    viewer.camera.changed.addEventListener(handler);
-    return () => viewer.camera.changed.removeEventListener(handler);
+    viewer.camera.percentageChanged = 0.01;
+    viewer.camera.changed.addEventListener(update);
+    viewer.camera.moveEnd.addEventListener(update);
+    update();
+
+    return () => {
+      viewer.camera.changed.removeEventListener(update);
+      viewer.camera.moveEnd.removeEventListener(update);
+    };
   }, [viewerRef, onCameraChange]);
 }
