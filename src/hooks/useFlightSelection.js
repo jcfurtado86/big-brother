@@ -16,12 +16,14 @@ const FLIGHT_ALTITUDE = Number(import.meta.env.VITE_FLIGHT_ALTITUDE_M ?? 10000);
 const TRACK_COLOR     = Color.fromCssColorString(import.meta.env.VITE_TRACK_COLOR || '#A020F0')
                           .withAlpha(Number(import.meta.env.VITE_TRACK_OPACITY ?? 0.9));
 
-export function useFlightSelection(viewer, flightStateRef, setSelected) {
+export function useFlightSelection(viewer, flightStateRef, setSelected, airportDataRef, onAirportSelect) {
   const selectionRef    = useRef(null); // { entity, icao24 }
   const pendingRef      = useRef(0);
   const liveIntervalRef = useRef(null);
   const setSelectedRef  = useRef(setSelected);
+  const onAirportSelectRef = useRef(onAirportSelect);
   useEffect(() => { setSelectedRef.current = setSelected; }, [setSelected]);
+  useEffect(() => { onAirportSelectRef.current = onAirportSelect; }, [onAirportSelect]);
 
   const { startFollow, stopFollow, updateFollow } = useCameraFollow(viewer);
 
@@ -50,6 +52,13 @@ export function useFlightSelection(viewer, flightStateRef, setSelected) {
     };
     canvas.addEventListener('mousedown', onMouseDown);
 
+    // Cursor pointer ao passar sobre elementos clicáveis
+    const hoverHandler = new ScreenSpaceEventHandler(canvas);
+    hoverHandler.setInputAction((movement) => {
+      const picked = viewer.scene.pick(movement.endPosition);
+      canvas.style.cursor = (defined(picked) && typeof picked.id === 'string') ? 'pointer' : 'default';
+    }, ScreenSpaceEventType.MOUSE_MOVE);
+
     const clearSelection = () => {
       if (selectionRef.current) {
         viewer.entities.remove(selectionRef.current.entity);
@@ -67,13 +76,26 @@ export function useFlightSelection(viewer, flightStateRef, setSelected) {
     handler.setInputAction(async (click) => {
       const picked = viewer.scene.pick(click.position);
       viewer.selectedEntity = undefined;
-      const icao24 = (defined(picked) && typeof picked.id === 'string') ? picked.id : null;
+      const rawId = (defined(picked) && typeof picked.id === 'string') ? picked.id : null;
 
+      // Click em aeroporto
+      if (rawId && rawId.startsWith('apt:')) {
+        const aptIcao = rawId.slice(4);
+        const aptData = airportDataRef?.current?.get(aptIcao) ?? null;
+        clearSelection();
+        setSelectedRef.current(null);
+        onAirportSelectRef.current?.(aptData);
+        return;
+      }
+
+      // Click em voo
+      const icao24 = rawId;
       const isSame = selectionRef.current?.icao24 === icao24;
 
       // Cancela fetch em andamento, limpa track e para follow.
       const token = ++pendingRef.current;
       clearSelection();
+      onAirportSelectRef.current?.(null);
 
       setSelectedRef.current(isSame ? null : icao24);
       if (!icao24 || isSame) return;
@@ -136,6 +158,8 @@ export function useFlightSelection(viewer, flightStateRef, setSelected) {
 
     return () => {
       handler.destroy();
+      hoverHandler.destroy();
+      canvas.style.cursor = 'default';
       canvas.removeEventListener('mousedown', onMouseDown);
       clearSelection();
     };

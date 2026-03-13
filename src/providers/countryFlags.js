@@ -40,3 +40,10 @@ export function getFlagImg(countryName) {
   const img = FLAG_IMGS[iso];
   return (img?.complete && img.naturalWidth > 0) ? img : null;
 }
+
+// Busca bandeira diretamente pelo código ISO alpha-2 (ex: "BR", "US").
+export function getFlagImgByCode(iso) {
+  if (!iso) return null;
+  const img = FLAG_IMGS[iso.toUpperCase()];
+  return (img?.complete && img.naturalWidth > 0) ? img : null;
+}

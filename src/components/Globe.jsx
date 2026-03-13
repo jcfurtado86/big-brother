@@ -52,7 +52,7 @@ function computeBboxFromViewer(viewer) {
   };
 }
 
-export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, showFlights, airportTypes }) {
+export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, showFlights, airportTypes }) {
   const viewerRef = useRef(null);
   const [viewer, setViewer] = useState(null);
 
@@ -129,9 +129,9 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
     onFlightSelect?.(flights.get(icao) ?? null);
   }, [flights, onFlightSelect]);
 
-  useFlightSelection(viewer, flightStateRef, handleFlightSelect);
+  const { airportDataRef } = useAirportLayer(viewer, airportTypes, bbox);
+  useFlightSelection(viewer, flightStateRef, handleFlightSelect, airportDataRef, onAirportSelect);
   useFlyToMouse(viewer);
-  useAirportLayer(viewer, airportTypes, bbox);
 
   useEffect(() => {
     if (!viewer || !initialView) return;

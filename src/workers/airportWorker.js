@@ -1,8 +1,8 @@
 // Worker: carrega airports.json, filtra por bbox/tipos e constrói
 // os rótulos via OffscreenCanvas — tudo fora do thread principal.
 
-const FONT_SIZE = 11;
-const PAD_X = 4, PAD_Y = 3;
+const FONT_SIZE = 14;
+const PAD_X = 5, PAD_Y = 4;
 const BATCH_SIZE = 100; // aeroportos por mensagem enviada
 
 // Contexto de medição reutilizável (evita criar OffscreenCanvas por rótulo)
@@ -13,19 +13,19 @@ _mctx.font     = `${FONT_SIZE}px monospace`;
 function buildLabelBitmap(text) {
   const textW = Math.ceil(_mctx.measureText(text).width);
   const W = PAD_X + textW + PAD_X;
-  const H = PAD_Y + FONT_SIZE + PAD_Y;
+  const H = PAD_Y + FONT_SIZE + 4 + PAD_Y;
 
   const canvas = new OffscreenCanvas(W, H);
   const ctx    = canvas.getContext('2d');
 
-  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
   if (typeof ctx.roundRect === 'function') ctx.roundRect(0, 0, W, H, 3);
   else ctx.rect(0, 0, W, H);
   ctx.fill();
 
-  ctx.font          = `${FONT_SIZE}px monospace`;
-  ctx.fillStyle     = '#fff';
-  ctx.textBaseline  = 'middle';
+  ctx.font         = `${FONT_SIZE}px monospace`;
+  ctx.fillStyle    = '#fff';
+  ctx.textBaseline = 'middle';
   ctx.fillText(text, PAD_X, H / 2);
 
   return { bitmap: canvas.transferToImageBitmap(), W, H };
@@ -76,14 +76,17 @@ self.onmessage = async ({ data }) => {
       const transferables = [];
 
       for (const ap of batch) {
-        const text = ap.icao || ap.iata || ap.name.slice(0, 10);
+        const text = ap.iata || ap.icao || ap.name.slice(0, 10);
         const { bitmap, W, H } = buildLabelBitmap(text);
         results.push({
           icao:        ap.icao,
+          iata:        ap.iata || '',
           type:        ap.type,
+          name:        ap.name || '',
+          city:        ap.city || '',
+          country:     ap.country || '',
           lat:         ap.lat,
           lon:         ap.lon,
-          text,
           labelBitmap: bitmap,
           labelW:      W,
           labelH:      H,

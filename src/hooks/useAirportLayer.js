@@ -3,14 +3,9 @@ import { BillboardCollection, Cartesian3, Cartesian2, NearFarScalar, Cartographi
 import { getAirportIcon, AIRPORT_TYPE_META } from '../providers/airportIcons';
 import AirportWorker from '../workers/airportWorker.js?worker';
 
-const LABEL_SCALE = {
-  large_airport:  () => new NearFarScalar(5e4, 1.0, 5e5, 0.0),
-  medium_airport: () => new NearFarScalar(2e4, 1.0, 2e5, 0.0),
-  small_airport:  () => new NearFarScalar(5e3, 1.0, 5e4, 0.0),
-  heliport:       () => new NearFarScalar(2e3, 1.0, 2e4, 0.0),
-  seaplane_base:  () => new NearFarScalar(2e3, 1.0, 3e4, 0.0),
-  balloonport:    () => new NearFarScalar(1e3, 1.0, 1e4, 0.0),
-};
+const LABEL_NEAR = Number(import.meta.env.VITE_LABEL_NEAR_M ?? 2e6);
+const LABEL_FAR  = Number(import.meta.env.VITE_LABEL_FAR_M  ?? 3e6);
+const LABEL_VISIBLE = () => new NearFarScalar(LABEL_NEAR, 1.0, LABEL_FAR, 0.0);
 
 function inBbox(lat, lon, bbox) {
   if (!bbox) return true;
@@ -24,7 +19,8 @@ function getCameraAlt(viewer) {
 
 export function useAirportLayer(viewer, activeTypes, bbox) {
   const billboardsRef  = useRef(null);
-  const renderedRef    = useRef(new Map()); // icao → {icon, label, lat, lon, _type}
+  const renderedRef    = useRef(new Map()); // icao → {icon, label, lat, lon, _type, ...data}
+  const airportDataRef = useRef(new Map()); // icao → full airport data for card
   const workerRef      = useRef(null);
   const workerReadyRef = useRef(false);
   const genRef         = useRef(0);
@@ -139,6 +135,7 @@ export function useAirportLayer(viewer, activeTypes, bbox) {
         && alt <= (meta.maxAlt ?? Infinity);
 
       const icon = bbs.add({
+        id:              'apt:' + ap.icao,
         position:        pos,
         image:           getAirportIcon(ap.type), // canvas cacheado no main thread
         width:           meta.size,
@@ -153,19 +150,23 @@ export function useAirportLayer(viewer, activeTypes, bbox) {
       lc.getContext('2d').drawImage(ap.labelBitmap, 0, 0);
       ap.labelBitmap.close();
 
-      const labelScale = LABEL_SCALE[ap.type]?.() ?? new NearFarScalar(5e3, 1.0, 5e4, 0.0);
       const label = bbs.add({
         position:               pos,
         image:                  lc,
         width:                  ap.labelW,
         height:                 ap.labelH,
         pixelOffset:            new Cartesian2(0, meta.size / 2 + ap.labelH / 2 + 4),
-        scaleByDistance:        labelScale,
-        translucencyByDistance: labelScale,
+        scaleByDistance:        LABEL_VISIBLE(),
+        translucencyByDistance: LABEL_VISIBLE(),
         show:                   visible,
       });
 
       rendered.set(ap.icao, { icon, label, lat: ap.lat, lon: ap.lon, _type: ap.type });
+      airportDataRef.current.set(ap.icao, {
+        icao: ap.icao, iata: ap.iata, type: ap.type,
+        name: ap.name, city: ap.city, country: ap.country,
+        lat: ap.lat, lon: ap.lon,
+      });
     }
   }
 
@@ -180,4 +181,6 @@ export function useAirportLayer(viewer, activeTypes, bbox) {
     sendUpdate();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeKey, bboxKey]);
+
+  return { airportDataRef };
 }

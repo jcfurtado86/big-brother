@@ -7,6 +7,7 @@ import ResetView from './components/ResetView';
 import NightToggle from './components/NightToggle';
 import ClockDisplay from './components/ClockDisplay';
 import FlightCard from './components/FlightCard';
+import AirportCard from './components/AirportCard';
 import FlightsToggle from './components/FlightsToggle';
 import AirportToggle from './components/AirportToggle';
 import { useGeoIP } from './hooks/useGeoIP';
@@ -26,6 +27,7 @@ export default function App() {
   const [lighting, setLighting] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   const [selectedFlight, setSelectedFlight] = useState(null);
+  const [selectedAirport, setSelectedAirport] = useState(null);
   const [showFlights, setShowFlights] = useState(true);
   const [airportTypes, setAirportTypes] = useState(new Set(['large_airport', 'medium_airport']));
   const geoIP = useGeoIP();
@@ -59,6 +61,7 @@ export default function App() {
         onCameraChange={setCoords}
         onMouseMove={handleMouseMove}
         onFlightSelect={setSelectedFlight}
+        onAirportSelect={setSelectedAirport}
         showFlights={showFlights}
         airportTypes={airportTypes}
       />
@@ -71,6 +74,7 @@ export default function App() {
       <FlightsToggle active={showFlights} onToggle={() => setShowFlights((v) => !v)} />
       <AirportToggle activeTypes={airportTypes} onChange={setAirportTypes} />
       <FlightCard flight={selectedFlight} onClose={() => setSelectedFlight(null)} />
+      <AirportCard airport={selectedAirport} onClose={() => setSelectedAirport(null)} />
     </>
   );
 }
