@@ -1,9 +1,8 @@
 import { useEffect } from 'react';
 import { CameraEventType, ClockStep } from 'cesium';
 
-export function useSceneConfig(viewerRef, { lighting } = {}) {
+export function useSceneConfig(viewer, { lighting } = {}) {
   useEffect(() => {
-    const viewer = viewerRef.current?.cesiumElement;
     if (!viewer) return;
 
     viewer.scene.skyAtmosphere.show = true;
@@ -30,10 +29,9 @@ export function useSceneConfig(viewerRef, { lighting } = {}) {
 
     canvas.addEventListener('wheel', onWheel, { passive: false });
     return () => canvas.removeEventListener('wheel', onWheel);
-  }, [viewerRef]);
+  }, [viewer]);
 
   useEffect(() => {
-    const viewer = viewerRef.current?.cesiumElement;
     if (!viewer) return;
     viewer.scene.globe.enableLighting = !!lighting;
     if (lighting) {
@@ -43,5 +41,5 @@ export function useSceneConfig(viewerRef, { lighting } = {}) {
       viewer.clock.clockStep = ClockStep.SYSTEM_CLOCK_MULTIPLIER;
       viewer.clock.shouldAnimate = false;
     }
-  }, [viewerRef, lighting]);
+  }, [viewer, lighting]);
 }

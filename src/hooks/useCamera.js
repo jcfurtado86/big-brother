@@ -1,9 +1,8 @@
 import { useEffect } from 'react';
 import { Math as CesiumMath } from 'cesium';
 
-export function useCamera(viewerRef, onCameraChange) {
+export function useCamera(viewer, onCameraChange) {
   useEffect(() => {
-    const viewer = viewerRef.current?.cesiumElement;
     if (!viewer) return;
 
     const update = () => {
@@ -25,5 +24,5 @@ export function useCamera(viewerRef, onCameraChange) {
       viewer.camera.changed.removeEventListener(update);
       viewer.camera.moveEnd.removeEventListener(update);
     };
-  }, [viewerRef, onCameraChange]);
+  }, [viewer, onCameraChange]);
 }

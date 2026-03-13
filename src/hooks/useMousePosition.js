@@ -1,13 +1,11 @@
 import { useEffect } from 'react';
 import { Cartesian2, Cartographic, Ellipsoid, Math as CesiumMath } from 'cesium';
 
-export function useMousePosition(viewerRef, onMouseMove) {
+export function useMousePosition(viewer, onMouseMove) {
   useEffect(() => {
-    const viewer = viewerRef.current?.cesiumElement;
     if (!viewer) return;
 
-    let canvas = null;
-    let attached = false;
+    const canvas = viewer.scene.canvas;
 
     const handleMove = (e) => {
       const pos = new Cartesian2(e.offsetX, e.offsetY);
@@ -20,25 +18,11 @@ export function useMousePosition(viewerRef, onMouseMove) {
       });
     };
 
-    const handleLeave = () => onMouseMove(null);
-
-    const attach = () => {
-      if (attached) return;
-      attached = true;
-      viewer.scene.postRender.removeEventListener(attach);
-      canvas = viewer.scene.canvas;
-      canvas.addEventListener('mousemove', handleMove);
-      canvas.addEventListener('mouseleave', handleLeave);
-    };
-
-    viewer.scene.postRender.addEventListener(attach);
+    canvas.addEventListener('mousemove', handleMove);
+    canvas.addEventListener('mouseleave', () => onMouseMove(null));
 
     return () => {
-      viewer.scene.postRender.removeEventListener(attach);
-      if (canvas) {
-        canvas.removeEventListener('mousemove', handleMove);
-        canvas.removeEventListener('mouseleave', handleLeave);
-      }
+      canvas.removeEventListener('mousemove', handleMove);
     };
-  }, [viewerRef, onMouseMove]);
+  }, [viewer, onMouseMove]);
 }

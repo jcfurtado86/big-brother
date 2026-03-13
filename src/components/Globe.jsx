@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Viewer, CameraFlyTo, ImageryLayer } from 'resium';
 import { EllipsoidTerrainProvider, Cartesian3, Math as CesiumMath } from 'cesium';
 import { useCamera } from '../hooks/useCamera';
@@ -7,15 +7,24 @@ import { useMousePosition } from '../hooks/useMousePosition';
 
 export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove }) {
   const viewerRef = useRef(null);
+  const [viewer, setViewer] = useState(null);
 
-  useCamera(viewerRef, onCameraChange);
-  useSceneConfig(viewerRef, { lighting });
-  useMousePosition(viewerRef, onMouseMove);
+  // Capture the cesiumElement as state so hooks rerun when it becomes available
+  useEffect(() => {
+    const check = () => {
+      const v = viewerRef.current?.cesiumElement;
+      if (v) setViewer(v);
+      else requestAnimationFrame(check);
+    };
+    check();
+  }, []);
+
+  useCamera(viewer, onCameraChange);
+  useSceneConfig(viewer, { lighting });
+  useMousePosition(viewer, onMouseMove);
 
   useEffect(() => {
-    if (!initialView) return;
-    const viewer = viewerRef.current?.cesiumElement;
-    if (!viewer) return;
+    if (!viewer || !initialView) return;
     viewer.camera.setView({
       destination: Cartesian3.fromDegrees(initialView.lon, initialView.lat, initialView.alt),
       orientation: {
@@ -24,12 +33,10 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
         roll: 0,
       },
     });
-  }, [initialView]);
+  }, [viewer, initialView]);
 
   useEffect(() => {
-    if (!resetKey) return;
-    const viewer = viewerRef.current?.cesiumElement;
-    if (!viewer) return;
+    if (!resetKey || !viewer) return;
     const cart = viewer.camera.positionCartographic;
     viewer.camera.flyTo({
       destination: Cartesian3.fromDegrees(
@@ -44,7 +51,7 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
       },
       duration: 2,
     });
-  }, [resetKey]);
+  }, [resetKey, viewer]);
 
   const destination = flyTarget
     ? Cartesian3.fromDegrees(flyTarget.lon, flyTarget.lat, flyTarget.alt ?? 300000)
