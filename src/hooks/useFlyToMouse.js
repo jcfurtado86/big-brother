@@ -9,9 +9,9 @@ import {
   Cartesian3,
 } from 'cesium';
 
-const MIN_ALT  = 2_000;   // altitude minima em metros
-const ZOOM_FACTOR = 3;    // divide a altitude atual por este valor
-const DURATION = 1.2;     // segundos
+const MIN_ALT     = Number(import.meta.env.VITE_FLY_MIN_ALT_M    ?? 2_000);
+const ZOOM_FACTOR = Number(import.meta.env.VITE_FLY_ZOOM_FACTOR  ?? 3);
+const DURATION    = Number(import.meta.env.VITE_FLY_DURATION_S   ?? 1.2);
 
 export function useFlyToMouse(viewer) {
   useEffect(() => {

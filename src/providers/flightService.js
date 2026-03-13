@@ -51,9 +51,15 @@ function parseTrackPositions(data) {
  * Busca todos os voos em tempo real.
  * @returns {Promise<Map<string, object> | null>} null em caso de erro recuperavel
  */
-export async function fetchFlights() {
+/**
+ * @param {{ north: number, south: number, east: number, west: number } | null} bbox
+ */
+export async function fetchFlights(bbox = null, signal = undefined) {
   const headers = await openskyHeaders();
-  const res = await fetch('/api/opensky', { headers });
+  const params = bbox
+    ? `?lamin=${bbox.south.toFixed(4)}&lomin=${bbox.west.toFixed(4)}&lamax=${bbox.north.toFixed(4)}&lomax=${bbox.east.toFixed(4)}`
+    : '';
+  const res = await fetch(`/api/opensky${params}`, { headers, signal });
 
   if (res.status === 429) { console.warn('[flightService] rate limited (429)'); return null; }
   if (res.status === 401) { console.warn('[flightService] unauthorized (401)'); invalidateToken(); return null; }

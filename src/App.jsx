@@ -13,6 +13,9 @@ import { layers } from './providers/layers';
 
 const layerOptions = layers.map(({ id, label }) => ({ id, label }));
 
+const DEFAULT_ALT   = Number(import.meta.env.VITE_DEFAULT_ALT_M    ?? 10_000_000);
+const DEFAULT_PITCH = Number(import.meta.env.VITE_DEFAULT_PITCH_DEG ?? -90);
+
 export default function App() {
   const [layerId, setLayerId] = useState('satellite');
   const [flyTarget, setFlyTarget] = useState(null);
@@ -27,8 +30,8 @@ export default function App() {
 
   useEffect(() => {
     if (geoIP) {
-      setInitialView({ lat: geoIP.lat, lon: geoIP.lon, alt: 20000000, pitch: -90 });
-      setCoords({ lat: Number(geoIP.lat).toFixed(4), lon: Number(geoIP.lon).toFixed(4), alt: '20000' });
+      setInitialView({ lat: geoIP.lat, lon: geoIP.lon, alt: DEFAULT_ALT, pitch: DEFAULT_PITCH });
+      setCoords({ lat: Number(geoIP.lat).toFixed(4), lon: Number(geoIP.lon).toFixed(4), alt: '10000' });
     }
   }, [geoIP]);
 

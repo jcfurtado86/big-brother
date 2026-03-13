@@ -19,7 +19,7 @@ export default defineConfig({
       '/api/opensky': {
         target: 'https://opensky-network.org',
         changeOrigin: true,
-        rewrite: () => '/api/states/all',
+        rewrite: (path) => path.replace('/api/opensky', '/api/states/all'),
       },
       '/api/skyauth': {
         target: 'https://auth.opensky-network.org',

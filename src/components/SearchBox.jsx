@@ -18,7 +18,8 @@ export default function SearchBox({ onSelect }) {
 
   async function fetchLocations(q) {
     try {
-      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=6`;
+      const limit = import.meta.env.VITE_SEARCH_LIMIT ?? 6;
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=${limit}`;
       const res = await fetch(url, { headers: { 'Accept-Language': 'pt-BR,pt' } });
       setResults(await res.json());
     } catch (e) {

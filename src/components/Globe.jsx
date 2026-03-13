@@ -1,7 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Viewer, CameraFlyTo, ImageryLayer } from 'resium';
-import { EllipsoidTerrainProvider, Cartesian3, Math as CesiumMath } from 'cesium';
+import { EllipsoidTerrainProvider, Cartesian3, Cartesian2, Cartographic, Ellipsoid, Math as CesiumMath } from 'cesium';
 import { useCamera } from '../hooks/useCamera';
+
+const DEFAULT_ALT   = Number(import.meta.env.VITE_DEFAULT_ALT_M    ?? 10_000_000);
+const DEFAULT_PITCH = Number(import.meta.env.VITE_DEFAULT_PITCH_DEG ?? -90);
 import { useSceneConfig } from '../hooks/useSceneConfig';
 import { useMousePosition } from '../hooks/useMousePosition';
 import { useFlights } from '../hooks/useFlights';
@@ -9,11 +12,49 @@ import { useFlightLayer } from '../hooks/useFlightLayer';
 import { useFlightSelection } from '../hooks/useFlightSelection';
 import { useFlyToMouse }      from '../hooks/useFlyToMouse';
 
+// Computes the visible bounding box from the current camera.
+// Uses corner picking when the globe edges are visible; falls back to the
+// arccos horizon formula for high-altitude views. Never returns null —
+// even at 10 000 km the user only sees ~half the globe, not the whole thing.
+function computeBboxFromViewer(viewer) {
+  const { clientWidth: w, clientHeight: h } = viewer.scene.canvas;
+  const corners = [
+    new Cartesian2(0, 0), new Cartesian2(w, 0),
+    new Cartesian2(w, h), new Cartesian2(0, h),
+  ];
+  const hits = corners
+    .map(c => viewer.camera.pickEllipsoid(c, Ellipsoid.WGS84))
+    .filter(Boolean);
+
+  if (hits.length >= 2) {
+    const carts = hits.map(p => Cartographic.fromCartesian(p, Ellipsoid.WGS84));
+    const lats = carts.map(c => CesiumMath.toDegrees(c.latitude));
+    const lons = carts.map(c => CesiumMath.toDegrees(c.longitude));
+    return {
+      south: Math.min(...lats), north: Math.max(...lats),
+      west:  Math.min(...lons), east:  Math.max(...lons),
+    };
+  }
+
+  // Arccos horizon formula — works at any altitude.
+  // At 10 000 km the visible cap is ~67°, so we fetch roughly one hemisphere.
+  const camCart = viewer.camera.positionCartographic;
+  const alt = camCart.height;
+  const R = 6_371_000;
+  const visAngleDeg = Math.acos(R / (R + alt)) * (180 / Math.PI);
+  const pad = Math.min(visAngleDeg * 1.5, 90);
+  const lat = CesiumMath.toDegrees(camCart.latitude);
+  const lon = CesiumMath.toDegrees(camCart.longitude);
+  return {
+    south: Math.max(lat - pad, -90), north: Math.min(lat + pad,  90),
+    west:  Math.max(lon - pad, -180), east: Math.min(lon + pad, 180),
+  };
+}
+
 export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, showFlights }) {
   const viewerRef = useRef(null);
   const [viewer, setViewer] = useState(null);
 
-  // Capture the cesiumElement as state so hooks rerun when it becomes available
   useEffect(() => {
     const check = () => {
       const v = viewerRef.current?.cesiumElement;
@@ -23,11 +64,55 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
     check();
   }, []);
 
+  // undefined = viewer not ready (don't poll yet)
+  // null      = whole globe visible (fetch all)
+  // {...}     = regional view (fetch with bbox params)
+  const [bbox, setBbox] = useState(undefined);
+
+  useEffect(() => {
+    if (!viewer) return;
+    const lastKeyRef = { current: null };
+
+    const onBboxUpdate = () => {
+      const next = computeBboxFromViewer(viewer);
+      const key = next === null ? '__global__'
+        : `${next.south.toFixed(1)},${next.west.toFixed(1)},${next.north.toFixed(1)},${next.east.toFixed(1)}`;
+      if (key === lastKeyRef.current) return;
+      lastKeyRef.current = key;
+      setBbox(next);
+    };
+
+    onBboxUpdate(); // immediate on mount
+    const removeListener = viewer.camera.changed.addEventListener(onBboxUpdate);
+    return () => removeListener();
+  }, [viewer]);
+
   useCamera(viewer, onCameraChange);
   useSceneConfig(viewer, { lighting });
   useMousePosition(viewer, onMouseMove);
-  const flights = useFlights(showFlights);
+  const flights = useFlights(showFlights, bbox);
+  const flightsRef = useRef(flights);
+  flightsRef.current = flights;
+
   const { stateRef: flightStateRef, setSelected } = useFlightLayer(viewer, flights);
+
+  // Live visibility filter — runs on every camera change, no debounce, no API call.
+  // Hides/shows already-loaded billboards instantly as the user pans/zooms.
+  useEffect(() => {
+    if (!viewer) return;
+    const update = () => {
+      const live = computeBboxFromViewer(viewer);
+      for (const [, entry] of flightStateRef.current) {
+        const visible = !live ||
+          (entry.lon >= live.west  && entry.lon <= live.east &&
+           entry.lat >= live.south && entry.lat <= live.north);
+        entry.billboard.show = visible;
+        if (entry.callsign) entry.callsign.show = visible;
+      }
+    };
+    const removeListener = viewer.camera.changed.addEventListener(update);
+    return () => removeListener();
+  }, [viewer, flightStateRef]);
 
   const handleFlightSelect = React.useCallback((icao24) => {
     setSelected(icao24);
@@ -56,11 +141,11 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
       destination: Cartesian3.fromDegrees(
         CesiumMath.toDegrees(cart.longitude),
         CesiumMath.toDegrees(cart.latitude),
-        20000000
+        DEFAULT_ALT
       ),
       orientation: {
         heading: CesiumMath.toRadians(0),
-        pitch: CesiumMath.toRadians(-90),
+        pitch: CesiumMath.toRadians(DEFAULT_PITCH),
         roll: 0,
       },
       duration: 2,

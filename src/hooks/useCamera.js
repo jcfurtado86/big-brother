@@ -15,7 +15,7 @@ export function useCamera(viewer, onCameraChange) {
       });
     };
 
-    viewer.camera.percentageChanged = 0.01;
+    viewer.camera.percentageChanged = Number(import.meta.env.VITE_CAMERA_CHANGE_THRESHOLD ?? 0.01);
     viewer.camera.changed.addEventListener(update);
     viewer.camera.moveEnd.addEventListener(update);
     update();

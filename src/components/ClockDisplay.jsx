@@ -15,7 +15,7 @@ export default function ClockDisplay() {
   return (
     <div className={styles.wrapper}>
       <span>{date}</span>
-      <span className={styles.time}>{time}</span>
+      <span>{time}</span>
     </div>
   );
 }
