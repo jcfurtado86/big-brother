@@ -16,7 +16,9 @@ const R = 6371000;
 const FLIGHT_ALTITUDE = Number(import.meta.env.VITE_FLIGHT_ALTITUDE_M ?? 10000);
 const LABEL_NEAR      = Number(import.meta.env.VITE_LABEL_NEAR_M      ?? 2e6);
 const LABEL_FAR       = Number(import.meta.env.VITE_LABEL_FAR_M       ?? 3e6);
-const LABEL_ALWAYS    = new NearFarScalar(1, 1.0, 1e10, 1.0);
+const LABEL_ALWAYS         = new NearFarScalar(1, 1.0, 1e10, 1.0);
+const PLANE_COLOR          = Color.fromCssColorString(import.meta.env.VITE_PLANE_COLOR          || '#F2A800');
+const SELECTED_PLANE_COLOR = Color.fromCssColorString(import.meta.env.VITE_SELECTED_PLANE_COLOR || '#FF0000');
 
 function deadReckon(lat, lon, heading, velocity, dtMs) {
   const dt = dtMs / 1000;
@@ -111,6 +113,8 @@ export function useFlightLayer(viewer, flightsMap) {
           width: w,
           height: h,
           rotation: -CesiumMath.toRadians(flight.heading),
+          alignedAxis: Cartesian3.UNIT_Z, // anchor rotation to world north, not screen up
+          color: PLANE_COLOR,
           scaleByDistance:       new NearFarScalar(5e5, 1.5, 1.5e7, 0.4),
           translucencyByDistance: new NearFarScalar(5e5, 1.0, 2e7,  0.5),
         });
@@ -174,7 +178,7 @@ export function useFlightLayer(viewer, flightsMap) {
     if (prev) {
       const entry = state.get(prev);
       if (entry) {
-        entry.billboard.color              = Color.WHITE;
+        entry.billboard.color              = PLANE_COLOR;
         entry.label.scaleByDistance        = new NearFarScalar(LABEL_NEAR, 1.0, LABEL_FAR, 0.0);
         entry.label.translucencyByDistance = new NearFarScalar(LABEL_NEAR, 1.0, LABEL_FAR, 0.0);
       }
@@ -185,7 +189,7 @@ export function useFlightLayer(viewer, flightsMap) {
     if (icao) {
       const entry = state.get(icao);
       if (entry) {
-        entry.billboard.color              = Color.RED;
+        entry.billboard.color              = SELECTED_PLANE_COLOR;
         entry.label.scaleByDistance        = LABEL_ALWAYS;
         entry.label.translucencyByDistance = LABEL_ALWAYS;
       }
