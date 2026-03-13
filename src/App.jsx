@@ -10,6 +10,7 @@ import FlightCard from './components/FlightCard';
 import AirportCard from './components/AirportCard';
 import FlightsToggle from './components/FlightsToggle';
 import AirportToggle from './components/AirportToggle';
+import WeatherToggle from './components/WeatherToggle';
 import { useGeoIP } from './hooks/useGeoIP';
 import { layers } from './providers/layers';
 
@@ -28,8 +29,9 @@ export default function App() {
   const [resetKey, setResetKey] = useState(0);
   const [selectedFlight, setSelectedFlight] = useState(null);
   const [selectedAirport, setSelectedAirport] = useState(null);
-  const [showFlights, setShowFlights] = useState(true);
-  const [airportTypes, setAirportTypes] = useState(new Set(['large_airport', 'medium_airport']));
+  const [showFlights, setShowFlights] = useState(false);
+  const [showWeather, setShowWeather] = useState(false);
+  const [airportTypes, setAirportTypes] = useState(new Set());
   const geoIP = useGeoIP();
 
   useEffect(() => {
@@ -63,6 +65,7 @@ export default function App() {
         onFlightSelect={setSelectedFlight}
         onAirportSelect={setSelectedAirport}
         showFlights={showFlights}
+        showWeather={showWeather}
         airportTypes={airportTypes}
       />
       <SearchBox onSelect={handleLocationSelect} />
@@ -72,6 +75,7 @@ export default function App() {
       <ResetView onReset={handleResetView} />
       <NightToggle active={lighting} onToggle={() => setLighting((v) => !v)} />
       <FlightsToggle active={showFlights} onToggle={() => setShowFlights((v) => !v)} />
+      <WeatherToggle active={showWeather} onToggle={() => setShowWeather((v) => !v)} />
       <AirportToggle activeTypes={airportTypes} onChange={setAirportTypes} />
       <FlightCard flight={selectedFlight} onClose={() => setSelectedFlight(null)} />
       <AirportCard airport={selectedAirport} onClose={() => setSelectedAirport(null)} />

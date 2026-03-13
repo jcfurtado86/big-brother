@@ -12,6 +12,7 @@ import { useFlightLayer } from '../hooks/useFlightLayer';
 import { useFlightSelection } from '../hooks/useFlightSelection';
 import { useFlyToMouse }      from '../hooks/useFlyToMouse';
 import { useAirportLayer }    from '../hooks/useAirportLayer';
+import { useWeatherLayer }    from '../hooks/useWeatherLayer';
 
 // Computes the visible bounding box from the current camera.
 // Uses corner picking when the globe edges are visible; falls back to the
@@ -52,7 +53,7 @@ function computeBboxFromViewer(viewer) {
   };
 }
 
-export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, showFlights, airportTypes }) {
+export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, showFlights, airportTypes, showWeather }) {
   const viewerRef = useRef(null);
   const [viewer, setViewer] = useState(null);
 
@@ -131,6 +132,7 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
 
   const { airportDataRef } = useAirportLayer(viewer, airportTypes, bbox);
   useFlightSelection(viewer, flightStateRef, handleFlightSelect, airportDataRef, onAirportSelect);
+  useWeatherLayer(viewer, showWeather);
   useFlyToMouse(viewer);
 
   useEffect(() => {
