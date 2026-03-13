@@ -3,9 +3,10 @@ import Globe from './components/Globe';
 import SearchBox from './components/SearchBox';
 import LayerToggle from './components/LayerToggle';
 import InfoBar from './components/InfoBar';
+import { imageryProviders, layerOptions } from './providers/imagery';
 
 export default function App() {
-  const [layer, setLayer] = useState('satellite');
+  const [layerId, setLayerId] = useState('satellite');
   const [flyTarget, setFlyTarget] = useState(null);
   const [coords, setCoords] = useState({ lat: null, lon: null, alt: null });
 
@@ -16,12 +17,12 @@ export default function App() {
   return (
     <>
       <Globe
-        layer={layer}
+        imageryProvider={imageryProviders[layerId]}
         flyTarget={flyTarget}
         onCameraChange={setCoords}
       />
       <SearchBox onSelect={handleLocationSelect} />
-      <LayerToggle current={layer} onChange={setLayer} />
+      <LayerToggle options={layerOptions} current={layerId} onChange={setLayerId} />
       <InfoBar coords={coords} />
     </>
   );

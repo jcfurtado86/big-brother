@@ -1,15 +1,10 @@
 import React from 'react';
 import styles from './LayerToggle.module.css';
 
-const LAYERS = [
-  { id: 'satellite', label: 'Satélite' },
-  { id: 'street', label: 'Mapa' },
-];
-
-export default function LayerToggle({ current, onChange }) {
+export default function LayerToggle({ options, current, onChange }) {
   return (
     <div className={styles.wrapper}>
-      {LAYERS.map(l => (
+      {options.map(l => (
         <button
           key={l.id}
           className={`${styles.btn} ${current === l.id ? styles.active : ''}`}
