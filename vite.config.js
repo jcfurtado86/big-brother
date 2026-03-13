@@ -16,6 +16,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace('/api/opensky-track', '/api/tracks/all'),
       },
+      '/api/opensky-meta': {
+        target: 'https://opensky-network.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api/opensky-meta', '/api/metadata/aircraft/icao'),
+      },
       '/api/opensky': {
         target: 'https://opensky-network.org',
         changeOrigin: true,

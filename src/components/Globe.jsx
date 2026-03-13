@@ -11,6 +11,7 @@ import { useFlights } from '../hooks/useFlights';
 import { useFlightLayer } from '../hooks/useFlightLayer';
 import { useFlightSelection } from '../hooks/useFlightSelection';
 import { useFlyToMouse }      from '../hooks/useFlyToMouse';
+import { useAirportLayer }    from '../hooks/useAirportLayer';
 
 // Computes the visible bounding box from the current camera.
 // Uses corner picking when the globe edges are visible; falls back to the
@@ -51,7 +52,7 @@ function computeBboxFromViewer(viewer) {
   };
 }
 
-export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, showFlights }) {
+export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, showFlights, airportTypes }) {
   const viewerRef = useRef(null);
   const [viewer, setViewer] = useState(null);
 
@@ -95,6 +96,7 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
   flightsRef.current = flights;
 
   const { stateRef: flightStateRef, setSelected } = useFlightLayer(viewer, flights);
+  const selectedIcaoRef = useRef(null);
 
   // Live visibility filter — runs on every camera change, no debounce, no API call.
   // Hides/shows already-loaded billboards instantly as the user pans/zooms.
@@ -115,12 +117,21 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
   }, [viewer, flightStateRef]);
 
   const handleFlightSelect = React.useCallback((icao24) => {
+    selectedIcaoRef.current = icao24 ?? null;
     setSelected(icao24);
     onFlightSelect?.(icao24 ? (flights.get(icao24) ?? null) : null);
   }, [setSelected, flights, onFlightSelect]);
 
+  // Keep FlightCard in sync when flights Map refreshes (every 60s)
+  useEffect(() => {
+    const icao = selectedIcaoRef.current;
+    if (!icao) return;
+    onFlightSelect?.(flights.get(icao) ?? null);
+  }, [flights, onFlightSelect]);
+
   useFlightSelection(viewer, flightStateRef, handleFlightSelect);
   useFlyToMouse(viewer);
+  useAirportLayer(viewer, airportTypes, bbox);
 
   useEffect(() => {
     if (!viewer || !initialView) return;

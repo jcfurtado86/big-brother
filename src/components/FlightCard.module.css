@@ -69,4 +69,21 @@
 .value {
   color: #ddd;
   text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.flag {
+  width: 22px;
+  height: 15px;
+  object-fit: cover;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.reg {
+  color: #888;
+  font-size: 11px;
 }

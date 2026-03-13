@@ -69,6 +69,25 @@ export async function fetchFlights(bbox = null, signal = undefined) {
 }
 
 /**
+ * Busca metadados estaticos de uma aeronave (modelo, matricula, operador).
+ * @param {string} icao24
+ * @returns {Promise<object | null>}
+ */
+export async function fetchAircraftMeta(icao24) {
+  const headers = await openskyHeaders();
+  const res = await fetch(`/api/opensky-meta/${icao24}`, { headers });
+  if (!res.ok) return null;
+  const d = await res.json();
+  return {
+    registration: d.registration     || null,
+    model:        d.model            || null,
+    manufacturer: d.manufacturername || null,
+    operator:     d.operator         || null,
+    built:        d.built ? d.built.substring(0, 4) : null,
+  };
+}
+
+/**
  * Busca o historico de track de um voo.
  * @param {string} icao24
  * @returns {Promise<Array<{lat: number, lon: number, alt: number}> | null>}

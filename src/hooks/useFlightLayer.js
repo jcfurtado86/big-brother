@@ -7,7 +7,8 @@ import {
   Cartesian3,
   Math as CesiumMath,
 } from 'cesium';
-import { getCategoryType, getPlaneImage, CATEGORY_SIZE } from '../providers/planeIcons';
+import { getCategoryType, getCategoryFromTypeCode, getIconForTypeCode, CATEGORY_SIZE } from '../providers/planeIcons';
+import { lookupAircraft, preloadAircraftDb } from '../providers/aircraftDb';
 import { getFlagImg } from '../providers/countryFlags';
 import { deadReckon } from '../utils/geoMath';
 
@@ -151,14 +152,17 @@ export function useFlightLayer(viewer, flightsMap) {
       if (billboards.isDestroyed()) return;
       const batch = planeQueueRef.current.splice(0, PLANE_BATCH_SIZE);
       for (const [icao, flight] of batch) {
-        const type     = getCategoryType(flight.category, flight.velocity, flight.altitude);
-        const { w, h } = CATEGORY_SIZE[type];
-        const pos      = Cartesian3.fromDegrees(flight.lon, flight.lat, FLIGHT_ALTITUDE);
+        const db        = lookupAircraft(icao);
+        const typeCode  = db?.typeCode ?? null;
+        const category  = getCategoryFromTypeCode(typeCode)
+                       ?? getCategoryType(flight.category, flight.velocity, flight.altitude);
+        const { w, h } = CATEGORY_SIZE[category] ?? CATEGORY_SIZE.unknown;
+        const pos       = Cartesian3.fromDegrees(flight.lon, flight.lat, FLIGHT_ALTITUDE);
 
         const billboard = billboards.add({
           id: icao,
           position: pos,
-          image: getPlaneImage(type),
+          image: getIconForTypeCode(typeCode, category),
           width: w,
           height: h,
           rotation: -CesiumMath.toRadians(flight.heading),
@@ -180,6 +184,8 @@ export function useFlightLayer(viewer, flightsMap) {
           _label:    flight.callsign || flight.icao24,
           _country:  flight.country,
           _pos:      pos,
+          _adsbCat:  flight.category,
+          _alt:      flight.altitude,
         });
 
         // Enqueue callsign for idle pass
@@ -234,6 +240,25 @@ export function useFlightLayer(viewer, flightsMap) {
       planeRafRef.current = requestAnimationFrame(processPlaneBatch);
     }
   }, [flightsMap, viewer]);
+
+  // Re-evaluate icons once aircraft DB finishes loading
+  useEffect(() => {
+    preloadAircraftDb().then(() => {
+      const billboards = billboardsRef.current;
+      if (!billboards || billboards.isDestroyed()) return;
+      for (const [icao, entry] of stateRef.current) {
+        const db       = lookupAircraft(icao);
+        const typeCode = db?.typeCode ?? null;
+        const category = getCategoryFromTypeCode(typeCode)
+                      ?? getCategoryType(entry._adsbCat, entry.velocity, entry._alt);
+        const { w, h } = CATEGORY_SIZE[category] ?? CATEGORY_SIZE.unknown;
+        entry.billboard.image  = getIconForTypeCode(typeCode, category);
+        entry.billboard.width  = w;
+        entry.billboard.height = h;
+        entry._h = h;
+      }
+    }).catch(() => { /* DB indisponível — mantém ícones atuais */ });
+  }, [viewer]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Dead reckoning
   useEffect(() => {
