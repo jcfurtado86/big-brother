@@ -27,6 +27,9 @@ yarn-error.log*
 *.sln
 *.sw?
 
+# Claude
+.claude/
+
 # OS
 .DS_Store
 Thumbs.db
