@@ -7,6 +7,7 @@ import { useMousePosition } from '../hooks/useMousePosition';
 import { useFlights } from '../hooks/useFlights';
 import { useFlightLayer } from '../hooks/useFlightLayer';
 import { useFlightSelection } from '../hooks/useFlightSelection';
+import { useFlyToMouse }      from '../hooks/useFlyToMouse';
 
 export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove }) {
   const viewerRef = useRef(null);
@@ -28,6 +29,7 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
   const flights = useFlights();
   const { stateRef: flightStateRef, setSelected } = useFlightLayer(viewer, flights);
   useFlightSelection(viewer, flightStateRef, setSelected);
+  useFlyToMouse(viewer);
 
   useEffect(() => {
     if (!viewer || !initialView) return;

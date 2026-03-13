@@ -9,33 +9,16 @@ import {
 } from 'cesium';
 import { getCategoryType, getPlaneImage, CATEGORY_SIZE } from '../providers/planeIcons';
 import { getFlagImg } from '../providers/countryFlags';
+import { deadReckon } from '../utils/geoMath';
 
 const DEAD_RECKONING_INTERVAL = Number(import.meta.env.VITE_DEAD_RECKONING_MS  ?? 1000);
-const R = 6371000;
 const FLIGHT_ALTITUDE = Number(import.meta.env.VITE_FLIGHT_ALTITUDE_M ?? 10000);
 const LABEL_NEAR      = Number(import.meta.env.VITE_LABEL_NEAR_M      ?? 2e6);
 const LABEL_FAR       = Number(import.meta.env.VITE_LABEL_FAR_M       ?? 3e6);
-const LABEL_ALWAYS         = new NearFarScalar(1, 1.0, 1e10, 1.0);
+const LABEL_ALWAYS   = new NearFarScalar(1, 1.0, 1e10, 1.0);
+const LABEL_VISIBLE  = () => new NearFarScalar(LABEL_NEAR, 1.0, LABEL_FAR, 0.0);
 const PLANE_COLOR          = Color.fromCssColorString(import.meta.env.VITE_PLANE_COLOR          || '#F2A800');
 const SELECTED_PLANE_COLOR = Color.fromCssColorString(import.meta.env.VITE_SELECTED_PLANE_COLOR || '#FF0000');
-
-function deadReckon(lat, lon, heading, velocity, dtMs) {
-  const dt = dtMs / 1000;
-  const d = velocity * dt;
-  if (d === 0) return { lat, lon };
-  const φ1 = CesiumMath.toRadians(lat);
-  const λ1 = CesiumMath.toRadians(lon);
-  const θ = CesiumMath.toRadians(heading);
-  const δ = d / R;
-  const φ2 = Math.asin(
-    Math.sin(φ1) * Math.cos(δ) + Math.cos(φ1) * Math.sin(δ) * Math.cos(θ)
-  );
-  const λ2 = λ1 + Math.atan2(
-    Math.sin(θ) * Math.sin(δ) * Math.cos(φ1),
-    Math.cos(δ) - Math.sin(φ1) * Math.sin(φ2)
-  );
-  return { lat: CesiumMath.toDegrees(φ2), lon: CesiumMath.toDegrees(λ2) };
-}
 
 // ── Callsign + flag canvas ────────────────────────────────────────────────────
 
@@ -97,8 +80,8 @@ function buildCallsignBillboard(billboards, pos, h, callsign, flagImg) {
     width:  W,
     height: H,
     pixelOffset:            new Cartesian2(0, labelY),
-    scaleByDistance:        new NearFarScalar(LABEL_NEAR, 1.0, LABEL_FAR, 0.0),
-    translucencyByDistance: new NearFarScalar(LABEL_NEAR, 1.0, LABEL_FAR, 0.0),
+    scaleByDistance:        LABEL_VISIBLE(),
+    translucencyByDistance: LABEL_VISIBLE(),
   });
 }
 
@@ -210,8 +193,8 @@ export function useFlightLayer(viewer, flightsMap) {
       const entry = state.get(prev);
       if (entry) {
         entry.billboard.color              = PLANE_COLOR;
-        entry.callsign.scaleByDistance        = new NearFarScalar(LABEL_NEAR, 1.0, LABEL_FAR, 0.0);
-        entry.callsign.translucencyByDistance = new NearFarScalar(LABEL_NEAR, 1.0, LABEL_FAR, 0.0);
+        entry.callsign.scaleByDistance        = LABEL_VISIBLE();
+        entry.callsign.translucencyByDistance = LABEL_VISIBLE();
       }
     }
 

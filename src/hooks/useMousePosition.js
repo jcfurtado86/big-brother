@@ -18,11 +18,13 @@ export function useMousePosition(viewer, onMouseMove) {
       });
     };
 
-    canvas.addEventListener('mousemove', handleMove);
-    canvas.addEventListener('mouseleave', () => onMouseMove(null));
+    const handleLeave = () => onMouseMove(null);
+    canvas.addEventListener('mousemove',  handleMove);
+    canvas.addEventListener('mouseleave', handleLeave);
 
     return () => {
-      canvas.removeEventListener('mousemove', handleMove);
+      canvas.removeEventListener('mousemove',  handleMove);
+      canvas.removeEventListener('mouseleave', handleLeave);
     };
   }, [viewer, onMouseMove]);
 }
