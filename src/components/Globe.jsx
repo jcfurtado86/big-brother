@@ -4,6 +4,9 @@ import { EllipsoidTerrainProvider, Cartesian3, Math as CesiumMath } from 'cesium
 import { useCamera } from '../hooks/useCamera';
 import { useSceneConfig } from '../hooks/useSceneConfig';
 import { useMousePosition } from '../hooks/useMousePosition';
+import { useFlights } from '../hooks/useFlights';
+import { useFlightLayer } from '../hooks/useFlightLayer';
+import { useFlightSelection } from '../hooks/useFlightSelection';
 
 export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove }) {
   const viewerRef = useRef(null);
@@ -22,6 +25,9 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
   useCamera(viewer, onCameraChange);
   useSceneConfig(viewer, { lighting });
   useMousePosition(viewer, onMouseMove);
+  const flights = useFlights();
+  const { stateRef: flightStateRef, setSelected } = useFlightLayer(viewer, flights);
+  useFlightSelection(viewer, flightStateRef, setSelected);
 
   useEffect(() => {
     if (!viewer || !initialView) return;

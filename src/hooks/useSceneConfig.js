@@ -9,8 +9,8 @@ export function useSceneConfig(viewer, { lighting } = {}) {
     viewer.scene.fog.enabled = true;
 
     const ctrl = viewer.scene.screenSpaceCameraController;
-    ctrl.minimumZoomDistance = 100;
-    ctrl.maximumZoomDistance = 30000000;
+    ctrl.minimumZoomDistance = Number(import.meta.env.VITE_ZOOM_MIN_M  ?? 100);
+    ctrl.maximumZoomDistance = Number(import.meta.env.VITE_ZOOM_MAX_M  ?? 30000000);
     ctrl.inertiaZoom = 0;
     ctrl.zoomEventTypes = [CameraEventType.RIGHT_DRAG, CameraEventType.PINCH];
 
@@ -19,7 +19,7 @@ export function useSceneConfig(viewer, { lighting } = {}) {
       e.preventDefault();
       const height = viewer.camera.positionCartographic?.height ?? 1000;
       const clamped = Math.max(100, height);
-      const amount = (Math.abs(e.deltaY) / 100) * clamped * 0.12;
+      const amount = (Math.abs(e.deltaY) / 100) * clamped * Number(import.meta.env.VITE_ZOOM_SENSITIVITY ?? 0.12);
       if (e.deltaY > 0) {
         viewer.camera.zoomOut(amount);
       } else {
