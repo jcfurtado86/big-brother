@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "cesium": "^1.139.1",
+    "i18n-iso-countries": "^7.14.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "resium": "^1.19.4",

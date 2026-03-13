@@ -24,6 +24,7 @@ function parseStates(data) {
     map.set(icao24, {
       icao24,
       callsign: (s[1] || '').trim(),
+      country:  s[2]  || '',
       lat,
       lon,
       heading:  heading  ?? 0,
