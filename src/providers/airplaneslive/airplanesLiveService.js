@@ -37,6 +37,7 @@ function parseAirplanesLive(data) {
       velocity:  (a.gs ?? 0) * KN_TO_MS,
       altitude:  onGround ? 0 : (typeof a.alt_baro === 'number' ? a.alt_baro : (a.alt_geom ?? 0)) * FT_TO_M,
       category:  mapCategory(a.category),
+      military:  !!(a.dbFlags & 1),
       fetchedAt: now,
       // Inline metadata — avoids separate /hex/ call
       _meta: (a.r || a.t || a.desc || a.ownOp || a.year) ? {
@@ -85,9 +86,14 @@ let pending = Promise.resolve();
 
 function throttledFetch(url, opts) {
   const job = pending.then(async () => {
+    // Skip already-aborted requests — don't waste a queue slot or rate-limit budget
+    if (opts?.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     const now = Date.now();
     const wait = Math.max(0, MIN_GAP_MS - (now - lastFinishedAt));
-    if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    if (wait > 0) {
+      await new Promise(r => setTimeout(r, wait));
+      if (opts?.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+    }
     try {
       return await fetch(url, opts);
     } finally {
@@ -104,6 +110,7 @@ export default {
   name: 'airplaneslive',
   label: 'Airplanes.live',
   pollInterval: 10_000,
+  retryInterval: 5_000,
 
   async fetchFlights(bbox = null, signal = undefined) {
     let url;

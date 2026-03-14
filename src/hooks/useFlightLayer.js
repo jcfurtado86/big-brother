@@ -7,6 +7,9 @@ import {
 } from 'cesium';
 import { getCategoryType, getCategoryFromTypeCode, getIconForTypeCode, CATEGORY_SIZE, FLIGHT_CATEGORY_COLOR } from '../providers/planeIcons';
 import { lookupAircraft, preloadAircraftDb } from '../providers/aircraftDb';
+
+const SCALE_BY_DIST        = new NearFarScalar(5e5, 1.5, 1.5e7, 0.4);
+const TRANSLUCENCY_BY_DIST = new NearFarScalar(5e5, 1.0, 2e7,  0.5);
 import { buildCallsignBillboard } from '../utils/callsignCanvas';
 import { useDeadReckoning } from './useDeadReckoning';
 import {
@@ -87,7 +90,7 @@ export function useFlightLayer(viewer, flightsMap, visibleTypes) {
         const db        = lookupAircraft(icao);
         const typeCode  = db?.typeCode ?? null;
         const category  = getCategoryFromTypeCode(typeCode)
-                       ?? getCategoryType(flight.category, flight.velocity, flight.altitude);
+                       ?? getCategoryType(flight.category, flight.velocity, flight.altitude, flight.military);
         const { w, h } = CATEGORY_SIZE[category] ?? CATEGORY_SIZE.unknown;
         const alt       = (flight.altitude ?? 0) * FLIGHT_ALT_SCALE;
         const pos       = Cartesian3.fromDegrees(flight.lon, flight.lat, alt);
@@ -103,8 +106,8 @@ export function useFlightLayer(viewer, flightsMap, visibleTypes) {
           rotation: -CesiumMath.toRadians(flight.heading),
           alignedAxis: Cartesian3.UNIT_Z,
           color: FLIGHT_CATEGORY_COLOR[category] ?? FLIGHT_CATEGORY_COLOR.unknown,
-          scaleByDistance:        new NearFarScalar(5e5, 1.5, 1.5e7, 0.4),
-          translucencyByDistance: new NearFarScalar(5e5, 1.0, 2e7,  0.5),
+          scaleByDistance:        SCALE_BY_DIST,
+          translucencyByDistance: TRANSLUCENCY_BY_DIST,
         });
 
         state.set(icao, {
@@ -121,6 +124,7 @@ export function useFlightLayer(viewer, flightsMap, visibleTypes) {
           _pos:      pos,
           _adsbCat:  flight.category,
           _alt:      flight.altitude,
+          _military: !!flight.military,
           _category: category,
         });
 
@@ -183,7 +187,7 @@ export function useFlightLayer(viewer, flightsMap, visibleTypes) {
         const db       = lookupAircraft(icao);
         const typeCode = db?.typeCode ?? null;
         const category = getCategoryFromTypeCode(typeCode)
-                      ?? getCategoryType(entry._adsbCat, entry.velocity, entry._alt);
+                      ?? getCategoryType(entry._adsbCat, entry.velocity, entry._alt, entry._military);
         const { w, h } = CATEGORY_SIZE[category] ?? CATEGORY_SIZE.unknown;
         entry.billboard.image  = getIconForTypeCode(typeCode, category);
         entry.billboard.width  = w;

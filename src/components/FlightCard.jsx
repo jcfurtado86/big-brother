@@ -14,6 +14,7 @@ const TYPE_LABEL = {
   light:      'Light / GA',
   helicopter: 'Helicopter',
   uav:        'UAV / drone',
+  military:   'Militar',
   unknown:    'Unknown',
 };
 
@@ -23,7 +24,7 @@ export default function FlightCard({ flight, onClose, flightProvider }) {
   if (!flight) return null;
 
   const callsign  = flight.callsign || flight.icao24;
-  const type      = getCategoryType(flight.category, flight.velocity, flight.altitude);
+  const type      = getCategoryType(flight.category, flight.velocity, flight.altitude, flight.military);
   const onGround  = flight.altitude === 0 && flight.velocity < 2;
   const flagImg   = getFlagImg(flight.country);
   const flagSrc   = flagImg?.src ?? null;

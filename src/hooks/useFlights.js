@@ -105,9 +105,11 @@ export function useFlights(enabled = true, bbox = undefined, providerName = 'ope
       return;
     }
 
-    const pollInterval = provider.pollInterval;
-    let cancelled = false;
-    let timerId   = null;
+    const pollInterval    = provider.pollInterval;
+    const MIN_REFETCH_GAP = Math.max(pollInterval / 3, 2000);
+    let cancelled    = false;
+    let timerId      = null;
+    let nextFireAt   = null;
 
     async function poll() {
       if (USE_MOCK) { if (!cancelled) setFlights(buildMockFlights()); return; }
@@ -136,7 +138,6 @@ export function useFlights(enabled = true, bbox = undefined, providerName = 'ope
         }
 
         // Debounce rapid bbox changes
-        const MIN_REFETCH_GAP = Math.max(pollInterval / 3, 2000);
         if (age < MIN_REFETCH_GAP) {
           schedule(MIN_REFETCH_GAP - age);
           return;
@@ -166,7 +167,7 @@ export function useFlights(enabled = true, bbox = undefined, providerName = 'ope
         if (parsed === null) {
           fetchedBboxRef.current = isGlobal ? null : fetchBbox;
           fetchedAtRef.current   = Date.now();
-          schedule(RETRY_INTERVAL);
+          schedule(provider.retryInterval ?? RETRY_INTERVAL);
           return;
         }
 
@@ -192,7 +193,7 @@ export function useFlights(enabled = true, bbox = undefined, providerName = 'ope
       } catch (e) {
         if (e.name === 'AbortError') return;
         console.error('[flights] fetch error:', e);
-        if (!cancelled) schedule(RETRY_INTERVAL);
+        if (!cancelled) schedule(provider.retryInterval ?? RETRY_INTERVAL);
       }
     }
 
@@ -205,7 +206,27 @@ export function useFlights(enabled = true, bbox = undefined, providerName = 'ope
       if (document.visibilityState === 'visible') { clearTimeout(timerId); poll(); }
     }
 
-    refetchRef.current = () => { clearTimeout(timerId); poll(); };
+    // Request a sooner poll (used by bbox-change effect)
+    refetchRef.current = () => {
+      if (cancelled) return;
+      const age = Date.now() - fetchedAtRef.current;
+      const currentBbox = bboxRef.current;
+      // Still inside fetched area — no need to refetch
+      if (
+        fetchedBboxRef.current !== undefined &&
+        bboxContains(fetchedBboxRef.current, currentBbox) &&
+        age < pollInterval
+      ) return;
+      // Schedule a fetch after debounce, but don't cancel existing timer
+      // unless the new timer would fire sooner
+      const delay = Math.max(0, MIN_REFETCH_GAP - age);
+      const fireAt = Date.now() + delay;
+      if (nextFireAt === null || fireAt < nextFireAt) {
+        clearTimeout(timerId);
+        nextFireAt = fireAt;
+        timerId = setTimeout(() => { nextFireAt = null; poll(); }, delay);
+      }
+    };
 
     document.addEventListener('visibilitychange', onVisibilityChange);
     poll();

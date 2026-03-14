@@ -23,6 +23,7 @@ import learjetRaw from '../assets/svg/planes/learjet.svg?raw';
 import md11Raw    from '../assets/svg/planes/md11.svg?raw';
 // Generic category silhouettes
 import a0Raw      from '../assets/svg/planes/a0.svg?raw';
+import a6Raw      from '../assets/svg/planes/a6.svg?raw';
 import a7Raw      from '../assets/svg/planes/a7.svg?raw';
 import b0Raw      from '../assets/svg/planes/b0.svg?raw';
 
@@ -74,6 +75,7 @@ const CATEGORY_SVG_URLS = {
   light:      svgToUrl(cessnaRaw),
   helicopter: svgToUrl(a7Raw),
   uav:        svgToUrl(b0Raw),
+  military:   svgToUrl(a6Raw),
   unknown:    svgToUrl(a0Raw),
 };
 
@@ -85,7 +87,8 @@ const CATEGORY_SVG_URLS = {
 //  > 30   → light (GA props)
 //  ≤ 30   → helicopter
 // Altitude (m): > 9000 + fast → heavy wide-body
-export function getCategoryType(cat, velocity = 0, altitude = 0) {
+export function getCategoryType(cat, velocity = 0, altitude = 0, military = false) {
+  if (military)   return 'military';
   if (cat === 8)  return 'helicopter';
   if (cat === 14) return 'uav';
   if (cat === 6)  return 'heavy';
@@ -108,7 +111,7 @@ export function getCategoryFromTypeCode(typeCode) {
   return TYPE_CATEGORY[typeCode.toUpperCase()] ?? null;
 }
 
-export const FLIGHT_CATEGORIES = ['heavy', 'large', 'regional', 'light', 'helicopter', 'uav'];
+export const FLIGHT_CATEGORIES = ['heavy', 'large', 'regional', 'light', 'helicopter', 'uav', 'military'];
 
 export const FLIGHT_CATEGORY_META = {
   heavy:      { label: 'Heavy (wide-body)', color: '#F2A800' },
@@ -117,6 +120,7 @@ export const FLIGHT_CATEGORY_META = {
   light:      { label: 'Light / GA',        color: '#90C040' },
   helicopter: { label: 'Helicóptero',       color: '#40C0E0' },
   uav:        { label: 'UAV / drone',       color: '#A080FF' },
+  military:   { label: 'Militar',           color: '#2E7D32' },
 };
 
 // Cesium Color por categoria (para billboard.color)
@@ -127,6 +131,7 @@ export const FLIGHT_CATEGORY_COLOR = {
   light:      Color.fromCssColorString('#90C040'),
   helicopter: Color.fromCssColorString('#40C0E0'),
   uav:        Color.fromCssColorString('#A080FF'),
+  military:   Color.fromCssColorString('#2E7D32'),
   unknown:    Color.fromCssColorString('#F2A800'),
 };
 
@@ -137,6 +142,7 @@ export const CATEGORY_SIZE = {
   light:      { w: 24, h: 24 },
   helicopter: { w: 30, h: 30 },
   uav:        { w: 28, h: 28 },
+  military:   { w: 36, h: 36 },
   unknown:    { w: 26, h: 26 },
 };
 
