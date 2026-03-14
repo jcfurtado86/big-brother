@@ -102,6 +102,8 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
         labelQueueRef.current.push(id);
       }
 
+      viewer.scene.requestRender();
+
       if (entityQueueRef.current.length > 0) {
         entityRafRef.current = requestAnimationFrame(processEntityBatch);
       } else {
@@ -139,6 +141,8 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
         }
         processed++;
       }
+
+      viewer.scene.requestRender();
 
       if (queue.length > 0) {
         labelIdleRef.current = scheduleIdle(processLabelBatch);
@@ -180,7 +184,9 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
         }
       }
     }
-  }, [categoryColors, selectedColor]);
+
+    if (viewer) viewer.scene.requestRender();
+  }, [categoryColors, selectedColor, viewer]);
 
   return { billboardsRef, stateRef, selectedIdRef, typesRef, setSelected };
 }

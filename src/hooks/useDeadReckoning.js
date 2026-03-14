@@ -9,6 +9,7 @@ export function useDeadReckoning(viewer, billboardsRef, stateRef) {
     const id = setInterval(() => {
       const billboards = billboardsRef.current;
       if (!billboards || billboards.isDestroyed()) return;
+      if (stateRef.current.size === 0) return;
       const now = Date.now();
       for (const [, entry] of stateRef.current) {
         const dt = now - entry.fetchedAt;
@@ -18,6 +19,7 @@ export function useDeadReckoning(viewer, billboardsRef, stateRef) {
         entry.billboard.position = pos;
         if (entry.callsign) entry.callsign.position = pos;
       }
+      viewer.scene.requestRender();
     }, DEAD_RECKONING_MS);
     return () => clearInterval(id);
   }, [viewer, billboardsRef, stateRef]);

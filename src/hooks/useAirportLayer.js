@@ -93,6 +93,7 @@ export function useAirportLayer(viewer, activeTypes, bbox) {
       entry.icon.show = visible;
       if (entry.label) entry.label.show = visible;
     }
+    if (viewerRef.current) viewerRef.current.scene.requestRender();
 
     genRef.current++;
     workerRef.current.postMessage({
@@ -167,6 +168,7 @@ export function useAirportLayer(viewer, activeTypes, bbox) {
         lat: ap.lat, lon: ap.lon,
       });
     }
+    if (viewerRef.current) viewerRef.current.scene.requestRender();
   }
 
   // ── Reage a mudanças de bbox ou tipos ativos ─────────────────────────────────

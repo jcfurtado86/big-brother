@@ -6,8 +6,13 @@ export default function SearchBox({ onSelect }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const timeoutRef = useRef(null);
+  const skipFetchRef = useRef(false);
 
   useEffect(() => {
+    if (skipFetchRef.current) {
+      skipFetchRef.current = false;
+      return;
+    }
     if (query.length < 3) {
       setResults([]);
       return;
@@ -30,6 +35,7 @@ export default function SearchBox({ onSelect }) {
 
   function handleSelect(place) {
     onSelect(parseFloat(place.lat), parseFloat(place.lon));
+    skipFetchRef.current = true;
     setQuery(place.display_name.split(',')[0]);
     setResults([]);
   }

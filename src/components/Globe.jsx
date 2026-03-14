@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { Viewer, CameraFlyTo, ImageryLayer } from 'resium';
+import { Viewer, ImageryLayer } from 'resium';
 import { EllipsoidTerrainProvider, Cartesian3, Math as CesiumMath, Ion, createWorldTerrainAsync } from 'cesium';
 import { useCamera } from '../hooks/useCamera';
 import { DEFAULT_ALT, DEFAULT_PITCH } from '../providers/constants';
@@ -231,9 +231,23 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
     });
   }, [resetKey, viewer]);
 
-  const destination = flyTarget
-    ? Cartesian3.fromDegrees(flyTarget.lon, flyTarget.lat, flyTarget.alt ?? 50000)
-    : undefined;
+  // Imperative flyTo — runs once per flyTarget change (keyed by ts)
+  const lastFlyTsRef = useRef(null);
+  useEffect(() => {
+    if (!viewer || !flyTarget) return;
+    if (flyTarget.ts === lastFlyTsRef.current) return;
+    lastFlyTsRef.current = flyTarget.ts;
+
+    viewer.camera.flyTo({
+      destination: Cartesian3.fromDegrees(flyTarget.lon, flyTarget.lat, flyTarget.alt ?? 50_000),
+      orientation: {
+        heading: CesiumMath.toRadians(0),
+        pitch: CesiumMath.toRadians(flyTarget.pitch ?? -90),
+        roll: 0,
+      },
+      duration: 2.5,
+    });
+  }, [viewer, flyTarget]);
 
   return (
     <div ref={wrapperRef} style={{ visibility: 'hidden', width: '100%', height: '100%' }}>
@@ -261,18 +275,6 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
           )}
         </React.Fragment>
       ))}
-
-      {destination && (
-        <CameraFlyTo
-          destination={destination}
-          orientation={{
-            heading: CesiumMath.toRadians(0),
-            pitch: CesiumMath.toRadians(flyTarget.pitch ?? -90),
-            roll: 0,
-          }}
-          duration={2.5}
-        />
-      )}
     </Viewer>
     </div>
   );

@@ -102,7 +102,8 @@ export function useTelecomLayer(viewer, pointsMap, lines, visibleTypes) {
         show: showLines,
       });
     }
-  }, [lines, visibleTypes]);
+    if (viewer) viewer.scene.requestRender();
+  }, [lines, visibleTypes, viewer]);
 
   return { stateRef, setSelected };
 }

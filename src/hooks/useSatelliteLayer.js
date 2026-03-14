@@ -70,6 +70,7 @@ export function useSatelliteLayer(viewer, satellitesMap, visibleTypes) {
   useEffect(() => {
     if (!viewer) return;
     function tick() {
+      if (stateRef.current.size === 0) return;
       const now = new Date();
       for (const [, entry] of stateRef.current) {
         const typeVisible = typesRef.current?.has(entry._category) ?? true;
@@ -88,6 +89,7 @@ export function useSatelliteLayer(viewer, satellitesMap, visibleTypes) {
           entry.billboard.color = SATELLITE_CATEGORY_COLOR[entry._category];
         }
       }
+      viewer.scene.requestRender();
     }
     tick();
     propagateRef.current = setInterval(tick, TICK_INTERVAL_MS);

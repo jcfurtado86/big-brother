@@ -29,5 +29,6 @@ export function useVisibilityFilter(viewer, layers) {
         if (entry[labelKey]) entry[labelKey].show = show;
       }
     }
+    if (viewer) viewer.scene.requestRender();
   }, typeRefs); // eslint-disable-line react-hooks/exhaustive-deps
 }

@@ -6,6 +6,14 @@ export function useSceneConfig(viewer, { lighting } = {}) {
   useEffect(() => {
     if (!viewer) return;
 
+    // Render on demand — only re-render when something changes.
+    // Animations (dead reckoning, satellite tick) call scene.requestRender().
+    viewer.scene.requestRenderMode = true;
+    viewer.scene.maximumRenderTimeChange = Infinity;
+
+    // Reduce terrain detail for better FPS (default is 2)
+    viewer.scene.globe.maximumScreenSpaceError = 4;
+
     viewer.scene.skyAtmosphere.show = true;
     viewer.scene.fog.enabled = true;
 
