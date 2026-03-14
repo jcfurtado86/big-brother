@@ -155,7 +155,7 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
 
   // Visibility filter — camera-change + type toggles, all in one hook
   useVisibilityFilter(viewer, [
-    { stateRef: flightStateRef,   types: flightTypes,    labelKey: 'callsign' },
+    { stateRef: flightStateRef,   types: flightTypes,    labelKey: 'label' },
     { stateRef: vesselStateRef,   types: vesselTypes,    labelKey: 'label' },
     { stateRef: satelliteStateRef, types: satelliteTypes, labelKey: 'label' },
   ]);

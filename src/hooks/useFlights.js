@@ -187,6 +187,14 @@ export function useFlights(enabled = true, bbox = undefined, providerName = 'ope
           for (const [icao, flight] of parsed) {
             merged.set(icao, flight);
           }
+          // Skip re-render if same flights with same data
+          if (merged.size === prev.size) {
+            let same = true;
+            for (const [icao, f] of merged) {
+              if (prev.get(icao)?.fetchedAt !== f.fetchedAt) { same = false; break; }
+            }
+            if (same) return prev;
+          }
           return merged;
         });
         schedule(pollInterval);

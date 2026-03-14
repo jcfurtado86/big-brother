@@ -103,16 +103,18 @@ export function useVessels(viewer, enabled = false) {
     const initialBbox = computeBboxFromViewer(viewer);
     console.log('[vessels] connecting — bbox:', initialBbox);
 
+    let dirty = false;
     const stream = connectVesselStream(
       initialBbox,
-      (vessel) => { vesselsMap.set(vessel.mmsi, vessel); },
+      (vessel) => { vesselsMap.set(vessel.mmsi, vessel); dirty = true; },
       (err) => console.warn('[vessels]', err),
     );
     streamRef.current = stream;
 
     // Flush accumulated updates to React state + persist to IDB
     const flushId = setInterval(() => {
-      if (vesselsMap.size > 0) {
+      if (dirty) {
+        dirty = false;
         console.log('[vessels] total:', vesselsMap.size);
         setVessels(new Map(vesselsMap));
         idbSet('vessels', 'vessels_all', { ts: Date.now(), entries: [...vesselsMap] });

@@ -1,6 +1,9 @@
 const DB_NAME = 'bb_cache';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 const STORES = ['tle', 'flights', 'vessels'];
+
+// Clean up legacy databases from older versions
+indexedDB.deleteDatabase('bb_satellite_cache');
 
 let dbPromise = null;
 
@@ -10,8 +13,13 @@ function openDb() {
       const req = indexedDB.open(DB_NAME, DB_VERSION);
       req.onupgradeneeded = () => {
         const db = req.result;
+        // Create required stores
         for (const name of STORES) {
           if (!db.objectStoreNames.contains(name)) db.createObjectStore(name);
+        }
+        // Remove legacy stores
+        for (const name of db.objectStoreNames) {
+          if (!STORES.includes(name)) db.deleteObjectStore(name);
         }
       };
       req.onsuccess = () => resolve(req.result);

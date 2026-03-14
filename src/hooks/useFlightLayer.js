@@ -1,221 +1,127 @@
-import { useEffect, useRef, useCallback } from 'react';
-import {
-  BillboardCollection,
-  NearFarScalar,
-  Cartesian3,
-  Math as CesiumMath,
-} from 'cesium';
+import { useEffect, useMemo } from 'react';
+import { Cartesian3, Math as CesiumMath } from 'cesium';
 import { getCategoryType, getCategoryFromTypeCode, getIconForTypeCode, CATEGORY_SIZE, FLIGHT_CATEGORY_COLOR } from '../providers/planeIcons';
 import { lookupAircraft, preloadAircraftDb } from '../providers/aircraftDb';
-
-const SCALE_BY_DIST        = new NearFarScalar(5e5, 1.5, 1.5e7, 0.4);
-const TRANSLUCENCY_BY_DIST = new NearFarScalar(5e5, 1.0, 2e7,  0.5);
 import { buildCallsignBillboard } from '../utils/callsignCanvas';
 import { useDeadReckoning } from './useDeadReckoning';
+import { useBillboardLayer } from './useBillboardLayer';
 import {
-  LABEL_VISIBLE, LABEL_ALWAYS,
   SELECTED_PLANE_COLOR, PLANE_BATCH_SIZE, CALLSIGN_BATCH_SIZE,
   FLIGHT_ALT_SCALE,
 } from '../providers/constants';
-import { scheduleIdle } from '../utils/scheduleIdle';
 
-// ── Hook ──────────────────────────────────────────────────────────────────────
+function resolveCategory(icao, adsbCat, velocity, altitude, military) {
+  const db       = lookupAircraft(icao);
+  const typeCode = db?.typeCode ?? null;
+  return {
+    category: getCategoryFromTypeCode(typeCode) ?? getCategoryType(adsbCat, velocity, altitude, military),
+    typeCode,
+  };
+}
 
 export function useFlightLayer(viewer, flightsMap, visibleTypes) {
-  const billboardsRef      = useRef(null);
-  const stateRef           = useRef(new Map());
-  const selectedIcaoRef    = useRef(null);
-  const planeQueueRef      = useRef([]);
-  const callsignQueueRef   = useRef([]);
-  const planeRafRef        = useRef(null);
-  const callsignIdleRef    = useRef(null);
-  const typesRef           = useRef(visibleTypes);
-  typesRef.current         = visibleTypes;
+  const config = useMemo(() => ({
+    batchSize: PLANE_BATCH_SIZE,
+    labelBatchSize: CALLSIGN_BATCH_SIZE,
+    categoryColors: FLIGHT_CATEGORY_COLOR,
+    selectedColor: SELECTED_PLANE_COLOR,
 
-  // Dead reckoning (extracted hook)
-  useDeadReckoning(viewer, billboardsRef, stateRef);
+    createBillboard(billboards, icao, flight, typesRef) {
+      const { category, typeCode } = resolveCategory(icao, flight.category, flight.velocity, flight.altitude, flight.military);
+      const { w, h } = CATEGORY_SIZE[category] ?? CATEGORY_SIZE.unknown;
+      const alt = (flight.altitude ?? 0) * FLIGHT_ALT_SCALE;
+      const pos = Cartesian3.fromDegrees(flight.lon, flight.lat, alt);
 
-  // Create / destroy billboard collection
-  useEffect(() => {
-    if (!viewer) return;
-    const billboards = new BillboardCollection();
-    viewer.scene.primitives.add(billboards);
-    billboardsRef.current = billboards;
-    return () => {
-      if (!billboards.isDestroyed()) viewer.scene.primitives.remove(billboards);
-      billboardsRef.current = null;
-      stateRef.current.clear();
-    };
-  }, [viewer]);
+      const show = typesRef.current?.has(category) ?? true;
+      const billboard = billboards.add({
+        id: icao,
+        position: pos,
+        image: getIconForTypeCode(typeCode, category),
+        width: w,
+        height: h,
+        show,
+        rotation: -CesiumMath.toRadians(flight.heading),
+        alignedAxis: Cartesian3.UNIT_Z,
+        color: FLIGHT_CATEGORY_COLOR[category] ?? FLIGHT_CATEGORY_COLOR.unknown,
+      });
 
-  // Sync flightsMap → billboards
-  useEffect(() => {
-    const billboards = billboardsRef.current;
-    if (!billboards) return;
-    const state = stateRef.current;
-
-    if (planeRafRef.current) { cancelAnimationFrame(planeRafRef.current); planeRafRef.current = null; }
-
-    // Remove stale
-    for (const [icao, entry] of state) {
-      if (!flightsMap.has(icao)) {
-        billboards.remove(entry.billboard);
-        if (entry.callsign) billboards.remove(entry.callsign);
-        state.delete(icao);
-      }
-    }
-
-    // Update existing + enqueue new
-    planeQueueRef.current = [];
-    for (const [icao, flight] of flightsMap) {
-      if (state.has(icao)) {
-        const entry = state.get(icao);
-        entry.lat       = flight.lat;
-        entry.lon       = flight.lon;
-        entry.heading   = flight.heading;
-        entry.velocity  = flight.velocity;
-        entry.fetchedAt = flight.fetchedAt;
-        entry._alt      = flight.altitude;
-        entry.billboard.rotation = -CesiumMath.toRadians(flight.heading);
-
-        // Update callsign label + country flag if enriched by merge
-        const newCountry = flight.country || '';
-        const newLabel   = flight.callsign || flight.icao24;
-        if (newCountry !== entry._country || newLabel !== entry._label) {
-          entry._country = newCountry;
-          entry._label   = newLabel;
-          // Rebuild callsign billboard with updated flag
-          if (entry.callsign) {
-            billboards.remove(entry.callsign);
-            entry.callsign = buildCallsignBillboard(
-              billboards, entry._pos, entry._h, entry._label, entry._country
-            );
-            entry.callsign.show = entry.billboard.show;
-          }
-        }
-
-        // Update category/military if enriched by merge
-        const newMilitary = !!flight.military;
-        const newAdsbCat  = flight.category;
-        if (newMilitary !== entry._military || newAdsbCat !== entry._adsbCat) {
-          entry._military = newMilitary;
-          entry._adsbCat  = newAdsbCat;
-          const db        = lookupAircraft(icao);
-          const typeCode  = db?.typeCode ?? null;
-          const category  = getCategoryFromTypeCode(typeCode)
-                         ?? getCategoryType(newAdsbCat, entry.velocity, entry._alt, newMilitary);
-          const { w, h }  = CATEGORY_SIZE[category] ?? CATEGORY_SIZE.unknown;
-          entry._category        = category;
-          entry.billboard.image  = getIconForTypeCode(typeCode, category);
-          entry.billboard.width  = w;
-          entry.billboard.height = h;
-          entry.billboard.color  = FLIGHT_CATEGORY_COLOR[category] ?? FLIGHT_CATEGORY_COLOR.unknown;
-          entry._h = h;
-          // Re-apply visibility filter for new category
-          const show = typesRef.current?.has(category) ?? true;
-          entry.billboard.show = show;
-          if (entry.callsign) entry.callsign.show = show;
-        }
-      } else {
-        planeQueueRef.current.push([icao, flight]);
-      }
-    }
-
-    // Pass 1 — plane billboards (RAF, lightweight)
-    function processPlaneBatch() {
-      if (billboards.isDestroyed()) return;
-      const batch = planeQueueRef.current.splice(0, PLANE_BATCH_SIZE);
-      for (const [icao, flight] of batch) {
-        const db        = lookupAircraft(icao);
-        const typeCode  = db?.typeCode ?? null;
-        const category  = getCategoryFromTypeCode(typeCode)
-                       ?? getCategoryType(flight.category, flight.velocity, flight.altitude, flight.military);
-        const { w, h } = CATEGORY_SIZE[category] ?? CATEGORY_SIZE.unknown;
-        const alt       = (flight.altitude ?? 0) * FLIGHT_ALT_SCALE;
-        const pos       = Cartesian3.fromDegrees(flight.lon, flight.lat, alt);
-
-        const show = typesRef.current?.has(category) ?? true;
-        const billboard = billboards.add({
-          id: icao,
-          position: pos,
-          image: getIconForTypeCode(typeCode, category),
-          width: w,
-          height: h,
-          show,
-          rotation: -CesiumMath.toRadians(flight.heading),
-          alignedAxis: Cartesian3.UNIT_Z,
-          color: FLIGHT_CATEGORY_COLOR[category] ?? FLIGHT_CATEGORY_COLOR.unknown,
-          scaleByDistance:        SCALE_BY_DIST,
-          translucencyByDistance: TRANSLUCENCY_BY_DIST,
-        });
-
-        state.set(icao, {
+      return {
+        billboard,
+        entry: {
           billboard,
-          callsign:  null,
-          lat:       flight.lat,
-          lon:       flight.lon,
-          heading:   flight.heading,
-          velocity:  flight.velocity,
+          label: null,
+          lat: flight.lat,
+          lon: flight.lon,
+          heading: flight.heading,
+          velocity: flight.velocity,
           fetchedAt: flight.fetchedAt,
-          _h:        h,
-          _label:    flight.callsign || flight.icao24,
-          _country:  flight.country,
-          _pos:      pos,
-          _adsbCat:  flight.category,
-          _alt:      flight.altitude,
+          _h: h,
+          _label: flight.callsign || flight.icao24,
+          _country: flight.country,
+          _pos: pos,
+          _adsbCat: flight.category,
+          _alt: flight.altitude,
           _military: !!flight.military,
           _category: category,
-        });
+        },
+      };
+    },
 
-        callsignQueueRef.current.push(icao);
-      }
+    updateEntry(entry, flight, billboards, typesRef) {
+      entry.lat       = flight.lat;
+      entry.lon       = flight.lon;
+      entry.heading   = flight.heading;
+      entry.velocity  = flight.velocity;
+      entry.fetchedAt = flight.fetchedAt;
+      entry._alt      = flight.altitude;
+      entry.billboard.rotation = -CesiumMath.toRadians(flight.heading);
 
-      if (planeQueueRef.current.length > 0) {
-        planeRafRef.current = requestAnimationFrame(processPlaneBatch);
-      } else {
-        planeRafRef.current = null;
-        if (callsignQueueRef.current.length > 0) {
-          callsignIdleRef.current = scheduleIdle(processCallsignBatch);
+      // Update callsign label + country flag if enriched by merge
+      const newCountry = flight.country || '';
+      const newLabel   = flight.callsign || flight.icao24;
+      if (newCountry !== entry._country || newLabel !== entry._label) {
+        entry._country = newCountry;
+        entry._label   = newLabel;
+        if (entry.label) {
+          billboards.remove(entry.label);
+          entry.label = buildCallsignBillboard(
+            billboards, entry._pos, entry._h, entry._label, entry._country
+          );
+          entry.label.show = entry.billboard.show;
         }
       }
-    }
 
-    // Pass 2 — callsign canvases (idle, expensive canvas ops)
-    function processCallsignBatch(deadline) {
-      if (billboards.isDestroyed()) return;
-      const queue = callsignQueueRef.current;
-
-      let processed = 0;
-      while (queue.length > 0 && processed < CALLSIGN_BATCH_SIZE) {
-        const hasTime = deadline?.timeRemaining ? deadline.timeRemaining() > 1 : true;
-        if (!hasTime) break;
-
-        const icao  = queue.shift();
-        const entry = state.get(icao);
-        if (!entry || entry.callsign) continue;
-
-        entry.callsign = buildCallsignBillboard(
-          billboards, entry._pos, entry._h, entry._label, entry._country
-        );
-        entry.callsign.show = entry.billboard.show;
-        if (selectedIcaoRef.current === icao) {
-          entry.callsign.scaleByDistance        = LABEL_ALWAYS;
-          entry.callsign.translucencyByDistance = LABEL_ALWAYS;
-        }
-        processed++;
+      // Update category/military if enriched by merge
+      const newMilitary = !!flight.military;
+      const newAdsbCat  = flight.category;
+      if (newMilitary !== entry._military || newAdsbCat !== entry._adsbCat) {
+        entry._military = newMilitary;
+        entry._adsbCat  = newAdsbCat;
+        const { category, typeCode } = resolveCategory(flight.icao24 || entry.billboard.id, newAdsbCat, entry.velocity, entry._alt, newMilitary);
+        const { w, h } = CATEGORY_SIZE[category] ?? CATEGORY_SIZE.unknown;
+        entry._category        = category;
+        entry.billboard.image  = getIconForTypeCode(typeCode, category);
+        entry.billboard.width  = w;
+        entry.billboard.height = h;
+        entry.billboard.color  = FLIGHT_CATEGORY_COLOR[category] ?? FLIGHT_CATEGORY_COLOR.unknown;
+        entry._h = h;
+        const show = typesRef.current?.has(category) ?? true;
+        entry.billboard.show = show;
+        if (entry.label) entry.label.show = show;
       }
+    },
 
-      if (queue.length > 0) {
-        callsignIdleRef.current = scheduleIdle(processCallsignBatch);
-      } else {
-        callsignIdleRef.current = null;
-      }
-    }
+    getLabelInfo(entry) {
+      return { pos: entry._pos, height: entry._h, label: entry._label, country: entry._country };
+    },
+  }), []);
 
-    if (planeQueueRef.current.length > 0) {
-      planeRafRef.current = requestAnimationFrame(processPlaneBatch);
-    }
-  }, [flightsMap, viewer]);
+  const { billboardsRef, stateRef, setSelected } = useBillboardLayer(
+    viewer, flightsMap, visibleTypes, config
+  );
+
+  // Dead reckoning
+  useDeadReckoning(viewer, billboardsRef, stateRef);
 
   // Re-evaluate icons once aircraft DB finishes loading
   useEffect(() => {
@@ -223,48 +129,15 @@ export function useFlightLayer(viewer, flightsMap, visibleTypes) {
       const billboards = billboardsRef.current;
       if (!billboards || billboards.isDestroyed()) return;
       for (const [icao, entry] of stateRef.current) {
-        const db       = lookupAircraft(icao);
-        const typeCode = db?.typeCode ?? null;
-        const category = getCategoryFromTypeCode(typeCode)
-                      ?? getCategoryType(entry._adsbCat, entry.velocity, entry._alt, entry._military);
+        const { category, typeCode } = resolveCategory(icao, entry._adsbCat, entry.velocity, entry._alt, entry._military);
         const { w, h } = CATEGORY_SIZE[category] ?? CATEGORY_SIZE.unknown;
         entry.billboard.image  = getIconForTypeCode(typeCode, category);
         entry.billboard.width  = w;
         entry.billboard.height = h;
         entry._h = h;
       }
-    }).catch(() => { /* DB indisponível — mantém ícones atuais */ });
-  }, [viewer]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Selection highlight
-  const setSelected = useCallback((icao) => {
-    const state = stateRef.current;
-    const prev  = selectedIcaoRef.current;
-
-    if (prev) {
-      const entry = state.get(prev);
-      if (entry) {
-        entry.billboard.color = FLIGHT_CATEGORY_COLOR[entry._category] ?? FLIGHT_CATEGORY_COLOR.unknown;
-        if (entry.callsign) {
-          entry.callsign.scaleByDistance        = LABEL_VISIBLE();
-          entry.callsign.translucencyByDistance = LABEL_VISIBLE();
-        }
-      }
-    }
-
-    selectedIcaoRef.current = icao ?? null;
-
-    if (icao) {
-      const entry = state.get(icao);
-      if (entry) {
-        entry.billboard.color = SELECTED_PLANE_COLOR;
-        if (entry.callsign) {
-          entry.callsign.scaleByDistance        = LABEL_ALWAYS;
-          entry.callsign.translucencyByDistance = LABEL_ALWAYS;
-        }
-      }
-    }
-  }, []);
+    }).catch(() => {});
+  }, [viewer]);
 
   return { stateRef, setSelected };
 }
