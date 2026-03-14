@@ -137,6 +137,7 @@ export function useWeatherLayer(viewer, active, opacity = 0.5) {
     let cancelled = false;
 
     async function update() {
+      if (document.hidden) return;
       await fetchAllTiles();
       if (cancelled) return;
 

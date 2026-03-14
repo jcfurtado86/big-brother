@@ -157,6 +157,7 @@ export function useVessels(viewer, enabled = false) {
     const onCameraChanged = () => {
       clearTimeout(debounceId);
       debounceId = setTimeout(() => {
+        if (document.hidden) return;
         const stream = streamRef.current;
         if (!stream) return;
         if (viewer.isDestroyed()) return;

@@ -22,6 +22,7 @@ export function useSatellites(enabled = false) {
     const ac = new AbortController();
 
     async function load() {
+      if (document.hidden) return;
       try {
         const sats = await fetchTLEs(ac.signal, SATELLITE_POLL_MS);
         if (!ac.signal.aborted) setSatellites(sats);
