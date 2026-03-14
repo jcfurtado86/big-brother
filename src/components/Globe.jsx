@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { Viewer, CameraFlyTo, ImageryLayer } from 'resium';
-import { EllipsoidTerrainProvider, Cartesian3, Math as CesiumMath } from 'cesium';
+import { EllipsoidTerrainProvider, Cartesian3, Math as CesiumMath, Ion, createWorldTerrainAsync } from 'cesium';
 import { useCamera } from '../hooks/useCamera';
 import { DEFAULT_ALT, DEFAULT_PITCH } from '../providers/constants';
 import { useSceneConfig } from '../hooks/useSceneConfig';
@@ -20,8 +20,8 @@ import { computeBboxFromViewer } from '../utils/bboxUtils';
 
 export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, showFlights, flightTypes, showAirports, airportTypes, showWeather, weatherOpacity, showVessels, vesselTypes, showSatellites, onSatelliteSelect, satelliteTypes, flightProvider }) {
   const viewerRef = useRef(null);
+  const wrapperRef = useRef(null);
   const [viewer, setViewer] = useState(null);
-
   useEffect(() => {
     const check = () => {
       const v = viewerRef.current?.cesiumElement;
@@ -30,6 +30,51 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
     };
     check();
   }, []);
+
+  // 3D terrain via Cesium Ion + reveal globe only after everything loads
+  useEffect(() => {
+    if (!viewer) return;
+    const wrapper = wrapperRef.current;
+    let revealed = false;
+
+    const reveal = () => {
+      if (revealed) return;
+      revealed = true;
+      if (wrapper) wrapper.style.visibility = 'visible';
+      console.log('[globe] revealed');
+    };
+
+    const waitForTiles = () => {
+      if (viewer.scene.globe.tilesLoaded) {
+        reveal();
+      } else {
+        const remove = viewer.scene.globe.tileLoadProgressEvent.addEventListener((remaining) => {
+          if (remaining === 0) { remove(); reveal(); }
+        });
+      }
+    };
+
+    const token = import.meta.env.VITE_CESIUM_ION_TOKEN;
+    if (!token) {
+      console.warn('[terrain] no VITE_CESIUM_ION_TOKEN — using flat ellipsoid');
+      waitForTiles();
+    } else {
+      Ion.defaultAccessToken = token;
+      console.log('[terrain] loading Cesium World Terrain...');
+      createWorldTerrainAsync().then(tp => {
+        viewer.terrainProvider = tp;
+        console.log('[terrain] 3D terrain active');
+        // Wait for terrain tiles to load after provider swap
+        waitForTiles();
+      }).catch(e => {
+        console.error('[terrain] failed:', e.message);
+        waitForTiles();
+      });
+    }
+
+    // Fallback: always reveal after 8s
+    setTimeout(reveal, 8000);
+  }, [viewer]);
 
   // undefined = viewer not ready (don't poll yet)
   // null      = whole globe visible (fetch all)
@@ -163,10 +208,11 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
   }, [resetKey, viewer]);
 
   const destination = flyTarget
-    ? Cartesian3.fromDegrees(flyTarget.lon, flyTarget.lat, flyTarget.alt ?? 300000)
+    ? Cartesian3.fromDegrees(flyTarget.lon, flyTarget.lat, flyTarget.alt ?? 50000)
     : undefined;
 
   return (
+    <div ref={wrapperRef} style={{ visibility: 'hidden', width: '100%', height: '100%' }}>
     <Viewer
       ref={viewerRef}
       full
@@ -197,12 +243,13 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
           destination={destination}
           orientation={{
             heading: CesiumMath.toRadians(0),
-            pitch: CesiumMath.toRadians(flyTarget.pitch ?? -45),
+            pitch: CesiumMath.toRadians(flyTarget.pitch ?? -90),
             roll: 0,
           }}
           duration={2.5}
         />
       )}
     </Viewer>
+    </div>
   );
 }
