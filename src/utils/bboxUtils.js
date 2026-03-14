@@ -2,16 +2,32 @@ import { Cartesian2, Cartographic, Ellipsoid, Math as CesiumMath } from 'cesium'
 
 /**
  * Computes the visible bounding box from the current camera.
- * Uses corner picking when the globe edges are visible; falls back to the
- * arccos horizon formula for high-altitude views.
+ *
+ * Samples a grid of screen-space points (not just the 4 corners) so that
+ * tilted / inclined views are handled correctly — top-of-screen rays that
+ * miss the ellipsoid are simply ignored while the horizon line is still
+ * captured via intermediate samples along the edges.
+ *
+ * Falls back to the arccos horizon formula when fewer than 2 picks succeed
+ * (e.g. zoomed-out view of the whole globe).
  */
 export function computeBboxFromViewer(viewer) {
   const { clientWidth: w, clientHeight: h } = viewer.scene.canvas;
-  const corners = [
-    new Cartesian2(0, 0), new Cartesian2(w, 0),
-    new Cartesian2(w, h), new Cartesian2(0, h),
-  ];
-  const hits = corners
+
+  // Sample a 5×5 grid + extra midpoints along the edges.
+  // Total ≈ 25 picks — cheap enough for every camera-changed event.
+  const STEPS = 4;
+  const samples = [];
+  for (let ix = 0; ix <= STEPS; ix++) {
+    for (let iy = 0; iy <= STEPS; iy++) {
+      samples.push(new Cartesian2(
+        (ix / STEPS) * w,
+        (iy / STEPS) * h,
+      ));
+    }
+  }
+
+  const hits = samples
     .map(c => viewer.camera.pickEllipsoid(c, Ellipsoid.WGS84))
     .filter(Boolean);
 
@@ -25,6 +41,7 @@ export function computeBboxFromViewer(viewer) {
     };
   }
 
+  // Fallback: horizon circle based on altitude.
   const camCart = viewer.camera.positionCartographic;
   const alt = camCart.height;
   const R = 6_371_000;
