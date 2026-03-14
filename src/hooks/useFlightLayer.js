@@ -10,8 +10,9 @@ import { lookupAircraft, preloadAircraftDb } from '../providers/aircraftDb';
 import { buildCallsignBillboard } from '../utils/callsignCanvas';
 import { useDeadReckoning } from './useDeadReckoning';
 import {
-  FLIGHT_ALTITUDE, LABEL_VISIBLE, LABEL_ALWAYS,
+  LABEL_VISIBLE, LABEL_ALWAYS,
   SELECTED_PLANE_COLOR, PLANE_BATCH_SIZE, CALLSIGN_BATCH_SIZE,
+  FLIGHT_ALT_SCALE,
 } from '../providers/constants';
 import { scheduleIdle } from '../utils/scheduleIdle';
 
@@ -71,6 +72,7 @@ export function useFlightLayer(viewer, flightsMap, visibleTypes) {
         entry.heading   = flight.heading;
         entry.velocity  = flight.velocity;
         entry.fetchedAt = flight.fetchedAt;
+        entry._alt      = flight.altitude;
         entry.billboard.rotation = -CesiumMath.toRadians(flight.heading);
       } else {
         planeQueueRef.current.push([icao, flight]);
@@ -87,7 +89,8 @@ export function useFlightLayer(viewer, flightsMap, visibleTypes) {
         const category  = getCategoryFromTypeCode(typeCode)
                        ?? getCategoryType(flight.category, flight.velocity, flight.altitude);
         const { w, h } = CATEGORY_SIZE[category] ?? CATEGORY_SIZE.unknown;
-        const pos       = Cartesian3.fromDegrees(flight.lon, flight.lat, FLIGHT_ALTITUDE);
+        const alt       = (flight.altitude ?? 0) * FLIGHT_ALT_SCALE;
+        const pos       = Cartesian3.fromDegrees(flight.lon, flight.lat, alt);
 
         const show = typesRef.current?.has(category) ?? true;
         const billboard = billboards.add({

@@ -10,7 +10,7 @@ import {
 import { fetchTrack }      from '../providers/flightService';
 import { deadReckon }      from '../utils/geoMath';
 import { useCameraFollow } from './useCameraFollow';
-import { FLIGHT_ALTITUDE, TRACK_COLOR, TICK_INTERVAL_MS } from '../providers/constants';
+import { TRACK_COLOR, TICK_INTERVAL_MS, FLIGHT_ALT_SCALE } from '../providers/constants';
 import { parseTLEOrbitalElements } from '../providers/satelliteService';
 
 export function useFlightSelection(viewer, flightStateRef, setSelected, airportDataRef, onAirportSelect, setSelectedAirport, vesselStateRef, onVesselSelect, setSelectedVessel, satelliteStateRef, onSatelliteSelect, setSelectedSatellite) {
@@ -65,8 +65,9 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
     const hoverHandler = new ScreenSpaceEventHandler(canvas);
     hoverHandler.setInputAction((movement) => {
       if (viewer.isDestroyed()) return;
-      const picked = viewer.scene.pick(movement.endPosition);
-      canvas.style.cursor = (defined(picked) && typeof picked.id === 'string') ? 'pointer' : 'default';
+      const picks = viewer.scene.drillPick(movement.endPosition, 5);
+      const hit = picks.find(p => defined(p) && typeof p.id === 'string');
+      canvas.style.cursor = hit ? 'pointer' : 'default';
     }, ScreenSpaceEventType.MOUSE_MOVE);
 
     const clearSelection = () => {
@@ -99,9 +100,10 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
 
     handler.setInputAction(async (click) => {
       if (viewer.isDestroyed()) return;
-      const picked = viewer.scene.pick(click.position);
+      const picks = viewer.scene.drillPick(click.position, 5);
+      const picked = picks.find(p => defined(p) && typeof p.id === 'string');
       viewer.selectedEntity = undefined;
-      const rawId = (defined(picked) && typeof picked.id === 'string') ? picked.id : null;
+      const rawId = picked?.id ?? null;
 
       // Airport
       if (rawId?.startsWith('apt:')) {
@@ -115,9 +117,22 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
       // Vessel
       if (rawId?.startsWith('vessel_')) {
         const mmsi = rawId.slice(7);
+        const vesselEntry = vesselStateRef?.current?.get(mmsi);
         clearAll();
         setSelectedVesselRef.current?.(mmsi);
-        onVesselSelectRef.current?.(vesselStateRef?.current?.get(mmsi)?.vessel ?? null);
+        onVesselSelectRef.current?.(vesselEntry?.vessel ?? null);
+
+        // Camera follow
+        if (vesselEntry) {
+          startFollow(Cartesian3.fromDegrees(vesselEntry.lon, vesselEntry.lat, 0));
+          liveIntervalRef.current = setInterval(() => {
+            const entry = vesselStateRef?.current?.get(mmsi);
+            if (!entry) return;
+            const pos = Cartesian3.fromDegrees(entry.lon, entry.lat, 0);
+            updateFollow(pos);
+            onVesselSelectRef.current?.(entry.vessel ?? null);
+          }, TICK_INTERVAL_MS);
+        }
         return;
       }
 
@@ -199,7 +214,7 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
           const { lat: lat0, lon: lon0 } = deadReckon(
             entry0.lat, entry0.lon, entry0.heading, entry0.velocity, dt0
           );
-          startFollow(Cartesian3.fromDegrees(lon0, lat0, FLIGHT_ALTITUDE));
+          startFollow(Cartesian3.fromDegrees(lon0, lat0, (entry0._alt ?? 0) * FLIGHT_ALT_SCALE));
         }
 
         liveIntervalRef.current = setInterval(() => {
@@ -209,7 +224,7 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
           const { lat, lon } = deadReckon(
             entry.lat, entry.lon, entry.heading, entry.velocity, dt
           );
-          const pos = Cartesian3.fromDegrees(lon, lat, FLIGHT_ALTITUDE);
+          const pos = Cartesian3.fromDegrees(lon, lat, (entry._alt ?? 0) * FLIGHT_ALT_SCALE);
           liveEndRef.current = pos;
           updateFollow(pos);
         }, TICK_INTERVAL_MS);

@@ -14,7 +14,7 @@ export const FLY_ZOOM_FACTOR      = 3;
 export const FLY_DURATION         = 1.2;           // segundos
 
 // ── Flights ─────────────────────────────────────────────────────────────────
-export const FLIGHT_ALTITUDE      = 10_000;        // metros (altitude de renderização dos ícones)
+export const FLIGHT_ALT_SCALE     = 3.5;           // fator estético (nuvens 25km render / ~7km real)
 export const DEAD_RECKONING_MS    = 1_000;
 export const PLANE_BATCH_SIZE     = 20;            // billboards por frame
 export const CALLSIGN_BATCH_SIZE  = 30;            // labels por idle slice
