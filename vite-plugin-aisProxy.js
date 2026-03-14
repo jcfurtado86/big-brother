@@ -62,7 +62,7 @@ export default function aisProxyPlugin() {
 
           if (upstream && upstream.readyState === WebSocket.OPEN) {
             // Update subscription — reenvia para o AISStream
-            upstream.send(JSON.stringify(msg));
+            try { upstream.send(JSON.stringify(msg)); } catch { /* closed mid-send */ }
             return;
           }
 
@@ -71,31 +71,34 @@ export default function aisProxyPlugin() {
 
           upstream.on('open', () => {
             console.log('[ais-proxy] connected to AISStream');
-            upstream.send(JSON.stringify(msg));
+            try { upstream.send(JSON.stringify(msg)); } catch { /* closed mid-send */ }
           });
 
           upstream.on('message', (data) => {
             if (clientWs.readyState === WebSocket.OPEN) {
-              clientWs.send(data.toString());
+              try { clientWs.send(data.toString()); } catch { /* closed mid-send */ }
             }
           });
 
           upstream.on('close', () => {
             console.log('[ais-proxy] upstream closed');
-            if (clientWs.readyState === WebSocket.OPEN) clientWs.close();
+            if (clientWs.readyState === WebSocket.OPEN) {
+              try { clientWs.close(); } catch { /* ignore */ }
+            }
           });
 
           upstream.on('error', (err) => {
             console.error('[ais-proxy] upstream error:', err.message);
+            upstream = null;
           });
         });
 
         clientWs.on('close', () => {
-          if (upstream) upstream.close();
+          if (upstream) { try { upstream.close(); } catch { /* ignore */ } upstream = null; }
         });
 
         clientWs.on('error', () => {
-          if (upstream) upstream.close();
+          if (upstream) { try { upstream.close(); } catch { /* ignore */ } upstream = null; }
         });
       });
 
