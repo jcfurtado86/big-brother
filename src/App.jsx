@@ -37,6 +37,8 @@ export default function App() {
   const [flightTypes, setFlightTypes] = useState(new Set(['heavy', 'large', 'regional', 'light', 'helicopter', 'uav', 'military', 'unknown']));
   const [vesselTypes, setVesselTypes] = useState(new Set(['cargo', 'tanker', 'passenger', 'fishing', 'sailing', 'tug', 'military', 'sar']));
   const [satelliteTypes, setSatelliteTypes] = useState(new Set(['leo', 'meo', 'geo']));
+  const [showTelecom, setShowTelecom] = useState(false);
+  const [telecomTypes, setTelecomTypes] = useState(new Set(['mast', 'comm_line', 'data_center']));
   const [flightProvider, setFlightProvider] = useState('all');
   const geoIP = useGeoIP();
 
@@ -83,6 +85,8 @@ export default function App() {
         satelliteTypes={satelliteTypes}
         airportTypes={airportTypes}
         flightProvider={flightProvider}
+        showTelecom={showTelecom}
+        telecomTypes={telecomTypes}
       />
       <SearchBox onSelect={handleLocationSelect} />
       <InfoBar coords={coords} mouseCoords={mouseCoords} />
@@ -116,6 +120,10 @@ export default function App() {
         onSatelliteTypesChange={setSatelliteTypes}
         flightProvider={flightProvider}
         onFlightProviderChange={setFlightProvider}
+        showTelecom={showTelecom}
+        onTelecomToggle={() => setShowTelecom((v) => !v)}
+        telecomTypes={telecomTypes}
+        onTelecomTypesChange={setTelecomTypes}
       />
       <FlightCard flight={selectedFlight} onClose={() => setSelectedFlight(null)} flightProvider={flightProvider} />
       <AirportCard airport={selectedAirport} onClose={() => setSelectedAirport(null)} />

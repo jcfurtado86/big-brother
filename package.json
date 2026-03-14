@@ -18,8 +18,10 @@
     "ws": "^8.19.0"
   },
   "dependencies": {
+    "@mapbox/vector-tile": "^2.0.4",
     "cesium": "^1.139.1",
     "i18n-iso-countries": "^7.14.0",
+    "pbf": "^4.0.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "resium": "^1.19.4",

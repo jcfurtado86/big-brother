@@ -16,12 +16,15 @@ import { useVessels }         from '../hooks/useVessels';
 import { useVesselLayer }     from '../hooks/useVesselLayer';
 import { useSatellites }      from '../hooks/useSatellites';
 import { useSatelliteLayer }  from '../hooks/useSatelliteLayer';
+import { useTelecom }         from '../hooks/useTelecom';
+import { useTelecomLayer }    from '../hooks/useTelecomLayer';
 import { computeBboxFromViewer } from '../utils/bboxUtils';
 
-export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, showFlights, flightTypes, showAirports, airportTypes, showWeather, weatherOpacity, showVessels, vesselTypes, showSatellites, onSatelliteSelect, satelliteTypes, flightProvider }) {
+export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, showFlights, flightTypes, showAirports, airportTypes, showWeather, weatherOpacity, showVessels, vesselTypes, showSatellites, onSatelliteSelect, satelliteTypes, showTelecom, telecomTypes, flightProvider }) {
   const viewerRef = useRef(null);
   const wrapperRef = useRef(null);
   const [viewer, setViewer] = useState(null);
+  const [cameraAltitude, setCameraAltitude] = useState(Infinity);
   useEffect(() => {
     const check = () => {
       const v = viewerRef.current?.cesiumElement;
@@ -92,6 +95,8 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
       if (key === lastKeyRef.current) return;
       lastKeyRef.current = key;
       setBbox(next);
+      const cart = viewer.camera.positionCartographic;
+      if (cart) setCameraAltitude(cart.height);
     };
 
     onBboxUpdate(); // immediate on mount
@@ -153,11 +158,30 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
   const satellitesMap = useSatellites(showSatellites);
   const { stateRef: satelliteStateRef, setSelected: setSelectedSatellite } = useSatelliteLayer(viewer, satellitesMap, satelliteTypes);
 
+  // Telecom — altitude-based category visibility
+  // comm_line: any altitude, data_center: < 800km, mast: < 100km
+  const showDC   = cameraAltitude < 800_000;
+  const showMast = cameraAltitude < 100_000;
+  const effectiveTelecomTypes = useMemo(() => {
+    const types = new Set();
+    for (const t of telecomTypes) {
+      if (t === 'comm_line') types.add(t);
+      else if (t === 'data_center' && showDC) types.add(t);
+      else if (t === 'mast' && showMast) types.add(t);
+    }
+    return types;
+  }, [telecomTypes, showDC, showMast]);
+
+  const activeTelecomTypes = showTelecom ? effectiveTelecomTypes : emptySet;
+  const { pointsMap: telecomPoints, lines: telecomLines } = useTelecom(viewer, showTelecom);
+  const { stateRef: telecomStateRef } = useTelecomLayer(viewer, telecomPoints, telecomLines, activeTelecomTypes);
+
   // Visibility filter — camera-change + type toggles, all in one hook
   useVisibilityFilter(viewer, [
     { stateRef: flightStateRef,   types: flightTypes,    labelKey: 'label' },
     { stateRef: vesselStateRef,   types: vesselTypes,    labelKey: 'label' },
     { stateRef: satelliteStateRef, types: satelliteTypes, labelKey: 'label' },
+    { stateRef: telecomStateRef,  types: activeTelecomTypes,   labelKey: 'label' },
   ]);
 
   const handleFlightSelect = React.useCallback((icao24) => {

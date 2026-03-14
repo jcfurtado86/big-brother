@@ -4,6 +4,7 @@ import { AIRPORT_TYPES, AIRPORT_TYPE_META } from '../providers/airportIcons';
 import { SATELLITE_CATEGORIES, SATELLITE_CATEGORY_META } from '../providers/satelliteIcons';
 import { FLIGHT_CATEGORIES, FLIGHT_CATEGORY_META } from '../providers/planeIcons';
 import { VESSEL_CATEGORIES, VESSEL_CATEGORY_META } from '../providers/vesselIcons';
+import { TELECOM_CATEGORIES, TELECOM_CATEGORY_META } from '../providers/telecomIcons';
 import { PROVIDER_LIST } from '../providers/flightProviders';
 
 function Card({ icon, label, defaultOpen = false, children }) {
@@ -69,6 +70,7 @@ export default function ControlPanel({
   showAirports, onAirportsToggle, airportTypes, onAirportTypesChange,
   showVessels, onVesselsToggle, vesselTypes, onVesselTypesChange,
   showSatellites, onSatellitesToggle, satelliteTypes, onSatelliteTypesChange,
+  showTelecom, onTelecomToggle, telecomTypes, onTelecomTypesChange,
   flightProvider, onFlightProviderChange,
 }) {
   return (
@@ -77,6 +79,12 @@ export default function ControlPanel({
       <Card icon="🛰️" label="Satélites">
         <Toggle label="Satélites" active={showSatellites} onToggle={onSatellitesToggle} />
         <TypeFilter types={SATELLITE_CATEGORIES} activeSet={satelliteTypes} onChange={onSatelliteTypesChange} items={SATELLITE_CATEGORY_META} />
+      </Card>
+
+      {/* Telecom */}
+      <Card icon="📡" label="Telecom">
+        <Toggle label="Infraestrutura" active={showTelecom} onToggle={onTelecomToggle} />
+        <TypeFilter types={TELECOM_CATEGORIES} activeSet={telecomTypes} onChange={onTelecomTypesChange} items={TELECOM_CATEGORY_META} />
       </Card>
 
       {/* Tráfego Marítimo */}

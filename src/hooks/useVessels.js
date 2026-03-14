@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { connectVesselStream } from '../providers/vesselService';
 import { computeBboxFromViewer } from '../utils/bboxUtils';
-import { idbGet, idbSet } from '../utils/idbCache';
+import { idbGet, idbSet, idbPurgeExpired } from '../utils/idbCache';
 
 const STALE_MS = 10 * 60 * 1000;
+// Purge expired vessel cache on startup
+idbPurgeExpired('vessels', STALE_MS);
 const CLEANUP_INTERVAL = 60_000;
 const FLUSH_INTERVAL   = 2_000;
 const BBOX_DEBOUNCE_MS = 2_000;

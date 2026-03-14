@@ -1,6 +1,6 @@
 const DB_NAME = 'bb_cache';
-const DB_VERSION = 5;
-const STORES = ['tle', 'flights', 'vessels'];
+const DB_VERSION = 6;
+const STORES = ['tle', 'flights', 'vessels', 'telecom'];
 
 // Clean up legacy databases from older versions
 indexedDB.deleteDatabase('bb_satellite_cache');
@@ -51,10 +51,61 @@ export async function idbSet(store, key, value) {
   }
 }
 
+export async function idbGetAllEntries(store) {
+  try {
+    const db = await openDb();
+    return new Promise((resolve) => {
+      const tx = db.transaction(store, 'readonly');
+      const os = tx.objectStore(store);
+      const keys = os.getAllKeys();
+      const vals = os.getAll();
+      tx.oncomplete = () => {
+        const entries = [];
+        for (let i = 0; i < keys.result.length; i++) {
+          entries.push([keys.result[i], vals.result[i]]);
+        }
+        resolve(entries);
+      };
+      tx.onerror = () => resolve([]);
+    });
+  } catch { return []; }
+}
+
 export async function idbDelete(store, key) {
   try {
     const db = await openDb();
     const tx = db.transaction(store, 'readwrite');
     tx.objectStore(store).delete(key);
   } catch { /* ignore */ }
+}
+
+/**
+ * Delete all entries in a store where `entry.ts` is older than `ttlMs`.
+ * Runs in a single readwrite transaction. Returns count of deleted keys.
+ */
+export async function idbPurgeExpired(store, ttlMs) {
+  try {
+    const db = await openDb();
+    return new Promise((resolve) => {
+      const tx = db.transaction(store, 'readwrite');
+      const os = tx.objectStore(store);
+      const keys = os.getAllKeys();
+      const vals = os.getAll();
+      const now = Date.now();
+      let deleted = 0;
+      tx.oncomplete = () => resolve(deleted);
+      tx.onerror    = () => resolve(0);
+      keys.onsuccess = () => {
+        vals.onsuccess = () => {
+          for (let i = 0; i < keys.result.length; i++) {
+            const entry = vals.result[i];
+            if (entry?.ts && (now - entry.ts) >= ttlMs) {
+              os.delete(keys.result[i]);
+              deleted++;
+            }
+          }
+        };
+      };
+    });
+  } catch { return 0; }
 }

@@ -37,6 +37,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace('/api/airplaneslive', '/v2'),
       },
+      '/api/openinframap': {
+        target: 'https://openinframap.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api/openinframap', ''),
+      },
     },
   },
 });

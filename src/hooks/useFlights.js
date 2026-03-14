@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { getProvider } from '../providers/flightProviders';
-import { idbGet, idbSet, idbDelete } from '../utils/idbCache';
+import { idbGet, idbSet, idbDelete, idbPurgeExpired } from '../utils/idbCache';
 import { FETCH_PADDING } from '../providers/constants';
 
 const RETRY_INTERVAL = Number(import.meta.env.VITE_RETRY_INTERVAL_MS ?? 1_200_000);
 const CACHE_TTL_MS   = Number(import.meta.env.VITE_FLIGHT_CACHE_TTL_MS ?? 5 * 60_000);
+
+// Purge expired flight cache entries on startup
+idbPurgeExpired('flights', CACHE_TTL_MS);
 
 const USE_DEV_CACHE = import.meta.env.VITE_FLIGHT_CACHE === 'true';
 const USE_MOCK      = import.meta.env.VITE_MOCK_FLIGHTS === 'true';
