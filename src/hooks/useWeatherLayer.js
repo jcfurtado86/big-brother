@@ -1,16 +1,83 @@
 import { useEffect, useRef } from 'react';
-import { Rectangle as CesiumRectangle, ImageMaterialProperty, Color } from 'cesium';
+import { Rectangle as CesiumRectangle, ImageMaterialProperty, Color, CallbackProperty } from 'cesium';
 import { OWM_TILE_URL } from '../providers/constants';
 
 const OWM_KEY    = import.meta.env.VITE_OWM_API_KEY || '';
 const ZOOM       = 2;        // 4×4 = 16 tiles per layer
 const N          = 1 << ZOOM;
 const REFRESH_MS = 60 * 60 * 1000;  // 60 min — keeps under OWM free tier (1000 calls/day)
+const CACHE_TTL  = REFRESH_MS;      // cache válido pelo mesmo período
 
 const LAYERS = [
-  { layer: 'clouds_new',       alt: 8_000,  alpha: 0.5 },
-  { layer: 'precipitation_new', alt: 12_000, alpha: 0.7 },
+  { layer: 'clouds_new', alt: 25_000 },
 ];
+
+/* ── tile cache (persiste entre toggle on/off) ─────────────── */
+
+// key → { blobUrl, fetchedAt }
+const tileCache = new Map();
+
+function tileCacheKey(layerName, x, y) {
+  return `${layerName}/${ZOOM}/${x}/${y}`;
+}
+
+function boostAlpha(blob) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = img.width;
+      c.height = img.height;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const id = ctx.getImageData(0, 0, c.width, c.height);
+      const d = id.data;
+      for (let i = 3; i < d.length; i += 4) {
+        d[i] = Math.min(255, d[i] * 3);
+      }
+      ctx.putImageData(id, 0, 0);
+      c.toBlob((b) => resolve(b), 'image/png');
+      URL.revokeObjectURL(img.src);
+    };
+    img.src = URL.createObjectURL(blob);
+  });
+}
+
+async function fetchTileBlob(layerName, x, y) {
+  const key = tileCacheKey(layerName, x, y);
+  const cached = tileCache.get(key);
+  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL) {
+    return cached.blobUrl;
+  }
+
+  const url = `${OWM_TILE_URL}/${layerName}/${ZOOM}/${x}/${y}.png?appid=${OWM_KEY}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return cached?.blobUrl ?? url;
+    const raw = await res.blob();
+    const boosted = await boostAlpha(raw);
+
+    if (cached?.blobUrl) URL.revokeObjectURL(cached.blobUrl);
+
+    const blobUrl = URL.createObjectURL(boosted);
+    tileCache.set(key, { blobUrl, fetchedAt: Date.now() });
+    return blobUrl;
+  } catch {
+    return cached?.blobUrl ?? url;
+  }
+}
+
+async function fetchAllTiles() {
+  const promises = [];
+  for (const { layer } of LAYERS) {
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) {
+        promises.push(fetchTileBlob(layer, x, y));
+      }
+    }
+  }
+  return Promise.all(promises);
+}
 
 /* ── helpers ────────────────────────────────────────────────── */
 
@@ -29,47 +96,59 @@ function removeEntities(viewer, list) {
   list.length = 0;
 }
 
-function addTileEntities(viewer, list, layerName, altitude, alpha) {
-  for (let y = 0; y < N; y++) {
-    for (let x = 0; x < N; x++) {
-      const b = tileBounds(ZOOM, x, y);
-      const url = `${OWM_TILE_URL}/${layerName}/${ZOOM}/${x}/${y}.png?appid=${OWM_KEY}`;
-      const entity = viewer.entities.add({
-        rectangle: {
-          coordinates: CesiumRectangle.fromDegrees(b.west, b.south, b.east, b.north),
-          height: altitude,
-          material: new ImageMaterialProperty({
-            image: url,
-            transparent: true,
-            color: Color.WHITE.withAlpha(alpha),
-          }),
-        },
-      });
-      list.push(entity);
+function addCachedEntities(viewer, list, opacityRef) {
+  for (const { layer, alt } of LAYERS) {
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) {
+        const key = tileCacheKey(layer, x, y);
+        const cached = tileCache.get(key);
+        if (!cached) continue;
+
+        const b = tileBounds(ZOOM, x, y);
+        const entity = viewer.entities.add({
+          rectangle: {
+            coordinates: CesiumRectangle.fromDegrees(b.west, b.south, b.east, b.north),
+            height: alt,
+            material: new ImageMaterialProperty({
+              image: cached.blobUrl,
+              transparent: true,
+              color: new CallbackProperty(() => Color.WHITE.withAlpha(opacityRef.current), false),
+            }),
+          },
+        });
+        list.push(entity);
+      }
     }
   }
 }
 
 /* ── hook ───────────────────────────────────────────────────── */
 
-export function useWeatherLayer(viewer, active) {
-  const entitiesRef = useRef([]);  // flat list of all entities across layers
-  const intervalRef = useRef(null);
+export function useWeatherLayer(viewer, active, opacity = 0.5) {
+  const entitiesRef  = useRef([]);
+  const intervalRef  = useRef(null);
+  const opacityRef   = useRef(opacity);
+  opacityRef.current = opacity;
 
+  // Rebuild tiles quando liga/desliga ou viewer muda
   useEffect(() => {
     if (!viewer || !active || !OWM_KEY) return;
 
-    function update() {
+    let cancelled = false;
+
+    async function update() {
+      await fetchAllTiles();
+      if (cancelled) return;
+
       removeEntities(viewer, entitiesRef.current);
-      for (const { layer, alt, alpha } of LAYERS) {
-        addTileEntities(viewer, entitiesRef.current, layer, alt, alpha);
-      }
+      addCachedEntities(viewer, entitiesRef.current, opacityRef);
     }
 
     update();
     intervalRef.current = setInterval(update, REFRESH_MS);
 
     return () => {
+      cancelled = true;
       if (intervalRef.current) clearInterval(intervalRef.current);
       removeEntities(viewer, entitiesRef.current);
     };

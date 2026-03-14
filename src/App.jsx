@@ -31,6 +31,7 @@ export default function App() {
   const [selectedAirport, setSelectedAirport] = useState(null);
   const [showFlights, setShowFlights] = useState(false);
   const [showWeather, setShowWeather] = useState(false);
+  const [weatherOpacity, setWeatherOpacity] = useState(0.5);
   const [showVessels, setShowVessels] = useState(false);
   const [selectedVessel, setSelectedVessel] = useState(null);
   const [airportTypes, setAirportTypes] = useState(new Set());
@@ -68,6 +69,7 @@ export default function App() {
         onAirportSelect={setSelectedAirport}
         showFlights={showFlights}
         showWeather={showWeather}
+        weatherOpacity={weatherOpacity}
         showVessels={showVessels}
         onVesselSelect={setSelectedVessel}
         airportTypes={airportTypes}
@@ -78,8 +80,8 @@ export default function App() {
       <ClockDisplay />
       <ResetView onReset={handleResetView} />
       <NightToggle active={lighting} onToggle={() => setLighting((v) => !v)} />
+      <WeatherToggle active={showWeather} onToggle={() => setShowWeather((v) => !v)} opacity={weatherOpacity} onOpacityChange={setWeatherOpacity} />
       <FlightsToggle active={showFlights} onToggle={() => setShowFlights((v) => !v)} />
-      <WeatherToggle active={showWeather} onToggle={() => setShowWeather((v) => !v)} />
       <AirportToggle activeTypes={airportTypes} onChange={setAirportTypes} />
       <VesselToggle active={showVessels} onToggle={() => setShowVessels((v) => !v)} />
       <FlightCard flight={selectedFlight} onClose={() => setSelectedFlight(null)} />

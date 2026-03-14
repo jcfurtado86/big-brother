@@ -15,7 +15,7 @@ import { useVessels }         from '../hooks/useVessels';
 import { useVesselLayer }     from '../hooks/useVesselLayer';
 import { computeBboxFromViewer } from '../utils/bboxUtils';
 
-export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, showFlights, airportTypes, showWeather, showVessels }) {
+export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, showFlights, airportTypes, showWeather, weatherOpacity, showVessels }) {
   const viewerRef = useRef(null);
   const [viewer, setViewer] = useState(null);
 
@@ -106,7 +106,7 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
   }, [flights, onFlightSelect]);
 
   useFlightSelection(viewer, flightStateRef, handleFlightSelect, airportDataRef, onAirportSelect, setSelectedAirport, vesselStateRef, onVesselSelect, setSelectedVessel);
-  useWeatherLayer(viewer, showWeather);
+  useWeatherLayer(viewer, showWeather, weatherOpacity);
   useFlyToMouse(viewer);
 
   useEffect(() => {

@@ -3,9 +3,9 @@ import { HAS_AUTH }    from '../providers/openskyAuth';
 import { fetchFlights } from '../providers/flightService';
 
 const POLL_INTERVAL  = HAS_AUTH
-  ? Number(import.meta.env.VITE_POLL_INTERVAL_AUTH_MS ?? 30_000)
+  ? Number(import.meta.env.VITE_POLL_INTERVAL_AUTH_MS ?? 60_000)
   : Number(import.meta.env.VITE_POLL_INTERVAL_ANON_MS ?? 60_000);
-const RETRY_INTERVAL = Number(import.meta.env.VITE_RETRY_INTERVAL_MS ?? 5_000);
+const RETRY_INTERVAL = Number(import.meta.env.VITE_RETRY_INTERVAL_MS ?? 1_200_000);
 const CACHE_TTL_MS   = Number(import.meta.env.VITE_FLIGHT_CACHE_TTL_MS ?? 5 * 60_000);
 
 const USE_DEV_CACHE = import.meta.env.VITE_FLIGHT_CACHE === 'true';
