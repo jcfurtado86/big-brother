@@ -8,6 +8,7 @@ import ClockDisplay from './components/ClockDisplay';
 import FlightCard from './components/FlightCard';
 import AirportCard from './components/AirportCard';
 import VesselCard from './components/VesselCard';
+import SatelliteCard from './components/SatelliteCard';
 import { useGeoIP } from './hooks/useGeoIP';
 import { layers } from './providers/layers';
 import { DEFAULT_ALT, DEFAULT_PITCH } from './providers/constants';
@@ -29,7 +30,13 @@ export default function App() {
   const [weatherOpacity, setWeatherOpacity] = useState(0);
   const [showVessels, setShowVessels] = useState(false);
   const [selectedVessel, setSelectedVessel] = useState(null);
-  const [airportTypes, setAirportTypes] = useState(new Set());
+  const [showSatellites, setShowSatellites] = useState(false);
+  const [selectedSatellite, setSelectedSatellite] = useState(null);
+  const [showAirports, setShowAirports] = useState(false);
+  const [airportTypes, setAirportTypes] = useState(new Set(['large_airport', 'medium_airport']));
+  const [flightTypes, setFlightTypes] = useState(new Set(['heavy', 'large', 'regional', 'light', 'helicopter', 'uav']));
+  const [vesselTypes, setVesselTypes] = useState(new Set(['cargo', 'tanker', 'passenger', 'fishing', 'sailing', 'tug', 'military', 'sar']));
+  const [satelliteTypes, setSatelliteTypes] = useState(new Set(['leo', 'meo', 'geo']));
   const geoIP = useGeoIP();
 
   useEffect(() => {
@@ -63,10 +70,16 @@ export default function App() {
         onFlightSelect={setSelectedFlight}
         onAirportSelect={setSelectedAirport}
         showFlights={showFlights}
+        flightTypes={flightTypes}
+        showAirports={showAirports}
         showWeather={showWeather}
         weatherOpacity={weatherOpacity}
         showVessels={showVessels}
+        vesselTypes={vesselTypes}
         onVesselSelect={setSelectedVessel}
+        showSatellites={showSatellites}
+        onSatelliteSelect={setSelectedSatellite}
+        satelliteTypes={satelliteTypes}
         airportTypes={airportTypes}
       />
       <SearchBox onSelect={handleLocationSelect} />
@@ -85,14 +98,25 @@ export default function App() {
         onWeatherOpacityChange={setWeatherOpacity}
         showFlights={showFlights}
         onFlightsToggle={() => setShowFlights((v) => !v)}
+        flightTypes={flightTypes}
+        onFlightTypesChange={setFlightTypes}
+        showAirports={showAirports}
+        onAirportsToggle={() => setShowAirports((v) => !v)}
         airportTypes={airportTypes}
         onAirportTypesChange={setAirportTypes}
         showVessels={showVessels}
         onVesselsToggle={() => setShowVessels((v) => !v)}
+        vesselTypes={vesselTypes}
+        onVesselTypesChange={setVesselTypes}
+        showSatellites={showSatellites}
+        onSatellitesToggle={() => setShowSatellites((v) => !v)}
+        satelliteTypes={satelliteTypes}
+        onSatelliteTypesChange={setSatelliteTypes}
       />
       <FlightCard flight={selectedFlight} onClose={() => setSelectedFlight(null)} />
       <AirportCard airport={selectedAirport} onClose={() => setSelectedAirport(null)} />
       <VesselCard vessel={selectedVessel} onClose={() => setSelectedVessel(null)} />
+      <SatelliteCard satellite={selectedSatellite} onClose={() => setSelectedSatellite(null)} />
     </>
   );
 }

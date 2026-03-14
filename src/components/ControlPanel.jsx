@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import styles from './ControlPanel.module.css';
 import { AIRPORT_TYPES, AIRPORT_TYPE_META } from '../providers/airportIcons';
+import { SATELLITE_CATEGORIES, SATELLITE_CATEGORY_META } from '../providers/satelliteIcons';
+import { FLIGHT_CATEGORIES, FLIGHT_CATEGORY_META } from '../providers/planeIcons';
+import { VESSEL_CATEGORIES, VESSEL_CATEGORY_META } from '../providers/vesselIcons';
 
 function Card({ icon, label, defaultOpen = false, children }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -16,19 +19,16 @@ function Card({ icon, label, defaultOpen = false, children }) {
   );
 }
 
-function Toggle({ icon, label, active, onToggle, children }) {
+function Toggle({ icon, label, active, onToggle }) {
   return (
-    <>
-      <div className={styles.row} onClick={(e) => { e.preventDefault(); onToggle(); }}>
-        <span className={styles.rowIcon}>{icon}</span>
-        <span className={styles.rowLabel}>{label}</span>
-        <span className={styles.switch}>
-          <input type="checkbox" checked={active} readOnly tabIndex={-1} />
-          <span className={styles.switchTrack} />
-        </span>
-      </div>
-      {children}
-    </>
+    <div className={styles.row} onClick={(e) => { e.preventDefault(); onToggle(); }}>
+      <span className={styles.switch}>
+        <input type="checkbox" checked={active} readOnly tabIndex={-1} />
+        <span className={styles.switchTrack} />
+      </span>
+      {icon && <span className={styles.rowIcon}>{icon}</span>}
+      <span className={styles.rowLabel}>{label}</span>
+    </div>
   );
 }
 
@@ -36,51 +36,60 @@ function Separator() {
   return <div className={styles.separator} />;
 }
 
+function TypeFilter({ types, activeSet, onChange, items }) {
+  function toggle(type) {
+    const next = new Set(activeSet);
+    if (next.has(type)) next.delete(type);
+    else next.add(type);
+    onChange(next);
+  }
+  return types.map(type => {
+    const meta = items[type];
+    return (
+      <label key={type} className={styles.subRow}>
+        <input
+          type="checkbox"
+          className={styles.checkbox}
+          checked={activeSet.has(type)}
+          onChange={() => toggle(type)}
+        />
+        <span className={styles.dot} style={{ background: meta.color }} />
+        <span className={styles.rowLabel}>{meta.label}</span>
+      </label>
+    );
+  });
+}
+
 export default function ControlPanel({
   layerOptions, currentLayer, onLayerChange,
   lighting, onLightingToggle,
   showWeather, onWeatherToggle, weatherOpacity, onWeatherOpacityChange,
-  showFlights, onFlightsToggle,
-  airportTypes, onAirportTypesChange,
-  showVessels, onVesselsToggle,
+  showFlights, onFlightsToggle, flightTypes, onFlightTypesChange,
+  showAirports, onAirportsToggle, airportTypes, onAirportTypesChange,
+  showVessels, onVesselsToggle, vesselTypes, onVesselTypesChange,
+  showSatellites, onSatellitesToggle, satelliteTypes, onSatelliteTypesChange,
 }) {
-  function toggleAirportType(type) {
-    const next = new Set(airportTypes);
-    if (next.has(type)) next.delete(type);
-    else next.add(type);
-    onAirportTypesChange(next);
-  }
-
   return (
     <div className={styles.panel}>
+      {/* Satélites */}
+      <Card icon="🛰️" label="Satélites">
+        <Toggle label="Satélites" active={showSatellites} onToggle={onSatellitesToggle} />
+        <TypeFilter types={SATELLITE_CATEGORIES} activeSet={satelliteTypes} onChange={onSatelliteTypesChange} items={SATELLITE_CATEGORY_META} />
+      </Card>
+
       {/* Tráfego Marítimo */}
       <Card icon="🚢" label="Tráfego Marítimo">
-        <Toggle icon="🚢" label="Embarcações" active={showVessels} onToggle={onVesselsToggle} />
+        <Toggle label="Embarcações" active={showVessels} onToggle={onVesselsToggle} />
+        <TypeFilter types={VESSEL_CATEGORIES} activeSet={vesselTypes} onChange={onVesselTypesChange} items={VESSEL_CATEGORY_META} />
       </Card>
 
       {/* Tráfego Aéreo */}
       <Card icon="✈️" label="Tráfego Aéreo">
-        <Toggle icon="✈️" label="Aeronaves" active={showFlights} onToggle={onFlightsToggle} />
+        <Toggle label="Aeronaves" active={showFlights} onToggle={onFlightsToggle} />
+        <TypeFilter types={FLIGHT_CATEGORIES} activeSet={flightTypes} onChange={onFlightTypesChange} items={FLIGHT_CATEGORY_META} />
         <Separator />
-        <div className={styles.row} style={{ cursor: 'default', color: '#999', fontSize: 11 }}>
-          <span className={styles.rowIcon}>🛫</span>
-          <span className={styles.rowLabel}>Aeroportos</span>
-        </div>
-        {AIRPORT_TYPES.map(type => {
-          const meta = AIRPORT_TYPE_META[type];
-          return (
-            <label key={type} className={styles.row} style={{ paddingLeft: 26 }}>
-              <span className={styles.dot} style={{ background: meta.color }} />
-              <span className={styles.rowLabel}>{meta.label}</span>
-              <input
-                type="checkbox"
-                className={styles.checkbox}
-                checked={airportTypes.has(type)}
-                onChange={() => toggleAirportType(type)}
-              />
-            </label>
-          );
-        })}
+        <Toggle label="Aeroportos" active={showAirports} onToggle={onAirportsToggle} />
+        <TypeFilter types={AIRPORT_TYPES} activeSet={airportTypes} onChange={onAirportTypesChange} items={AIRPORT_TYPE_META} />
       </Card>
 
       {/* Ambiente — mapa base, iluminação, nuvens */}

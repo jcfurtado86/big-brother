@@ -8,9 +8,19 @@
   gap: 6px;
   max-height: calc(100vh - 96px);
   overflow-y: auto;
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* IE / Edge */
+}
+
+.panel::-webkit-scrollbar {
+  display: none;                  /* Chrome / Safari */
 }
 
 /* ── card ───────────────────────────────────────── */
+
+.card:first-child {
+  margin-top: auto;
+}
 
 .card {
   background: rgba(20, 20, 30, 0.85);
@@ -19,6 +29,7 @@
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
   min-width: 180px;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .cardHeader {
@@ -207,6 +218,17 @@
 .checkbox {
   accent-color: #4A9EFF;
   cursor: pointer;
+  margin: 0;
+}
+
+/* ── sub-option rows (indented under a toggle) ── */
+
+.subRow {
+  composes: row;
+  padding-left: 36px;
+  font-size: 11px;
+  color: #bbb;
+  gap: 6px;
 }
 
 .separator {

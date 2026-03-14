@@ -1,0 +1,31 @@
+import { Color } from 'cesium';
+import satRaw from '../assets/svg/satellites/satellite.svg?raw';
+
+const SAT_URL = URL.createObjectURL(
+  new Blob([satRaw], { type: 'image/svg+xml' })
+);
+
+export function getSatelliteIcon() {
+  return SAT_URL;
+}
+
+// Categorização por altitude orbital
+export function getSatelliteCategory(altKm) {
+  if (altKm < 2_000)  return 'leo';
+  if (altKm < 35_000) return 'meo';
+  return 'geo';
+}
+
+export const SATELLITE_CATEGORY_COLOR = {
+  leo: Color.fromCssColorString('#00E5FF'),   // ciano
+  meo: Color.fromCssColorString('#FF9800'),   // laranja
+  geo: Color.fromCssColorString('#E040FB'),   // roxo
+};
+
+export const SATELLITE_CATEGORIES = ['leo', 'meo', 'geo'];
+
+export const SATELLITE_CATEGORY_META = {
+  leo: { label: 'Low Earth Orbit',      color: '#00E5FF' },
+  meo: { label: 'Medium Earth Orbit',   color: '#FF9800' },
+  geo: { label: 'Geostationary Orbit',  color: '#E040FB' },
+};

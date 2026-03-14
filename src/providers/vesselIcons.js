@@ -33,6 +33,8 @@ export const VESSEL_CATEGORY_SIZE = {
   unknown:   { w: 26, h: 26 },
 };
 
+export const VESSEL_CATEGORIES = ['cargo', 'tanker', 'passenger', 'fishing', 'sailing', 'tug', 'military', 'sar'];
+
 export const VESSEL_CATEGORY_META = {
   cargo:     { label: 'Carga',      color: '#2196F3' },   // azul
   tanker:    { label: 'Tanque',     color: '#F44336' },   // vermelho

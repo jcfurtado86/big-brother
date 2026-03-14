@@ -5,13 +5,13 @@ import {
   Cartesian3,
   Math as CesiumMath,
 } from 'cesium';
-import { getCategoryType, getCategoryFromTypeCode, getIconForTypeCode, CATEGORY_SIZE } from '../providers/planeIcons';
+import { getCategoryType, getCategoryFromTypeCode, getIconForTypeCode, CATEGORY_SIZE, FLIGHT_CATEGORY_COLOR } from '../providers/planeIcons';
 import { lookupAircraft, preloadAircraftDb } from '../providers/aircraftDb';
 import { buildCallsignBillboard } from '../utils/callsignCanvas';
 import { useDeadReckoning } from './useDeadReckoning';
 import {
   FLIGHT_ALTITUDE, LABEL_VISIBLE,
-  PLANE_COLOR, SELECTED_PLANE_COLOR, PLANE_BATCH_SIZE, CALLSIGN_BATCH_SIZE,
+  SELECTED_PLANE_COLOR, PLANE_BATCH_SIZE, CALLSIGN_BATCH_SIZE,
 } from '../providers/constants';
 
 const LABEL_ALWAYS = new NearFarScalar(1, 1.0, 1e10, 1.0);
@@ -22,7 +22,7 @@ const scheduleIdle = typeof requestIdleCallback === 'function'
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
-export function useFlightLayer(viewer, flightsMap) {
+export function useFlightLayer(viewer, flightsMap, visibleTypes) {
   const billboardsRef      = useRef(null);
   const stateRef           = useRef(new Map());
   const selectedIcaoRef    = useRef(null);
@@ -30,6 +30,8 @@ export function useFlightLayer(viewer, flightsMap) {
   const callsignQueueRef   = useRef([]);
   const planeRafRef        = useRef(null);
   const callsignIdleRef    = useRef(null);
+  const typesRef           = useRef(visibleTypes);
+  typesRef.current         = visibleTypes;
 
   // Dead reckoning (extracted hook)
   useDeadReckoning(viewer, billboardsRef, stateRef);
@@ -92,15 +94,17 @@ export function useFlightLayer(viewer, flightsMap) {
         const { w, h } = CATEGORY_SIZE[category] ?? CATEGORY_SIZE.unknown;
         const pos       = Cartesian3.fromDegrees(flight.lon, flight.lat, FLIGHT_ALTITUDE);
 
+        const show = typesRef.current?.has(category) ?? true;
         const billboard = billboards.add({
           id: icao,
           position: pos,
           image: getIconForTypeCode(typeCode, category),
           width: w,
           height: h,
+          show,
           rotation: -CesiumMath.toRadians(flight.heading),
           alignedAxis: Cartesian3.UNIT_Z,
-          color: PLANE_COLOR,
+          color: FLIGHT_CATEGORY_COLOR[category] ?? FLIGHT_CATEGORY_COLOR.unknown,
           scaleByDistance:        new NearFarScalar(5e5, 1.5, 1.5e7, 0.4),
           translucencyByDistance: new NearFarScalar(5e5, 1.0, 2e7,  0.5),
         });
@@ -119,6 +123,7 @@ export function useFlightLayer(viewer, flightsMap) {
           _pos:      pos,
           _adsbCat:  flight.category,
           _alt:      flight.altitude,
+          _category: category,
         });
 
         callsignQueueRef.current.push(icao);
@@ -151,6 +156,7 @@ export function useFlightLayer(viewer, flightsMap) {
         entry.callsign = buildCallsignBillboard(
           billboards, entry._pos, entry._h, entry._label, entry._country
         );
+        entry.callsign.show = entry.billboard.show;
         if (selectedIcaoRef.current === icao) {
           entry.callsign.scaleByDistance        = LABEL_ALWAYS;
           entry.callsign.translucencyByDistance = LABEL_ALWAYS;
@@ -197,7 +203,7 @@ export function useFlightLayer(viewer, flightsMap) {
     if (prev) {
       const entry = state.get(prev);
       if (entry?.callsign) {
-        entry.billboard.color              = PLANE_COLOR;
+        entry.billboard.color              = FLIGHT_CATEGORY_COLOR[entry._category] ?? FLIGHT_CATEGORY_COLOR.unknown;
         entry.callsign.scaleByDistance        = LABEL_VISIBLE();
         entry.callsign.translucencyByDistance = LABEL_VISIBLE();
       }

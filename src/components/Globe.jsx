@@ -13,9 +13,11 @@ import { useAirportLayer }    from '../hooks/useAirportLayer';
 import { useWeatherLayer }    from '../hooks/useWeatherLayer';
 import { useVessels }         from '../hooks/useVessels';
 import { useVesselLayer }     from '../hooks/useVesselLayer';
+import { useSatellites }      from '../hooks/useSatellites';
+import { useSatelliteLayer }  from '../hooks/useSatelliteLayer';
 import { computeBboxFromViewer } from '../utils/bboxUtils';
 
-export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, showFlights, airportTypes, showWeather, weatherOpacity, showVessels }) {
+export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, showFlights, flightTypes, showAirports, airportTypes, showWeather, weatherOpacity, showVessels, vesselTypes, showSatellites, onSatelliteSelect, satelliteTypes }) {
   const viewerRef = useRef(null);
   const [viewer, setViewer] = useState(null);
 
@@ -58,14 +60,28 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
   const flightsRef = useRef(flights);
   flightsRef.current = flights;
 
-  const { stateRef: flightStateRef, setSelected } = useFlightLayer(viewer, flights);
+  const { stateRef: flightStateRef, setSelected } = useFlightLayer(viewer, flights, flightTypes);
   const selectedIcaoRef = useRef(null);
 
-  const { airportDataRef, setSelectedAirport } = useAirportLayer(viewer, airportTypes, bbox);
+  const emptySet = React.useMemo(() => new Set(), []);
+  const effectiveAirportTypes = showAirports ? airportTypes : emptySet;
+  const { airportDataRef, setSelectedAirport } = useAirportLayer(viewer, effectiveAirportTypes, bbox);
 
   // Vessels
   const vessels = useVessels(showVessels);
-  const { stateRef: vesselStateRef, setSelected: setSelectedVessel } = useVesselLayer(viewer, vessels);
+  const { stateRef: vesselStateRef, setSelected: setSelectedVessel } = useVesselLayer(viewer, vessels, vesselTypes);
+
+  // Satellites
+  const satellitesMap = useSatellites(showSatellites);
+  const { stateRef: satelliteStateRef, setSelected: setSelectedSatellite } = useSatelliteLayer(viewer, satellitesMap, satelliteTypes);
+
+  // Refs for type filters (read inside camera listener without re-creating it)
+  const flightTypesRef = useRef(flightTypes);
+  flightTypesRef.current = flightTypes;
+  const vesselTypesRef = useRef(vesselTypes);
+  vesselTypesRef.current = vesselTypes;
+  const satelliteTypesRef = useRef(satelliteTypes);
+  satelliteTypesRef.current = satelliteTypes;
 
   // Live visibility filter — runs on every camera change, no debounce, no API call.
   // Hides/shows already-loaded billboards instantly as the user pans/zooms.
@@ -73,24 +89,54 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
     if (!viewer) return;
     const update = () => {
       const live = computeBboxFromViewer(viewer);
+      const ft = flightTypesRef.current;
+      const vt = vesselTypesRef.current;
       for (const [, entry] of flightStateRef.current) {
-        const visible = !live ||
+        const inView = !live ||
           (entry.lon >= live.west  && entry.lon <= live.east &&
            entry.lat >= live.south && entry.lat <= live.north);
+        const visible = inView && (ft?.has(entry._category) ?? true);
         entry.billboard.show = visible;
         if (entry.callsign) entry.callsign.show = visible;
       }
       for (const [, entry] of vesselStateRef.current) {
-        const visible = !live ||
+        const inView = !live ||
           (entry.lon >= live.west  && entry.lon <= live.east &&
            entry.lat >= live.south && entry.lat <= live.north);
+        const visible = inView && (vt?.has(entry._category) ?? true);
+        entry.billboard.show = visible;
+        if (entry.label) entry.label.show = visible;
+      }
+      const st = satelliteTypesRef.current;
+      for (const [, entry] of satelliteStateRef.current) {
+        const inView = !live ||
+          (entry.lon >= live.west  && entry.lon <= live.east &&
+           entry.lat >= live.south && entry.lat <= live.north);
+        const visible = inView && (st?.has(entry._category) ?? true);
         entry.billboard.show = visible;
         if (entry.label) entry.label.show = visible;
       }
     };
     const removeListener = viewer.camera.changed.addEventListener(update);
     return () => removeListener();
-  }, [viewer, flightStateRef, vesselStateRef]);
+  }, [viewer, flightStateRef, vesselStateRef, satelliteStateRef]);
+
+  // Re-apply type filter when flight/vessel types change
+  useEffect(() => {
+    for (const [, entry] of flightStateRef.current) {
+      const show = flightTypes?.has(entry._category) ?? true;
+      entry.billboard.show = show;
+      if (entry.callsign) entry.callsign.show = show;
+    }
+  }, [flightTypes]);
+
+  useEffect(() => {
+    for (const [, entry] of vesselStateRef.current) {
+      const show = vesselTypes?.has(entry._category) ?? true;
+      entry.billboard.show = show;
+      if (entry.label) entry.label.show = show;
+    }
+  }, [vesselTypes]);
 
   const handleFlightSelect = React.useCallback((icao24) => {
     selectedIcaoRef.current = icao24 ?? null;
@@ -105,7 +151,7 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
     onFlightSelect?.(flights.get(icao) ?? null);
   }, [flights, onFlightSelect]);
 
-  useFlightSelection(viewer, flightStateRef, handleFlightSelect, airportDataRef, onAirportSelect, setSelectedAirport, vesselStateRef, onVesselSelect, setSelectedVessel);
+  useFlightSelection(viewer, flightStateRef, handleFlightSelect, airportDataRef, onAirportSelect, setSelectedAirport, vesselStateRef, onVesselSelect, setSelectedVessel, satelliteStateRef, onSatelliteSelect, setSelectedSatellite);
   useWeatherLayer(viewer, showWeather, weatherOpacity);
   useFlyToMouse(viewer);
 

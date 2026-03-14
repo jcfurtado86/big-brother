@@ -26,6 +26,7 @@ import a0Raw      from '../assets/svg/planes/a0.svg?raw';
 import a7Raw      from '../assets/svg/planes/a7.svg?raw';
 import b0Raw      from '../assets/svg/planes/b0.svg?raw';
 
+import { Color } from 'cesium';
 import { TYPE_CATEGORY, TYPE_SVG } from './modelCategories';
 import { VEL_HEAVY, VEL_REGIONAL, VEL_LIGHT, ALT_HEAVY } from './constants';
 
@@ -106,6 +107,28 @@ export function getCategoryFromTypeCode(typeCode) {
   if (!typeCode) return null;
   return TYPE_CATEGORY[typeCode.toUpperCase()] ?? null;
 }
+
+export const FLIGHT_CATEGORIES = ['heavy', 'large', 'regional', 'light', 'helicopter', 'uav'];
+
+export const FLIGHT_CATEGORY_META = {
+  heavy:      { label: 'Heavy (wide-body)', color: '#F2A800' },
+  large:      { label: 'Large jet',         color: '#E08600' },
+  regional:   { label: 'Regional',          color: '#FF6F61' },
+  light:      { label: 'Light / GA',        color: '#90C040' },
+  helicopter: { label: 'Helicóptero',       color: '#40C0E0' },
+  uav:        { label: 'UAV / drone',       color: '#A080FF' },
+};
+
+// Cesium Color por categoria (para billboard.color)
+export const FLIGHT_CATEGORY_COLOR = {
+  heavy:      Color.fromCssColorString('#F2A800'),
+  large:      Color.fromCssColorString('#E08600'),
+  regional:   Color.fromCssColorString('#FF6F61'),
+  light:      Color.fromCssColorString('#90C040'),
+  helicopter: Color.fromCssColorString('#40C0E0'),
+  uav:        Color.fromCssColorString('#A080FF'),
+  unknown:    Color.fromCssColorString('#F2A800'),
+};
 
 export const CATEGORY_SIZE = {
   heavy:      { w: 48, h: 48 },

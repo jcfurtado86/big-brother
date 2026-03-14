@@ -11,8 +11,9 @@ import { fetchTrack }      from '../providers/flightService';
 import { deadReckon }      from '../utils/geoMath';
 import { useCameraFollow } from './useCameraFollow';
 import { FLIGHT_ALTITUDE, TRACK_COLOR } from '../providers/constants';
+import { parseTLEOrbitalElements } from '../providers/satelliteService';
 
-export function useFlightSelection(viewer, flightStateRef, setSelected, airportDataRef, onAirportSelect, setSelectedAirport, vesselStateRef, onVesselSelect, setSelectedVessel) {
+export function useFlightSelection(viewer, flightStateRef, setSelected, airportDataRef, onAirportSelect, setSelectedAirport, vesselStateRef, onVesselSelect, setSelectedVessel, satelliteStateRef, onSatelliteSelect, setSelectedSatellite) {
   const selectionRef    = useRef(null); // { entity, icao24 }
   const pendingRef      = useRef(0);
   const liveIntervalRef = useRef(null);
@@ -21,11 +22,15 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
   const setSelectedAirportRef = useRef(setSelectedAirport);
   const onVesselSelectRef     = useRef(onVesselSelect);
   const setSelectedVesselRef  = useRef(setSelectedVessel);
+  const onSatelliteSelectRef     = useRef(onSatelliteSelect);
+  const setSelectedSatelliteRef  = useRef(setSelectedSatellite);
   useEffect(() => { setSelectedRef.current = setSelected; }, [setSelected]);
   useEffect(() => { onAirportSelectRef.current = onAirportSelect; }, [onAirportSelect]);
   useEffect(() => { setSelectedAirportRef.current = setSelectedAirport; }, [setSelectedAirport]);
   useEffect(() => { onVesselSelectRef.current = onVesselSelect; }, [onVesselSelect]);
   useEffect(() => { setSelectedVesselRef.current = setSelectedVessel; }, [setSelectedVessel]);
+  useEffect(() => { onSatelliteSelectRef.current = onSatelliteSelect; }, [onSatelliteSelect]);
+  useEffect(() => { setSelectedSatelliteRef.current = setSelectedSatellite; }, [setSelectedSatellite]);
 
   const { startFollow, stopFollow, updateFollow } = useCameraFollow(viewer);
 
@@ -87,6 +92,8 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
         clearSelection();
         setSelectedRef.current(null);
         setSelectedVesselRef.current?.(null);
+        setSelectedSatelliteRef.current?.(null);
+        onSatelliteSelectRef.current?.(null);
         setSelectedAirportRef.current?.(aptIcao);
         onVesselSelectRef.current?.(null);
         onAirportSelectRef.current?.(aptData);
@@ -101,8 +108,57 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
         setSelectedRef.current(null);
         setSelectedAirportRef.current?.(null);
         onAirportSelectRef.current?.(null);
+        setSelectedSatelliteRef.current?.(null);
+        onSatelliteSelectRef.current?.(null);
         setSelectedVesselRef.current?.(mmsi);
         onVesselSelectRef.current?.(vesselData);
+        return;
+      }
+
+      // Click em satélite
+      if (rawId && rawId.startsWith('sat_')) {
+        const noradId = rawId.slice(4);
+        const satEntry = satelliteStateRef?.current?.get(noradId);
+        const orbital = satEntry?.tle ? parseTLEOrbitalElements(satEntry.tle) : null;
+        const satData = satEntry ? {
+          name: satEntry._name,
+          noradId,
+          lat: satEntry.lat,
+          lon: satEntry.lon,
+          alt: satEntry.alt,
+          velocity: satEntry.velocity,
+          ...orbital,
+        } : null;
+        clearSelection();
+        setSelectedRef.current(null);
+        setSelectedAirportRef.current?.(null);
+        onAirportSelectRef.current?.(null);
+        setSelectedVesselRef.current?.(null);
+        onVesselSelectRef.current?.(null);
+        setSelectedSatelliteRef.current?.(noradId);
+        onSatelliteSelectRef.current?.(satData);
+
+        // Camera follow — acompanha o satélite em tempo real
+        if (satEntry) {
+          const altM = (satEntry.alt ?? 400) * 1000;
+          startFollow(Cartesian3.fromDegrees(satEntry.lon, satEntry.lat, altM));
+          liveIntervalRef.current = setInterval(() => {
+            const entry = satelliteStateRef?.current?.get(noradId);
+            if (!entry) return;
+            const pos = Cartesian3.fromDegrees(entry.lon, entry.lat, (entry.alt ?? 400) * 1000);
+            updateFollow(pos);
+            const orb = entry.tle ? parseTLEOrbitalElements(entry.tle) : null;
+            onSatelliteSelectRef.current?.({
+              name: entry._name,
+              noradId,
+              lat: entry.lat,
+              lon: entry.lon,
+              alt: entry.alt,
+              velocity: entry.velocity,
+              ...orb,
+            });
+          }, 200);
+        }
         return;
       }
 
@@ -115,8 +171,10 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
       clearSelection();
       setSelectedVesselRef.current?.(null);
       setSelectedAirportRef.current?.(null);
+      setSelectedSatelliteRef.current?.(null);
       onAirportSelectRef.current?.(null);
       onVesselSelectRef.current?.(null);
+      onSatelliteSelectRef.current?.(null);
 
       setSelectedRef.current(isSame ? null : icao24);
       if (!icao24 || isSame) return;

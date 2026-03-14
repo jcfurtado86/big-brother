@@ -28,7 +28,7 @@ const scheduleIdle = typeof requestIdleCallback === 'function'
   ? (cb) => requestIdleCallback(cb, { timeout: 2000 })
   : (cb) => requestAnimationFrame(cb);
 
-export function useVesselLayer(viewer, vesselsMap) {
+export function useVesselLayer(viewer, vesselsMap, visibleTypes) {
   const billboardsRef      = useRef(null);
   const stateRef           = useRef(new Map());
   const selectedMmsiRef    = useRef(null);
@@ -36,6 +36,8 @@ export function useVesselLayer(viewer, vesselsMap) {
   const labelQueueRef      = useRef([]);
   const vesselRafRef       = useRef(null);
   const labelIdleRef       = useRef(null);
+  const typesRef           = useRef(visibleTypes);
+  typesRef.current         = visibleTypes;
 
   // Create / destroy billboard collection
   useEffect(() => {
@@ -93,12 +95,14 @@ export function useVesselLayer(viewer, vesselsMap) {
         const sz = vesselSize(vessel.length);
         const pos = Cartesian3.fromDegrees(vessel.lon, vessel.lat, 0);
 
+        const show = typesRef.current?.has(category) ?? true;
         const billboard = billboards.add({
           id: `vessel_${mmsi}`,
           position: pos,
           image: getVesselIcon(),
           width: sz,
           height: sz,
+          show,
           rotation: -CesiumMath.toRadians(vessel.heading),
           alignedAxis: Cartesian3.UNIT_Z,
           color: VESSEL_CATEGORY_COLOR[category],
@@ -149,6 +153,7 @@ export function useVesselLayer(viewer, vesselsMap) {
         entry.label = buildCallsignBillboard(
           billboards, entry._pos, entry._h, entry._name, entry._country
         );
+        entry.label.show = entry.billboard.show;
         if (selectedMmsiRef.current === mmsi) {
           entry.label.scaleByDistance        = LABEL_ALWAYS;
           entry.label.translucencyByDistance = LABEL_ALWAYS;

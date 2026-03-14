@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { HAS_AUTH }    from '../providers/openskyAuth';
 import { fetchFlights } from '../providers/flightService';
+import { idbGet, idbSet, idbDelete } from '../utils/idbCache';
 
 const POLL_INTERVAL  = HAS_AUTH
   ? Number(import.meta.env.VITE_POLL_INTERVAL_AUTH_MS ?? 60_000)
@@ -28,27 +29,22 @@ function buildMockFlights() {
   return map;
 }
 
-// ── localStorage cache ────────────────────────────────────────────────────────
+// ── IndexedDB cache ──────────────────────────────────────────────────────────
 
 function cacheKey(bbox) {
   const r = (n) => Math.round(n);
-  return `flights_${r(bbox.south)}_${r(bbox.west)}_${r(bbox.north)}_${r(bbox.east)}`;
+  return `${r(bbox.south)}_${r(bbox.west)}_${r(bbox.north)}_${r(bbox.east)}`;
 }
 
-function loadCache(bbox) {
-  try {
-    const raw = localStorage.getItem(cacheKey(bbox));
-    if (!raw) return null;
-    const { ts, entries } = JSON.parse(raw);
-    if (Date.now() - ts > CACHE_TTL_MS) { localStorage.removeItem(cacheKey(bbox)); return null; }
-    return new Map(entries);
-  } catch { return null; }
+async function loadFlightCache(bbox) {
+  const data = await idbGet('flights', cacheKey(bbox));
+  if (!data) return null;
+  if (Date.now() - data.ts > CACHE_TTL_MS) { idbDelete('flights', cacheKey(bbox)); return null; }
+  return new Map(data.entries);
 }
 
-function saveCache(bbox, map) {
-  try {
-    localStorage.setItem(cacheKey(bbox), JSON.stringify({ ts: Date.now(), entries: [...map] }));
-  } catch { /* quota exceeded */ }
+function saveFlightCache(bbox, map) {
+  idbSet('flights', cacheKey(bbox), { ts: Date.now(), entries: [...map] });
 }
 
 // ── bbox helpers ──────────────────────────────────────────────────────────────
@@ -135,9 +131,9 @@ export function useFlights(enabled = true, bbox = undefined) {
       const controller = new AbortController();
       abortRef.current = controller;
 
-      // Show localStorage cache immediately for regional views
+      // Show cached data immediately for regional views
       if (currentBbox !== null) {
-        const cached = loadCache(currentBbox);
+        const cached = await loadFlightCache(currentBbox);
         if (cached && !cancelled) setFlights(cached);
       }
 
@@ -151,7 +147,7 @@ export function useFlights(enabled = true, bbox = undefined) {
         if (parsed === null) { schedule(RETRY_INTERVAL); return; }
 
         if (USE_DEV_CACHE) devCache = parsed;
-        if (fetchBbox !== null) saveCache(fetchBbox, parsed);
+        if (fetchBbox !== null) saveFlightCache(fetchBbox, parsed);
 
         // Store the padded bbox — containment checks against the larger area
         fetchedBboxRef.current = fetchBbox;

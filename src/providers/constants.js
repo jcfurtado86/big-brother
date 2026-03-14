@@ -5,7 +5,7 @@ export const DEFAULT_ALT          = 10_000_000;    // metros
 export const DEFAULT_PITCH        = -90;           // graus
 export const CAMERA_CHANGE_PCT    = 0.01;          // fração de movimento para disparar camera.changed
 export const ZOOM_MIN             = 100;           // metros
-export const ZOOM_MAX             = 30_000_000;    // metros
+export const ZOOM_MAX             = 70_000_000;    // metros
 export const ZOOM_SENSITIVITY     = 0.05;          // multiplicador da roda do mouse
 
 // ── Double-click fly ────────────────────────────────────────────────────────
@@ -35,6 +35,14 @@ export const VESSEL_COLOR          = Color.fromCssColorString('#00BCD4');
 export const SELECTED_VESSEL_COLOR = Color.fromCssColorString('#FF0000');
 export const VESSEL_BATCH_SIZE     = 20;
 export const VESSEL_LABEL_BATCH    = 30;
+
+// ── Satellites ─────────────────────────────────────────────────────────────
+export const SATELLITE_COLOR          = Color.fromCssColorString('#00E5FF');
+export const SELECTED_SATELLITE_COLOR = Color.fromCssColorString('#FF0000');
+export const SATELLITE_BATCH_SIZE     = 50;
+export const SATELLITE_LABEL_BATCH    = 30;
+export const SATELLITE_POLL_MS        = 24 * 60 * 60 * 1000;  // 1 fetch por dia
+export const CELESTRAK_URL            = 'https://celestrak.org/NORAD/elements/gp.php';
 
 // ── Category heuristics ─────────────────────────────────────────────────────
 export const VEL_HEAVY            = 210;           // m/s
