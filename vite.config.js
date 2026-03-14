@@ -32,6 +32,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: () => '/auth/realms/opensky-network/protocol/openid-connect/token',
       },
+      '/api/airplaneslive': {
+        target: 'https://api.airplanes.live',
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api/airplaneslive', '/v2'),
+      },
     },
   },
 });

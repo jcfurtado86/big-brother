@@ -7,13 +7,13 @@ import {
   CallbackProperty,
   defined,
 } from 'cesium';
-import { fetchTrack }      from '../providers/flightService';
+import { getProvider }     from '../providers/flightProviders';
 import { deadReckon }      from '../utils/geoMath';
 import { useCameraFollow } from './useCameraFollow';
 import { TRACK_COLOR, TICK_INTERVAL_MS, FLIGHT_ALT_SCALE } from '../providers/constants';
 import { parseTLEOrbitalElements } from '../providers/satelliteService';
 
-export function useFlightSelection(viewer, flightStateRef, setSelected, airportDataRef, onAirportSelect, setSelectedAirport, vesselStateRef, onVesselSelect, setSelectedVessel, satelliteStateRef, onSatelliteSelect, setSelectedSatellite) {
+export function useFlightSelection(viewer, flightStateRef, setSelected, airportDataRef, onAirportSelect, setSelectedAirport, vesselStateRef, onVesselSelect, setSelectedVessel, satelliteStateRef, onSatelliteSelect, setSelectedSatellite, providerName = 'opensky') {
   const selectionRef    = useRef(null); // { entity, icao24 }
   const pendingRef      = useRef(0);
   const liveIntervalRef = useRef(null);
@@ -182,7 +182,7 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
       if (!icao24 || isSame) return;
 
       try {
-        const trackPoints = await fetchTrack(icao24);
+        const trackPoints = await getProvider(providerName).fetchTrack(icao24);
         if (token !== pendingRef.current) return;
         if (!trackPoints || trackPoints.length < 2) return;
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { lookupAircraft, preloadAircraftDb } from '../providers/aircraftDb';
-import { fetchAircraftMeta } from '../providers/flightService';
+import { getProvider } from '../providers/flightProviders';
 
 // Cache persistente entre renders e remontagens do componente
 const _cache = new Map();
@@ -10,7 +10,7 @@ preloadAircraftDb().catch(() => {
   // DB local indisponível — fallback para API por aeronave
 });
 
-export function useAircraftMeta(icao24) {
+export function useAircraftMeta(icao24, providerName = 'opensky') {
   const cached = icao24 ? _cache.get(icao24) : undefined;
   const [meta, setMeta] = useState(cached ?? null);
 
@@ -30,7 +30,7 @@ export function useAircraftMeta(icao24) {
 
     // Fallback: API por aeronave (enquanto DB local não carregou ou icao24 ausente)
     let cancelled = false;
-    fetchAircraftMeta(icao24).then(data => {
+    getProvider(providerName).fetchAircraftMeta(icao24).then(data => {
       if (cancelled) return;
       if (data) _cache.set(icao24, data);
       setMeta(data);

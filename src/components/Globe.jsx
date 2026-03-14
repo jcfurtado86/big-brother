@@ -18,7 +18,7 @@ import { useSatellites }      from '../hooks/useSatellites';
 import { useSatelliteLayer }  from '../hooks/useSatelliteLayer';
 import { computeBboxFromViewer } from '../utils/bboxUtils';
 
-export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, showFlights, flightTypes, showAirports, airportTypes, showWeather, weatherOpacity, showVessels, vesselTypes, showSatellites, onSatelliteSelect, satelliteTypes }) {
+export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, showFlights, flightTypes, showAirports, airportTypes, showWeather, weatherOpacity, showVessels, vesselTypes, showSatellites, onSatelliteSelect, satelliteTypes, flightProvider }) {
   const viewerRef = useRef(null);
   const [viewer, setViewer] = useState(null);
 
@@ -57,7 +57,7 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
   useCamera(viewer, onCameraChange);
   useSceneConfig(viewer, { lighting });
   useMousePosition(viewer, onMouseMove);
-  const flights = useFlights(showFlights, bbox);
+  const flights = useFlights(showFlights, bbox, flightProvider);
   const flightsRef = useRef(flights);
   flightsRef.current = flights;
 
@@ -96,7 +96,7 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
     onFlightSelect?.(flights.get(icao) ?? null);
   }, [flights, onFlightSelect]);
 
-  useFlightSelection(viewer, flightStateRef, handleFlightSelect, airportDataRef, onAirportSelect, setSelectedAirport, vesselStateRef, onVesselSelect, setSelectedVessel, satelliteStateRef, onSatelliteSelect, setSelectedSatellite);
+  useFlightSelection(viewer, flightStateRef, handleFlightSelect, airportDataRef, onAirportSelect, setSelectedAirport, vesselStateRef, onVesselSelect, setSelectedVessel, satelliteStateRef, onSatelliteSelect, setSelectedSatellite, flightProvider);
   useWeatherLayer(viewer, showWeather, weatherOpacity);
   useFlyToMouse(viewer);
 

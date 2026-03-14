@@ -37,6 +37,7 @@ export default function App() {
   const [flightTypes, setFlightTypes] = useState(new Set(['heavy', 'large', 'regional', 'light', 'helicopter', 'uav']));
   const [vesselTypes, setVesselTypes] = useState(new Set(['cargo', 'tanker', 'passenger', 'fishing', 'sailing', 'tug', 'military', 'sar']));
   const [satelliteTypes, setSatelliteTypes] = useState(new Set(['leo', 'meo', 'geo']));
+  const [flightProvider, setFlightProvider] = useState('opensky');
   const geoIP = useGeoIP();
 
   useEffect(() => {
@@ -81,6 +82,7 @@ export default function App() {
         onSatelliteSelect={setSelectedSatellite}
         satelliteTypes={satelliteTypes}
         airportTypes={airportTypes}
+        flightProvider={flightProvider}
       />
       <SearchBox onSelect={handleLocationSelect} />
       <InfoBar coords={coords} mouseCoords={mouseCoords} />
@@ -112,8 +114,10 @@ export default function App() {
         onSatellitesToggle={() => setShowSatellites((v) => !v)}
         satelliteTypes={satelliteTypes}
         onSatelliteTypesChange={setSatelliteTypes}
+        flightProvider={flightProvider}
+        onFlightProviderChange={setFlightProvider}
       />
-      <FlightCard flight={selectedFlight} onClose={() => setSelectedFlight(null)} />
+      <FlightCard flight={selectedFlight} onClose={() => setSelectedFlight(null)} flightProvider={flightProvider} />
       <AirportCard airport={selectedAirport} onClose={() => setSelectedAirport(null)} />
       <VesselCard vessel={selectedVessel} onClose={() => setSelectedVessel(null)} />
       <SatelliteCard satellite={selectedSatellite} onClose={() => setSelectedSatellite(null)} />

@@ -17,8 +17,8 @@ const TYPE_LABEL = {
   unknown:    'Unknown',
 };
 
-export default function FlightCard({ flight, onClose }) {
-  const meta = useAircraftMeta(flight?.icao24 ?? null);
+export default function FlightCard({ flight, onClose, flightProvider }) {
+  const meta = useAircraftMeta(flight?.icao24 ?? null, flightProvider);
 
   if (!flight) return null;
 

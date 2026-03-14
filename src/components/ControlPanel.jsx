@@ -4,6 +4,7 @@ import { AIRPORT_TYPES, AIRPORT_TYPE_META } from '../providers/airportIcons';
 import { SATELLITE_CATEGORIES, SATELLITE_CATEGORY_META } from '../providers/satelliteIcons';
 import { FLIGHT_CATEGORIES, FLIGHT_CATEGORY_META } from '../providers/planeIcons';
 import { VESSEL_CATEGORIES, VESSEL_CATEGORY_META } from '../providers/vesselIcons';
+import { PROVIDER_LIST } from '../providers/flightProviders';
 
 function Card({ icon, label, defaultOpen = false, children }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -68,6 +69,7 @@ export default function ControlPanel({
   showAirports, onAirportsToggle, airportTypes, onAirportTypesChange,
   showVessels, onVesselsToggle, vesselTypes, onVesselTypesChange,
   showSatellites, onSatellitesToggle, satelliteTypes, onSatelliteTypesChange,
+  flightProvider, onFlightProviderChange,
 }) {
   return (
     <div className={styles.panel}>
@@ -86,6 +88,18 @@ export default function ControlPanel({
       {/* Tráfego Aéreo */}
       <Card icon="✈️" label="Tráfego Aéreo">
         <Toggle label="Aeronaves" active={showFlights} onToggle={onFlightsToggle} />
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Tracker</span>
+          <select
+            className={styles.select}
+            value={flightProvider}
+            onChange={e => onFlightProviderChange(e.target.value)}
+          >
+            {PROVIDER_LIST.map(p => (
+              <option key={p.name} value={p.name}>{p.label}</option>
+            ))}
+          </select>
+        </div>
         <TypeFilter types={FLIGHT_CATEGORIES} activeSet={flightTypes} onChange={onFlightTypesChange} items={FLIGHT_CATEGORY_META} />
         <Separator />
         <Toggle label="Aeroportos" active={showAirports} onToggle={onAirportsToggle} />

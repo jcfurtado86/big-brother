@@ -1,11 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { HAS_AUTH }    from '../providers/openskyAuth';
-import { fetchFlights } from '../providers/flightService';
+import { getProvider } from '../providers/flightProviders';
 import { idbGet, idbSet, idbDelete } from '../utils/idbCache';
+import { FETCH_PADDING } from '../providers/constants';
 
-const POLL_INTERVAL  = HAS_AUTH
-  ? Number(import.meta.env.VITE_POLL_INTERVAL_AUTH_MS ?? 60_000)
-  : Number(import.meta.env.VITE_POLL_INTERVAL_ANON_MS ?? 60_000);
 const RETRY_INTERVAL = Number(import.meta.env.VITE_RETRY_INTERVAL_MS ?? 1_200_000);
 const CACHE_TTL_MS   = Number(import.meta.env.VITE_FLIGHT_CACHE_TTL_MS ?? 5 * 60_000);
 
@@ -55,18 +52,13 @@ function bboxToKey(bbox) {
   return `${bbox.south.toFixed(1)},${bbox.west.toFixed(1)},${bbox.north.toFixed(1)},${bbox.east.toFixed(1)}`;
 }
 
-// Returns true if `inner` is fully covered by `outer`.
-// null = global (covers everything).
 function bboxContains(outer, inner) {
-  if (outer === null) return true;   // global covers any region
-  if (inner === null) return false;  // global is not covered by a region
+  if (outer === null) return true;
+  if (inner === null) return false;
   return inner.south >= outer.south && inner.north <= outer.north &&
          inner.west  >= outer.west  && inner.east  <= outer.east;
 }
 
-// Expands a bbox by `factor` of its own size on each side.
-// Fetching a larger area means small pans stay within the cached region.
-import { FETCH_PADDING } from '../providers/constants';
 function expandBbox(bbox) {
   if (!bbox) return bbox;
   const latPad = (bbox.north - bbox.south) * FETCH_PADDING;
@@ -81,17 +73,27 @@ function expandBbox(bbox) {
 
 // ── hook ──────────────────────────────────────────────────────────────────────
 
-export function useFlights(enabled = true, bbox = undefined) {
+export function useFlights(enabled = true, bbox = undefined, providerName = 'opensky') {
+  const provider   = getProvider(providerName);
   const bboxKey    = bboxToKey(bbox);
   const [flights, setFlights] = useState(new Map());
   const bboxRef    = useRef(bbox);
   const refetchRef = useRef(null);
   bboxRef.current  = bbox;
 
-  const abortRef        = useRef(null);        // current AbortController
-  const fetchedBboxRef  = useRef(undefined);   // bbox of last successful API fetch
-  const fetchedAtRef    = useRef(0);           // timestamp of last successful API fetch
-  const fetchedMapRef   = useRef(new Map());   // unfiltered result of last successful API fetch
+  const abortRef        = useRef(null);
+  const fetchedBboxRef  = useRef(undefined);
+  const fetchedAtRef    = useRef(0);
+  const fetchedMapRef   = useRef(new Map());
+
+  // Reset state when provider changes (refs only — the main effect handles the re-poll)
+  const prevProviderRef = useRef(providerName);
+  if (prevProviderRef.current !== providerName) {
+    prevProviderRef.current = providerName;
+    fetchedBboxRef.current  = undefined;
+    fetchedAtRef.current    = 0;
+    fetchedMapRef.current   = new Map();
+  }
 
   const bboxReady = enabled && bbox !== undefined;
   useEffect(() => {
@@ -100,65 +102,65 @@ export function useFlights(enabled = true, bbox = undefined) {
       return;
     }
 
+    const pollInterval = provider.pollInterval;
     let cancelled = false;
     let timerId   = null;
 
     async function poll() {
       if (USE_MOCK) { if (!cancelled) setFlights(buildMockFlights()); return; }
       if (USE_DEV_CACHE && devCache) { if (!cancelled) setFlights(devCache); return; }
-      if (document.visibilityState === 'hidden') { schedule(POLL_INTERVAL); return; }
+      if (document.visibilityState === 'hidden') { schedule(pollInterval); return; }
 
       const currentBbox = bboxRef.current;
       const age         = Date.now() - fetchedAtRef.current;
 
-      // ── In-memory containment check ──────────────────────────────────────────
-      // If the new bbox is fully inside the last fetched region AND data is still
-      // fresh, skip the API call. Pass the full fetched map — the live visibility
-      // filter in Globe.jsx handles showing only what's in the current viewport,
-      // so we never remove/re-add billboards just because the camera moved.
       if (
         fetchedBboxRef.current !== undefined &&
         bboxContains(fetchedBboxRef.current, currentBbox) &&
-        age < POLL_INTERVAL
+        age < pollInterval
       ) {
         if (!cancelled) setFlights(fetchedMapRef.current);
-        schedule(POLL_INTERVAL - age); // wait until data actually goes stale
+        schedule(pollInterval - age);
         return;
       }
 
-      // ── API fetch ─────────────────────────────────────────────────────────────
+      // Debounce rapid bbox changes — don't fetch more often than pollInterval / 3
+      const MIN_REFETCH_GAP = Math.max(pollInterval / 3, 2000);
+      if (age < MIN_REFETCH_GAP) {
+        schedule(MIN_REFETCH_GAP - age);
+        return;
+      }
+
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
 
-      // Show cached data immediately for regional views
       if (currentBbox !== null) {
         const cached = await loadFlightCache(currentBbox);
         if (cached && !cancelled) setFlights(cached);
       }
 
-      // Fetch a padded bbox so small pans stay within the cached region
       const fetchBbox = expandBbox(currentBbox);
 
       try {
-        const parsed = await fetchFlights(fetchBbox, controller.signal);
+        const parsed = await provider.fetchFlights(fetchBbox, controller.signal);
         if (cancelled) return;
 
-        if (parsed === null) { schedule(RETRY_INTERVAL); return; }
+        if (parsed === null) {
+          // Mark as "fetched" so containment check blocks re-polls during backoff
+          fetchedBboxRef.current = fetchBbox;
+          fetchedAtRef.current   = Date.now();
+          schedule(RETRY_INTERVAL);
+          return;
+        }
 
         if (USE_DEV_CACHE) devCache = parsed;
         if (fetchBbox !== null) saveFlightCache(fetchBbox, parsed);
 
-        // Store the padded bbox — containment checks against the larger area
         fetchedBboxRef.current = fetchBbox;
         fetchedAtRef.current   = Date.now();
         fetchedMapRef.current  = parsed;
 
-        // Merge new data into existing flights.
-        // - Flights in the viewport get updated positions from the API.
-        // - Flights outside the viewport keep their last known position
-        //   (dead reckoning continues from there).
-        // - Flights not refreshed within CACHE_TTL_MS are evicted.
         const now = Date.now();
         setFlights(prev => {
           const merged = new Map();
@@ -170,7 +172,7 @@ export function useFlights(enabled = true, bbox = undefined) {
           }
           return merged;
         });
-        schedule(POLL_INTERVAL);
+        schedule(pollInterval);
       } catch (e) {
         if (e.name === 'AbortError') return;
         console.error('[flights] fetch error:', e);
@@ -200,9 +202,8 @@ export function useFlights(enabled = true, bbox = undefined) {
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bboxReady]);
+  }, [bboxReady, providerName]);
 
-  // When bbox changes, check containment (via poll) immediately.
   useEffect(() => {
     if (bbox === undefined) return;
     refetchRef.current?.();
