@@ -1,0 +1,215 @@
+.panel {
+  position: fixed;
+  bottom: 48px;
+  right: 16px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: calc(100vh - 96px);
+  overflow-y: auto;
+}
+
+/* ── card ───────────────────────────────────────── */
+
+.card {
+  background: rgba(20, 20, 30, 0.85);
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+  min-width: 180px;
+  overflow: hidden;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+  font-family: monospace;
+  font-size: 12px;
+  color: #ccc;
+  transition: background 0.15s;
+}
+
+.cardHeader:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.cardIcon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.cardLabel {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.chevron {
+  font-size: 10px;
+  transition: transform 0.2s;
+  color: #666;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.cardBody {
+  padding: 4px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── toggle row (icon + label + switch) ────────── */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: monospace;
+  font-size: 12px;
+  color: #ddd;
+  cursor: pointer;
+  user-select: none;
+  padding: 3px 0;
+}
+
+.row:hover {
+  color: #fff;
+}
+
+.rowIcon {
+  font-size: 13px;
+  flex-shrink: 0;
+  width: 18px;
+  text-align: center;
+}
+
+.rowLabel {
+  flex: 1;
+  white-space: nowrap;
+}
+
+/* ── mini toggle switch ────────────────────────── */
+
+.switch {
+  position: relative;
+  width: 28px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switchTrack {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.switchTrack::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #888;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.switch input:checked + .switchTrack {
+  background: rgba(60, 80, 180, 0.85);
+}
+
+.switch input:checked + .switchTrack::after {
+  transform: translateX(12px);
+  background: #fff;
+}
+
+/* ── slider ────────────────────────────────────── */
+
+.sliderRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 26px;
+}
+
+.slider {
+  flex: 1;
+  accent-color: #4A9EFF;
+  cursor: pointer;
+  height: 4px;
+}
+
+.sliderValue {
+  min-width: 30px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-family: monospace;
+  font-size: 11px;
+  color: #999;
+}
+
+/* ── layer buttons ─────────────────────────────── */
+
+.layerGroup {
+  display: flex;
+  gap: 4px;
+  padding-left: 26px;
+}
+
+.layerBtn {
+  flex: 1;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-family: monospace;
+  font-size: 11px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.08);
+  color: #aaa;
+  transition: background 0.15s, color 0.15s;
+}
+
+.layerBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.layerBtnActive {
+  background: rgba(60, 80, 180, 0.85);
+  color: #fff;
+}
+
+/* ── airport dots ──────────────────────────────── */
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.checkbox {
+  accent-color: #4A9EFF;
+  cursor: pointer;
+}
+
+.separator {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin: 2px 0;
+}

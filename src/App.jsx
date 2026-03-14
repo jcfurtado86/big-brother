@@ -1,17 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Globe from './components/Globe';
 import SearchBox from './components/SearchBox';
-import LayerToggle from './components/LayerToggle';
+import ControlPanel from './components/ControlPanel';
 import InfoBar from './components/InfoBar';
 import ResetView from './components/ResetView';
-import NightToggle from './components/NightToggle';
 import ClockDisplay from './components/ClockDisplay';
 import FlightCard from './components/FlightCard';
 import AirportCard from './components/AirportCard';
-import FlightsToggle from './components/FlightsToggle';
-import AirportToggle from './components/AirportToggle';
-import WeatherToggle from './components/WeatherToggle';
-import VesselToggle from './components/VesselToggle';
 import VesselCard from './components/VesselCard';
 import { useGeoIP } from './hooks/useGeoIP';
 import { layers } from './providers/layers';
@@ -31,7 +26,7 @@ export default function App() {
   const [selectedAirport, setSelectedAirport] = useState(null);
   const [showFlights, setShowFlights] = useState(false);
   const [showWeather, setShowWeather] = useState(false);
-  const [weatherOpacity, setWeatherOpacity] = useState(0.5);
+  const [weatherOpacity, setWeatherOpacity] = useState(0);
   const [showVessels, setShowVessels] = useState(false);
   const [selectedVessel, setSelectedVessel] = useState(null);
   const [airportTypes, setAirportTypes] = useState(new Set());
@@ -75,15 +70,26 @@ export default function App() {
         airportTypes={airportTypes}
       />
       <SearchBox onSelect={handleLocationSelect} />
-      <LayerToggle options={layerOptions} current={layerId} onChange={setLayerId} />
       <InfoBar coords={coords} mouseCoords={mouseCoords} />
       <ClockDisplay />
       <ResetView onReset={handleResetView} />
-      <NightToggle active={lighting} onToggle={() => setLighting((v) => !v)} />
-      <WeatherToggle active={showWeather} onToggle={() => setShowWeather((v) => !v)} opacity={weatherOpacity} onOpacityChange={setWeatherOpacity} />
-      <FlightsToggle active={showFlights} onToggle={() => setShowFlights((v) => !v)} />
-      <AirportToggle activeTypes={airportTypes} onChange={setAirportTypes} />
-      <VesselToggle active={showVessels} onToggle={() => setShowVessels((v) => !v)} />
+      <ControlPanel
+        layerOptions={layerOptions}
+        currentLayer={layerId}
+        onLayerChange={setLayerId}
+        lighting={lighting}
+        onLightingToggle={() => setLighting((v) => !v)}
+        showWeather={showWeather}
+        onWeatherToggle={() => setShowWeather((v) => !v)}
+        weatherOpacity={weatherOpacity}
+        onWeatherOpacityChange={setWeatherOpacity}
+        showFlights={showFlights}
+        onFlightsToggle={() => setShowFlights((v) => !v)}
+        airportTypes={airportTypes}
+        onAirportTypesChange={setAirportTypes}
+        showVessels={showVessels}
+        onVesselsToggle={() => setShowVessels((v) => !v)}
+      />
       <FlightCard flight={selectedFlight} onClose={() => setSelectedFlight(null)} />
       <AirportCard airport={selectedAirport} onClose={() => setSelectedAirport(null)} />
       <VesselCard vessel={selectedVessel} onClose={() => setSelectedVessel(null)} />
