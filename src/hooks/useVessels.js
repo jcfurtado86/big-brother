@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { connectVesselStream } from '../providers/vesselService';
+import { computeBboxFromViewer } from '../utils/bboxUtils';
 
 const STALE_MS = 10 * 60 * 1000;
 const CLEANUP_INTERVAL = 60_000;
 const FLUSH_INTERVAL   = 2_000;
+const BBOX_DEBOUNCE_MS = 2_000;
 
 const USE_MOCK = import.meta.env.VITE_MOCK_VESSELS === 'true';
 
@@ -56,10 +58,12 @@ function buildMockVessels() {
 
 // ── hook ──────────────────────────────────────────────────────────────────────
 
-export function useVessels(enabled = false) {
+export function useVessels(viewer, enabled = false) {
   const [vessels, setVessels] = useState(new Map());
   const vesselsMapRef = useRef(new Map());
+  const streamRef = useRef(null);
 
+  // Conexão WebSocket — abre/fecha com enabled + viewer
   useEffect(() => {
     if (!enabled) {
       vesselsMapRef.current.clear();
@@ -73,15 +77,20 @@ export function useVessels(enabled = false) {
       return;
     }
 
+    // Espera viewer estar pronto para usar bbox da viewport
+    if (!viewer) return;
+
     const vesselsMap = vesselsMapRef.current;
 
-    console.log('[vessels] connecting — global');
+    const initialBbox = computeBboxFromViewer(viewer);
+    console.log('[vessels] connecting — bbox:', initialBbox);
 
     const stream = connectVesselStream(
-      GLOBAL_BBOX,
+      initialBbox,
       (vessel) => { vesselsMap.set(vessel.mmsi, vessel); },
       (err) => console.warn('[vessels]', err),
     );
+    streamRef.current = stream;
 
     // Flush accumulated updates to React state
     const flushId = setInterval(() => {
@@ -109,10 +118,42 @@ export function useVessels(enabled = false) {
 
     return () => {
       stream.close();
+      streamRef.current = null;
       clearInterval(flushId);
       clearInterval(cleanupId);
     };
-  }, [enabled]);
+  }, [viewer, enabled]);
+
+  // Atualiza bbox do WebSocket quando a câmera move (debounced)
+  useEffect(() => {
+    if (!viewer || !enabled || USE_MOCK) return;
+
+    let debounceId = null;
+    let lastKey = null;
+
+    const onCameraChanged = () => {
+      clearTimeout(debounceId);
+      debounceId = setTimeout(() => {
+        const stream = streamRef.current;
+        if (!stream) return;
+        if (viewer.isDestroyed()) return;
+
+        const bbox = computeBboxFromViewer(viewer);
+        const key = `${bbox.south.toFixed(1)},${bbox.west.toFixed(1)},${bbox.north.toFixed(1)},${bbox.east.toFixed(1)}`;
+        if (key === lastKey) return;
+        lastKey = key;
+
+        console.log('[vessels] updating bbox:', bbox);
+        stream.updateBbox(bbox);
+      }, BBOX_DEBOUNCE_MS);
+    };
+
+    const removeListener = viewer.camera.changed.addEventListener(onCameraChanged);
+    return () => {
+      removeListener();
+      clearTimeout(debounceId);
+    };
+  }, [viewer, enabled]);
 
   return vessels;
 }

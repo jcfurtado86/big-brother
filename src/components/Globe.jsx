@@ -69,7 +69,7 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
   const { airportDataRef, setSelectedAirport } = useAirportLayer(viewer, effectiveAirportTypes, bbox);
 
   // Vessels
-  const vessels = useVessels(showVessels);
+  const vessels = useVessels(viewer, showVessels);
   const { stateRef: vesselStateRef, setSelected: setSelectedVessel } = useVesselLayer(viewer, vessels, vesselTypes);
 
   // Satellites

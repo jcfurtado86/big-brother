@@ -57,6 +57,9 @@ export default function aisProxyPlugin() {
           // Injeta a API key na subscription do client
           msg.APIKey = API_KEY;
 
+          const boxes = msg.BoundingBoxes;
+          if (boxes) console.log('[ais-proxy] subscription bbox:', JSON.stringify(boxes));
+
           if (upstream && upstream.readyState === WebSocket.OPEN) {
             // Update subscription — reenvia para o AISStream
             upstream.send(JSON.stringify(msg));
