@@ -26,7 +26,7 @@ export default function App() {
   const [selectedFlight, setSelectedFlight] = useState(null);
   const [selectedAirport, setSelectedAirport] = useState(null);
   const [showFlights, setShowFlights] = useState(false);
-  const [showWeather, setShowWeather] = useState(false);
+  const [showWeather, setShowWeather] = useState(true);
   const [weatherOpacity, setWeatherOpacity] = useState(0);
   const [showVessels, setShowVessels] = useState(false);
   const [selectedVessel, setSelectedVessel] = useState(null);

@@ -10,16 +10,12 @@ import { propagateSat } from '../providers/satelliteService';
 import {
   SELECTED_SATELLITE_COLOR,
   SATELLITE_BATCH_SIZE, SATELLITE_LABEL_BATCH,
-  LABEL_VISIBLE,
+  LABEL_VISIBLE, LABEL_ALWAYS,
+  TICK_INTERVAL_MS,
 } from '../providers/constants';
+import { scheduleIdle } from '../utils/scheduleIdle';
 
-const LABEL_ALWAYS = new NearFarScalar(1, 1.0, 1e10, 1.0);
 const SAT_SIZE = 24;
-const PROPAGATE_INTERVAL = 200; // ms
-
-const scheduleIdle = typeof requestIdleCallback === 'function'
-  ? (cb) => requestIdleCallback(cb, { timeout: 2000 })
-  : (cb) => requestAnimationFrame(cb);
 
 export function useSatelliteLayer(viewer, satellitesMap, visibleTypes) {
   const billboardsRef    = useRef(null);
@@ -70,7 +66,7 @@ export function useSatelliteLayer(viewer, satellitesMap, visibleTypes) {
       }
     }
     tick();
-    propagateRef.current = setInterval(tick, PROPAGATE_INTERVAL);
+    propagateRef.current = setInterval(tick, TICK_INTERVAL_MS);
     return () => { clearInterval(propagateRef.current); };
   }, [viewer]);
 
@@ -181,15 +177,6 @@ export function useSatelliteLayer(viewer, satellitesMap, visibleTypes) {
       satRafRef.current = requestAnimationFrame(processSatBatch);
     }
   }, [satellitesMap, viewer]);
-
-  // Filter by satellite category (LEO/MEO/GEO)
-  useEffect(() => {
-    for (const [, entry] of stateRef.current) {
-      const show = visibleTypes?.has(entry._category) ?? true;
-      entry.billboard.show = show;
-      if (entry.label) entry.label.show = show;
-    }
-  }, [visibleTypes]);
 
   // Selection highlight
   const setSelected = useCallback((noradId) => {

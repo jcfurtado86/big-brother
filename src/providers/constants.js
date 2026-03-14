@@ -24,24 +24,25 @@ export const FETCH_PADDING        = 0.5;           // expansão do bbox de busca
 export const LABEL_NEAR           = 2_000_000;     // metros (100% visível abaixo)
 export const LABEL_FAR            = 4_000_000;     // metros (invisível acima)
 export const LABEL_VISIBLE        = () => new NearFarScalar(LABEL_NEAR, 1.0, LABEL_FAR, 0.0);
+export const LABEL_ALWAYS         = new NearFarScalar(1, 1.0, 1e10, 1.0);
 
 // ── Colors ──────────────────────────────────────────────────────────────────
-export const PLANE_COLOR          = Color.fromCssColorString('#F2A800');
 export const SELECTED_PLANE_COLOR = Color.fromCssColorString('#FF0000');
 export const TRACK_COLOR          = Color.fromCssColorString('#A020F0').withAlpha(0.9);
 
 // ── Vessels ───────────────────────────────────────────────────────────────
-export const VESSEL_COLOR          = Color.fromCssColorString('#00BCD4');
 export const SELECTED_VESSEL_COLOR = Color.fromCssColorString('#FF0000');
 export const VESSEL_BATCH_SIZE     = 20;
 export const VESSEL_LABEL_BATCH    = 30;
 
 // ── Satellites ─────────────────────────────────────────────────────────────
-export const SATELLITE_COLOR          = Color.fromCssColorString('#00E5FF');
 export const SELECTED_SATELLITE_COLOR = Color.fromCssColorString('#FF0000');
 export const SATELLITE_BATCH_SIZE     = 50;
 export const SATELLITE_LABEL_BATCH    = 30;
 export const SATELLITE_POLL_MS        = 24 * 60 * 60 * 1000;  // 1 fetch por dia
+
+// ── Tick / Follow ─────────────────────────────────────────────────────────
+export const TICK_INTERVAL_MS         = 500;  // propagação + camera follow
 export const CELESTRAK_URL            = 'https://celestrak.org/NORAD/elements/gp.php';
 
 // ── Category heuristics ─────────────────────────────────────────────────────

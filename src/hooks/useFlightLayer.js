@@ -10,15 +10,10 @@ import { lookupAircraft, preloadAircraftDb } from '../providers/aircraftDb';
 import { buildCallsignBillboard } from '../utils/callsignCanvas';
 import { useDeadReckoning } from './useDeadReckoning';
 import {
-  FLIGHT_ALTITUDE, LABEL_VISIBLE,
+  FLIGHT_ALTITUDE, LABEL_VISIBLE, LABEL_ALWAYS,
   SELECTED_PLANE_COLOR, PLANE_BATCH_SIZE, CALLSIGN_BATCH_SIZE,
 } from '../providers/constants';
-
-const LABEL_ALWAYS = new NearFarScalar(1, 1.0, 1e10, 1.0);
-
-const scheduleIdle = typeof requestIdleCallback === 'function'
-  ? (cb) => requestIdleCallback(cb, { timeout: 2000 })
-  : (cb) => requestAnimationFrame(cb);
+import { scheduleIdle } from '../utils/scheduleIdle';
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 

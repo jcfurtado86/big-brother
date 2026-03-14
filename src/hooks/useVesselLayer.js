@@ -10,10 +10,9 @@ import { buildCallsignBillboard } from '../utils/callsignCanvas';
 import {
   SELECTED_VESSEL_COLOR,
   VESSEL_BATCH_SIZE, VESSEL_LABEL_BATCH,
-  LABEL_VISIBLE,
+  LABEL_VISIBLE, LABEL_ALWAYS,
 } from '../providers/constants';
-
-const LABEL_ALWAYS = new NearFarScalar(1, 1.0, 1e10, 1.0);
+import { scheduleIdle } from '../utils/scheduleIdle';
 
 // Tamanho do ícone proporcional ao comprimento real do navio
 const MIN_LEN = 10, MAX_LEN = 400;
@@ -23,10 +22,6 @@ function vesselSize(length) {
   const s = MIN_PX + (MAX_PX - MIN_PX) * (l - MIN_LEN) / (MAX_LEN - MIN_LEN);
   return Math.round(s);
 }
-
-const scheduleIdle = typeof requestIdleCallback === 'function'
-  ? (cb) => requestIdleCallback(cb, { timeout: 2000 })
-  : (cb) => requestAnimationFrame(cb);
 
 export function useVesselLayer(viewer, vesselsMap, visibleTypes) {
   const billboardsRef      = useRef(null);
