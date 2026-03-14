@@ -5,7 +5,7 @@ import { getFlagImg } from '../providers/countryFlags';
 import { useAircraftMeta } from '../hooks/useAircraftMeta';
 import { getAirlineLogo, markLogoFailed } from '../providers/airlineLogos';
 import { getAirlineFromCallsign } from '../providers/airlineCodes';
-import { toKt, toFt, toCompass } from '../utils/unitConversion';
+import { toKt, toFt, toCompass, toVs } from '../utils/unitConversion';
 
 const TYPE_LABEL = {
   heavy:      'Heavy (wide-body)',
@@ -26,6 +26,9 @@ export default function FlightCard({ flight, onClose, flightProvider }) {
   const callsign  = flight.callsign || flight.icao24;
   const type      = getCategoryType(flight.category, flight.velocity, flight.altitude, flight.military);
   const onGround  = flight.altitude === 0 && flight.velocity < 2;
+  const vs        = toVs(flight.verticalRate);
+  const squawk    = flight.squawk || null;
+  const isEmergencySquawk = squawk === '7700' || squawk === '7600' || squawk === '7500';
   const flagImg   = getFlagImg(flight.country);
   const flagSrc   = flagImg?.src ?? null;
 
@@ -92,11 +95,21 @@ export default function FlightCard({ flight, onClose, flightProvider }) {
         <span className={styles.label}>Altitude</span>
         <span className={styles.value}>{toFt(flight.altitude)} ft</span>
 
+        {vs && <>
+          <span className={styles.label}>V/S</span>
+          <span className={styles.value}>{vs}</span>
+        </>}
+
         <span className={styles.label}>Velocidade</span>
         <span className={styles.value}>{toKt(flight.velocity)} kt</span>
 
         <span className={styles.label}>Rumo</span>
         <span className={styles.value}>{Math.round(flight.heading)}° {toCompass(flight.heading)}</span>
+
+        {squawk && <>
+          <span className={styles.label}>Squawk</span>
+          <span className={isEmergencySquawk ? styles.emergency : styles.value}>{squawk}</span>
+        </>}
       </div>
     </div>
   );

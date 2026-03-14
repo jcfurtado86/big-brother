@@ -107,3 +107,9 @@
   color: #888;
   font-size: 11px;
 }
+
+.emergency {
+  color: #ff4444;
+  font-weight: bold;
+  text-align: right;
+}

@@ -78,6 +78,22 @@ export function useFlightLayer(viewer, flightsMap, visibleTypes) {
         entry._alt      = flight.altitude;
         entry.billboard.rotation = -CesiumMath.toRadians(flight.heading);
 
+        // Update callsign label + country flag if enriched by merge
+        const newCountry = flight.country || '';
+        const newLabel   = flight.callsign || flight.icao24;
+        if (newCountry !== entry._country || newLabel !== entry._label) {
+          entry._country = newCountry;
+          entry._label   = newLabel;
+          // Rebuild callsign billboard with updated flag
+          if (entry.callsign) {
+            billboards.remove(entry.callsign);
+            entry.callsign = buildCallsignBillboard(
+              billboards, entry._pos, entry._h, entry._label, entry._country
+            );
+            entry.callsign.show = entry.billboard.show;
+          }
+        }
+
         // Update category/military if enriched by merge
         const newMilitary = !!flight.military;
         const newAdsbCat  = flight.category;
@@ -95,6 +111,10 @@ export function useFlightLayer(viewer, flightsMap, visibleTypes) {
           entry.billboard.height = h;
           entry.billboard.color  = FLIGHT_CATEGORY_COLOR[category] ?? FLIGHT_CATEGORY_COLOR.unknown;
           entry._h = h;
+          // Re-apply visibility filter for new category
+          const show = typesRef.current?.has(category) ?? true;
+          entry.billboard.show = show;
+          if (entry.callsign) entry.callsign.show = show;
         }
       } else {
         planeQueueRef.current.push([icao, flight]);

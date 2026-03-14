@@ -111,7 +111,7 @@ export function getCategoryFromTypeCode(typeCode) {
   return TYPE_CATEGORY[typeCode.toUpperCase()] ?? null;
 }
 
-export const FLIGHT_CATEGORIES = ['heavy', 'large', 'regional', 'light', 'helicopter', 'uav', 'military'];
+export const FLIGHT_CATEGORIES = ['heavy', 'large', 'regional', 'light', 'helicopter', 'uav', 'military', 'unknown'];
 
 export const FLIGHT_CATEGORY_META = {
   heavy:      { label: 'Heavy (wide-body)', color: '#F2A800' },
@@ -121,6 +121,7 @@ export const FLIGHT_CATEGORY_META = {
   helicopter: { label: 'Helicóptero',       color: '#40C0E0' },
   uav:        { label: 'UAV / drone',       color: '#A080FF' },
   military:   { label: 'Militar',           color: '#2E7D32' },
+  unknown:    { label: 'Outros',            color: '#888888' },
 };
 
 // Cesium Color por categoria (para billboard.color)

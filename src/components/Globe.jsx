@@ -70,9 +70,11 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
           // Enrich OpenSky with AL-exclusive fields
           merged.set(icao, {
             ...os,
-            military: al.military,
-            category: al.category || os.category,
-            _meta:    al._meta ?? os._meta ?? null,
+            military:     al.military,
+            category:     al.category ?? os.category,
+            verticalRate: al.verticalRate ?? os.verticalRate ?? null,
+            squawk:       al.squawk ?? os.squawk ?? null,
+            _meta:        al._meta ?? os._meta ?? null,
           });
         } else {
           merged.set(icao, os);

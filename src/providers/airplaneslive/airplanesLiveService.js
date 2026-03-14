@@ -37,8 +37,10 @@ function parseAirplanesLive(data) {
       velocity:  (a.gs ?? 0) * KN_TO_MS,
       altitude:  onGround ? 0 : (typeof a.alt_baro === 'number' ? a.alt_baro : (a.alt_geom ?? 0)) * FT_TO_M,
       category:  mapCategory(a.category),
-      military:  !!(a.dbFlags & 1),
-      fetchedAt: now,
+      military:     !!(a.dbFlags & 1),
+      verticalRate: (a.baro_rate ?? a.geom_rate ?? null),  // ft/min from API
+      squawk:       a.squawk || null,
+      fetchedAt:    now,
       // Inline metadata — avoids separate /hex/ call
       _meta: (a.r || a.t || a.desc || a.ownOp || a.year) ? {
         registration: a.r    || null,
