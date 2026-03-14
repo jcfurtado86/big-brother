@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(100,100)">
+    <!-- Hull: proa pontiaguda no topo, corpo largo, popa reta embaixo -->
+    <path d="
+      M 0,-90
+      L 24,-55
+      L 26,-30
+      L 26,55
+      Q 26,78  18,80
+      L -18,80
+      Q -26,78  -26,55
+      L -26,-30
+      L -24,-55
+      Z
+    " fill="#FFFFFF" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"/>
+  </g>
+</svg>

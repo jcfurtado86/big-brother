@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import cesium from 'vite-plugin-cesium';
+import aisProxy from './vite-plugin-aisProxy.js';
 
 export default defineConfig({
-  plugins: [react(), cesium()],
+  plugins: [react(), cesium(), aisProxy()],
   server: {
     proxy: {
       '/api/geoip': {

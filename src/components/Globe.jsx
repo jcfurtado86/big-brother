@@ -11,9 +11,11 @@ import { useFlightSelection } from '../hooks/useFlightSelection';
 import { useFlyToMouse }      from '../hooks/useFlyToMouse';
 import { useAirportLayer }    from '../hooks/useAirportLayer';
 import { useWeatherLayer }    from '../hooks/useWeatherLayer';
+import { useVessels }         from '../hooks/useVessels';
+import { useVesselLayer }     from '../hooks/useVesselLayer';
 import { computeBboxFromViewer } from '../utils/bboxUtils';
 
-export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, showFlights, airportTypes, showWeather }) {
+export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, showFlights, airportTypes, showWeather, showVessels }) {
   const viewerRef = useRef(null);
   const [viewer, setViewer] = useState(null);
 
@@ -59,6 +61,12 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
   const { stateRef: flightStateRef, setSelected } = useFlightLayer(viewer, flights);
   const selectedIcaoRef = useRef(null);
 
+  const { airportDataRef, setSelectedAirport } = useAirportLayer(viewer, airportTypes, bbox);
+
+  // Vessels
+  const vessels = useVessels(showVessels);
+  const { stateRef: vesselStateRef, setSelected: setSelectedVessel } = useVesselLayer(viewer, vessels);
+
   // Live visibility filter — runs on every camera change, no debounce, no API call.
   // Hides/shows already-loaded billboards instantly as the user pans/zooms.
   useEffect(() => {
@@ -72,10 +80,17 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
         entry.billboard.show = visible;
         if (entry.callsign) entry.callsign.show = visible;
       }
+      for (const [, entry] of vesselStateRef.current) {
+        const visible = !live ||
+          (entry.lon >= live.west  && entry.lon <= live.east &&
+           entry.lat >= live.south && entry.lat <= live.north);
+        entry.billboard.show = visible;
+        if (entry.label) entry.label.show = visible;
+      }
     };
     const removeListener = viewer.camera.changed.addEventListener(update);
     return () => removeListener();
-  }, [viewer, flightStateRef]);
+  }, [viewer, flightStateRef, vesselStateRef]);
 
   const handleFlightSelect = React.useCallback((icao24) => {
     selectedIcaoRef.current = icao24 ?? null;
@@ -90,8 +105,7 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
     onFlightSelect?.(flights.get(icao) ?? null);
   }, [flights, onFlightSelect]);
 
-  const { airportDataRef } = useAirportLayer(viewer, airportTypes, bbox);
-  useFlightSelection(viewer, flightStateRef, handleFlightSelect, airportDataRef, onAirportSelect);
+  useFlightSelection(viewer, flightStateRef, handleFlightSelect, airportDataRef, onAirportSelect, setSelectedAirport, vesselStateRef, onVesselSelect, setSelectedVessel);
   useWeatherLayer(viewer, showWeather);
   useFlyToMouse(viewer);
 

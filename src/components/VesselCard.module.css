@@ -1,0 +1,91 @@
+.card {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  width: 240px;
+  padding: 16px 18px;
+  background: rgba(20, 20, 30, 0.88);
+  border-radius: 16px;
+  color: #fff;
+  font-family: monospace;
+  font-size: 13px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
+  z-index: 10;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.name {
+  font-size: 18px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: #00BCD4;
+}
+
+.mmsi {
+  font-size: 11px;
+  color: #888;
+  margin-top: 1px;
+}
+
+.close {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 8px;
+}
+
+.close:hover {
+  color: #fff;
+}
+
+.divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 12px 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  row-gap: 7px;
+  column-gap: 12px;
+}
+
+.label {
+  color: #888;
+  white-space: nowrap;
+}
+
+.value {
+  color: #ddd;
+  text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.flag {
+  width: 22px;
+  height: 15px;
+  object-fit: cover;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.typeDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}

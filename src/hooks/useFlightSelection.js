@@ -12,14 +12,20 @@ import { deadReckon }      from '../utils/geoMath';
 import { useCameraFollow } from './useCameraFollow';
 import { FLIGHT_ALTITUDE, TRACK_COLOR } from '../providers/constants';
 
-export function useFlightSelection(viewer, flightStateRef, setSelected, airportDataRef, onAirportSelect) {
+export function useFlightSelection(viewer, flightStateRef, setSelected, airportDataRef, onAirportSelect, setSelectedAirport, vesselStateRef, onVesselSelect, setSelectedVessel) {
   const selectionRef    = useRef(null); // { entity, icao24 }
   const pendingRef      = useRef(0);
   const liveIntervalRef = useRef(null);
   const setSelectedRef  = useRef(setSelected);
-  const onAirportSelectRef = useRef(onAirportSelect);
+  const onAirportSelectRef    = useRef(onAirportSelect);
+  const setSelectedAirportRef = useRef(setSelectedAirport);
+  const onVesselSelectRef     = useRef(onVesselSelect);
+  const setSelectedVesselRef  = useRef(setSelectedVessel);
   useEffect(() => { setSelectedRef.current = setSelected; }, [setSelected]);
   useEffect(() => { onAirportSelectRef.current = onAirportSelect; }, [onAirportSelect]);
+  useEffect(() => { setSelectedAirportRef.current = setSelectedAirport; }, [setSelectedAirport]);
+  useEffect(() => { onVesselSelectRef.current = onVesselSelect; }, [onVesselSelect]);
+  useEffect(() => { setSelectedVesselRef.current = setSelectedVessel; }, [setSelectedVessel]);
 
   const { startFollow, stopFollow, updateFollow } = useCameraFollow(viewer);
 
@@ -80,7 +86,23 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
         const aptData = airportDataRef?.current?.get(aptIcao) ?? null;
         clearSelection();
         setSelectedRef.current(null);
+        setSelectedVesselRef.current?.(null);
+        setSelectedAirportRef.current?.(aptIcao);
+        onVesselSelectRef.current?.(null);
         onAirportSelectRef.current?.(aptData);
+        return;
+      }
+
+      // Click em embarcação
+      if (rawId && rawId.startsWith('vessel_')) {
+        const mmsi = rawId.slice(7);
+        const vesselData = vesselStateRef?.current?.get(mmsi)?.vessel ?? null;
+        clearSelection();
+        setSelectedRef.current(null);
+        setSelectedAirportRef.current?.(null);
+        onAirportSelectRef.current?.(null);
+        setSelectedVesselRef.current?.(mmsi);
+        onVesselSelectRef.current?.(vesselData);
         return;
       }
 
@@ -91,7 +113,10 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
       // Cancela fetch em andamento, limpa track e para follow.
       const token = ++pendingRef.current;
       clearSelection();
+      setSelectedVesselRef.current?.(null);
+      setSelectedAirportRef.current?.(null);
       onAirportSelectRef.current?.(null);
+      onVesselSelectRef.current?.(null);
 
       setSelectedRef.current(isSame ? null : icao24);
       if (!icao24 || isSame) return;

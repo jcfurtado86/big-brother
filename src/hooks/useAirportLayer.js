@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { BillboardCollection, Cartesian3, Cartesian2, Cartographic } from 'cesium';
-import { getAirportIcon, AIRPORT_TYPE_META } from '../providers/airportIcons';
+import { getAirportIcon, AIRPORT_TYPE_META, AIRPORT_TYPE_COLOR, SELECTED_AIRPORT_COLOR } from '../providers/airportIcons';
 import { LABEL_VISIBLE } from '../providers/constants';
 import AirportWorker from '../workers/airportWorker.js?worker';
 
@@ -18,6 +18,7 @@ export function useAirportLayer(viewer, activeTypes, bbox) {
   const billboardsRef  = useRef(null);
   const renderedRef    = useRef(new Map()); // icao → {icon, label, lat, lon, _type, ...data}
   const airportDataRef = useRef(new Map()); // icao → full airport data for card
+  const selectedIcaoRef = useRef(null);
   const workerRef      = useRef(null);
   const workerReadyRef = useRef(false);
   const genRef         = useRef(0);
@@ -134,9 +135,10 @@ export function useAirportLayer(viewer, activeTypes, bbox) {
       const icon = bbs.add({
         id:              'apt:' + ap.icao,
         position:        pos,
-        image:           getAirportIcon(ap.type), // canvas cacheado no main thread
+        image:           getAirportIcon(ap.type),
         width:           meta.size,
         height:          meta.size,
+        color:           AIRPORT_TYPE_COLOR[ap.type],
         scaleByDistance: meta.scale,
         show:            visible,
       });
@@ -179,5 +181,30 @@ export function useAirportLayer(viewer, activeTypes, bbox) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeKey, bboxKey]);
 
-  return { airportDataRef };
+  // ── Seleção (vermelho via billboard.color) ──────────────────────────────────
+
+  const setSelectedAirport = useCallback((icao) => {
+    const rendered = renderedRef.current;
+    const prev = selectedIcaoRef.current;
+
+    // Restaura cor original
+    if (prev) {
+      const entry = rendered.get(prev);
+      if (entry) {
+        entry.icon.color = AIRPORT_TYPE_COLOR[entry._type];
+      }
+    }
+
+    selectedIcaoRef.current = icao ?? null;
+
+    // Aplica cor vermelha
+    if (icao) {
+      const entry = rendered.get(icao);
+      if (entry) {
+        entry.icon.color = SELECTED_AIRPORT_COLOR;
+      }
+    }
+  }, []);
+
+  return { airportDataRef, setSelectedAirport };
 }

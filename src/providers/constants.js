@@ -30,6 +30,12 @@ export const PLANE_COLOR          = Color.fromCssColorString('#F2A800');
 export const SELECTED_PLANE_COLOR = Color.fromCssColorString('#FF0000');
 export const TRACK_COLOR          = Color.fromCssColorString('#A020F0').withAlpha(0.9);
 
+// ── Vessels ───────────────────────────────────────────────────────────────
+export const VESSEL_COLOR          = Color.fromCssColorString('#00BCD4');
+export const SELECTED_VESSEL_COLOR = Color.fromCssColorString('#FF0000');
+export const VESSEL_BATCH_SIZE     = 20;
+export const VESSEL_LABEL_BATCH    = 30;
+
 // ── Category heuristics ─────────────────────────────────────────────────────
 export const VEL_HEAVY            = 210;           // m/s
 export const VEL_REGIONAL         = 130;
