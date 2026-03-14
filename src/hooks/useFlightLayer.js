@@ -200,10 +200,12 @@ export function useFlightLayer(viewer, flightsMap, visibleTypes) {
 
     if (prev) {
       const entry = state.get(prev);
-      if (entry?.callsign) {
-        entry.billboard.color              = FLIGHT_CATEGORY_COLOR[entry._category] ?? FLIGHT_CATEGORY_COLOR.unknown;
-        entry.callsign.scaleByDistance        = LABEL_VISIBLE();
-        entry.callsign.translucencyByDistance = LABEL_VISIBLE();
+      if (entry) {
+        entry.billboard.color = FLIGHT_CATEGORY_COLOR[entry._category] ?? FLIGHT_CATEGORY_COLOR.unknown;
+        if (entry.callsign) {
+          entry.callsign.scaleByDistance        = LABEL_VISIBLE();
+          entry.callsign.translucencyByDistance = LABEL_VISIBLE();
+        }
       }
     }
 
@@ -211,10 +213,12 @@ export function useFlightLayer(viewer, flightsMap, visibleTypes) {
 
     if (icao) {
       const entry = state.get(icao);
-      if (entry?.callsign) {
-        entry.billboard.color              = SELECTED_PLANE_COLOR;
-        entry.callsign.scaleByDistance        = LABEL_ALWAYS;
-        entry.callsign.translucencyByDistance = LABEL_ALWAYS;
+      if (entry) {
+        entry.billboard.color = SELECTED_PLANE_COLOR;
+        if (entry.callsign) {
+          entry.callsign.scaleByDistance        = LABEL_ALWAYS;
+          entry.callsign.translucencyByDistance = LABEL_ALWAYS;
+        }
       }
     }
   }, []);

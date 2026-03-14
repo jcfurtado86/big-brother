@@ -33,6 +33,11 @@ export function lookupAircraft(icao24) {
   };
 }
 
+/** Returns true if the local DB has finished loading. */
+export function isDbReady() {
+  return _db !== null;
+}
+
 /**
  * Garante que o banco está carregado antes de fazer lookups.
  * Chame no bootstrap da aplicação ou antes do primeiro uso.

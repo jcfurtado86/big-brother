@@ -38,6 +38,14 @@ function parseAirplanesLive(data) {
       altitude:  onGround ? 0 : (typeof a.alt_baro === 'number' ? a.alt_baro : (a.alt_geom ?? 0)) * FT_TO_M,
       category:  mapCategory(a.category),
       fetchedAt: now,
+      // Inline metadata — avoids separate /hex/ call
+      _meta: (a.r || a.t || a.desc || a.ownOp || a.year) ? {
+        registration: a.r    || null,
+        model:        a.t    || null,
+        manufacturer: a.desc || null,
+        operator:     a.ownOp || null,
+        built:        a.year || null,
+      } : null,
     });
   }
   return map;

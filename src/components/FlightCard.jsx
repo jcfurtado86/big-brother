@@ -18,12 +18,13 @@ const TYPE_LABEL = {
 };
 
 export default function FlightCard({ flight, onClose, flightProvider }) {
-  const meta = useAircraftMeta(flight?.icao24 ?? null, flightProvider);
+  const meta = useAircraftMeta(flight?.icao24 ?? null, flightProvider, flight);
 
   if (!flight) return null;
 
   const callsign  = flight.callsign || flight.icao24;
   const type      = getCategoryType(flight.category, flight.velocity, flight.altitude);
+  const onGround  = flight.altitude === 0 && flight.velocity < 2;
   const flagImg   = getFlagImg(flight.country);
   const flagSrc   = flagImg?.src ?? null;
 
@@ -83,6 +84,9 @@ export default function FlightCard({ flight, onClose, flightProvider }) {
 
         <span className={styles.label}>Tipo</span>
         <span className={styles.value}>{TYPE_LABEL[type]}</span>
+
+        <span className={styles.label}>Status</span>
+        <span className={styles.value}>{onGround ? 'No solo' : 'Em voo'}</span>
 
         <span className={styles.label}>Altitude</span>
         <span className={styles.value}>{toFt(flight.altitude)} ft</span>

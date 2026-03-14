@@ -28,20 +28,22 @@ function buildMockFlights() {
 
 // ── IndexedDB cache ──────────────────────────────────────────────────────────
 
-function cacheKey(bbox) {
+function makeCacheKey(provider, bbox) {
+  if (provider.global) return `${provider.name}_global`;
   const r = (n) => Math.round(n);
-  return `${r(bbox.south)}_${r(bbox.west)}_${r(bbox.north)}_${r(bbox.east)}`;
+  return `${provider.name}_${r(bbox.south)}_${r(bbox.west)}_${r(bbox.north)}_${r(bbox.east)}`;
 }
 
-async function loadFlightCache(bbox) {
-  const data = await idbGet('flights', cacheKey(bbox));
+async function loadFlightCache(provider, bbox) {
+  const key = makeCacheKey(provider, bbox);
+  const data = await idbGet('flights', key);
   if (!data) return null;
-  if (Date.now() - data.ts > CACHE_TTL_MS) { idbDelete('flights', cacheKey(bbox)); return null; }
+  if (Date.now() - data.ts > CACHE_TTL_MS) { idbDelete('flights', key); return null; }
   return new Map(data.entries);
 }
 
-function saveFlightCache(bbox, map) {
-  idbSet('flights', cacheKey(bbox), { ts: Date.now(), entries: [...map] });
+function saveFlightCache(provider, bbox, map) {
+  idbSet('flights', makeCacheKey(provider, bbox), { ts: Date.now(), entries: [...map] });
 }
 
 // ── bbox helpers ──────────────────────────────────────────────────────────────
@@ -75,6 +77,7 @@ function expandBbox(bbox) {
 
 export function useFlights(enabled = true, bbox = undefined, providerName = 'opensky') {
   const provider   = getProvider(providerName);
+  const isGlobal   = !!provider.global;
   const bboxKey    = bboxToKey(bbox);
   const [flights, setFlights] = useState(new Map());
   const bboxRef    = useRef(bbox);
@@ -111,53 +114,66 @@ export function useFlights(enabled = true, bbox = undefined, providerName = 'ope
       if (USE_DEV_CACHE && devCache) { if (!cancelled) setFlights(devCache); return; }
       if (document.visibilityState === 'hidden') { schedule(pollInterval); return; }
 
-      const currentBbox = bboxRef.current;
-      const age         = Date.now() - fetchedAtRef.current;
+      const age = Date.now() - fetchedAtRef.current;
 
-      if (
-        fetchedBboxRef.current !== undefined &&
-        bboxContains(fetchedBboxRef.current, currentBbox) &&
-        age < pollInterval
-      ) {
-        if (!cancelled) setFlights(fetchedMapRef.current);
-        schedule(pollInterval - age);
-        return;
-      }
+      // ── Global providers: simple fixed-interval poll, no bbox logic ──
+      if (isGlobal) {
+        if (age < pollInterval && fetchedMapRef.current.size > 0) {
+          schedule(pollInterval - age);
+          return;
+        }
+      } else {
+        // ── Bbox providers: check containment ──
+        const currentBbox = bboxRef.current;
+        if (
+          fetchedBboxRef.current !== undefined &&
+          bboxContains(fetchedBboxRef.current, currentBbox) &&
+          age < pollInterval
+        ) {
+          if (!cancelled) setFlights(fetchedMapRef.current);
+          schedule(pollInterval - age);
+          return;
+        }
 
-      // Debounce rapid bbox changes — don't fetch more often than pollInterval / 3
-      const MIN_REFETCH_GAP = Math.max(pollInterval / 3, 2000);
-      if (age < MIN_REFETCH_GAP) {
-        schedule(MIN_REFETCH_GAP - age);
-        return;
+        // Debounce rapid bbox changes
+        const MIN_REFETCH_GAP = Math.max(pollInterval / 3, 2000);
+        if (age < MIN_REFETCH_GAP) {
+          schedule(MIN_REFETCH_GAP - age);
+          return;
+        }
       }
 
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
 
-      if (currentBbox !== null) {
-        const cached = await loadFlightCache(currentBbox);
+      const currentBbox = bboxRef.current;
+      const fetchBbox   = isGlobal ? null : expandBbox(currentBbox);
+
+      // Show IDB cache while fetching
+      if (!isGlobal && currentBbox !== null) {
+        const cached = await loadFlightCache(provider, currentBbox);
+        if (cached && !cancelled) setFlights(cached);
+      } else if (isGlobal) {
+        const cached = await loadFlightCache(provider, null);
         if (cached && !cancelled) setFlights(cached);
       }
-
-      const fetchBbox = expandBbox(currentBbox);
 
       try {
         const parsed = await provider.fetchFlights(fetchBbox, controller.signal);
         if (cancelled) return;
 
         if (parsed === null) {
-          // Mark as "fetched" so containment check blocks re-polls during backoff
-          fetchedBboxRef.current = fetchBbox;
+          fetchedBboxRef.current = isGlobal ? null : fetchBbox;
           fetchedAtRef.current   = Date.now();
           schedule(RETRY_INTERVAL);
           return;
         }
 
         if (USE_DEV_CACHE) devCache = parsed;
-        if (fetchBbox !== null) saveFlightCache(fetchBbox, parsed);
+        saveFlightCache(provider, fetchBbox, parsed);
 
-        fetchedBboxRef.current = fetchBbox;
+        fetchedBboxRef.current = isGlobal ? null : fetchBbox;
         fetchedAtRef.current   = Date.now();
         fetchedMapRef.current  = parsed;
 
@@ -204,7 +220,9 @@ export function useFlights(enabled = true, bbox = undefined, providerName = 'ope
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bboxReady, providerName]);
 
+  // Bbox changes trigger refetch only for non-global providers
   useEffect(() => {
+    if (isGlobal) return;
     if (bbox === undefined) return;
     refetchRef.current?.();
   // eslint-disable-next-line react-hooks/exhaustive-deps
