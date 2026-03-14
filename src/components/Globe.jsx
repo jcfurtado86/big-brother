@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { Viewer, CameraFlyTo, ImageryLayer } from 'resium';
 import { EllipsoidTerrainProvider, Cartesian3, Math as CesiumMath } from 'cesium';
 import { useCamera } from '../hooks/useCamera';
@@ -57,7 +57,37 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
   useCamera(viewer, onCameraChange);
   useSceneConfig(viewer, { lighting });
   useMousePosition(viewer, onMouseMove);
-  const flights = useFlights(showFlights, bbox, flightProvider);
+  const isAll = flightProvider === 'all';
+  const openskyFlights = useFlights(showFlights && (flightProvider === 'opensky' || isAll), bbox, 'opensky');
+  const alFlights      = useFlights(showFlights && (flightProvider === 'airplaneslive' || isAll), bbox, 'airplaneslive');
+
+  const flights = useMemo(() => {
+    if (isAll) {
+      const merged = new Map();
+      for (const [icao, os] of openskyFlights) {
+        const al = alFlights.get(icao);
+        if (al) {
+          // Enrich OpenSky with AL-exclusive fields
+          merged.set(icao, {
+            ...os,
+            military: al.military,
+            category: al.category || os.category,
+            _meta:    al._meta ?? os._meta ?? null,
+          });
+        } else {
+          merged.set(icao, os);
+        }
+      }
+      // Add AL-only flights (not in OpenSky)
+      for (const [icao, f] of alFlights) {
+        if (!merged.has(icao)) merged.set(icao, f);
+      }
+      return merged;
+    }
+    if (flightProvider === 'opensky') return openskyFlights;
+    return alFlights;
+  }, [isAll, flightProvider, openskyFlights, alFlights]);
+
   const flightsRef = useRef(flights);
   flightsRef.current = flights;
 

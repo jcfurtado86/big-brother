@@ -77,6 +77,25 @@ export function useFlightLayer(viewer, flightsMap, visibleTypes) {
         entry.fetchedAt = flight.fetchedAt;
         entry._alt      = flight.altitude;
         entry.billboard.rotation = -CesiumMath.toRadians(flight.heading);
+
+        // Update category/military if enriched by merge
+        const newMilitary = !!flight.military;
+        const newAdsbCat  = flight.category;
+        if (newMilitary !== entry._military || newAdsbCat !== entry._adsbCat) {
+          entry._military = newMilitary;
+          entry._adsbCat  = newAdsbCat;
+          const db        = lookupAircraft(icao);
+          const typeCode  = db?.typeCode ?? null;
+          const category  = getCategoryFromTypeCode(typeCode)
+                         ?? getCategoryType(newAdsbCat, entry.velocity, entry._alt, newMilitary);
+          const { w, h }  = CATEGORY_SIZE[category] ?? CATEGORY_SIZE.unknown;
+          entry._category        = category;
+          entry.billboard.image  = getIconForTypeCode(typeCode, category);
+          entry.billboard.width  = w;
+          entry.billboard.height = h;
+          entry.billboard.color  = FLIGHT_CATEGORY_COLOR[category] ?? FLIGHT_CATEGORY_COLOR.unknown;
+          entry._h = h;
+        }
       } else {
         planeQueueRef.current.push([icao, flight]);
       }

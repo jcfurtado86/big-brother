@@ -37,7 +37,7 @@ export default function App() {
   const [flightTypes, setFlightTypes] = useState(new Set(['heavy', 'large', 'regional', 'light', 'helicopter', 'uav', 'military']));
   const [vesselTypes, setVesselTypes] = useState(new Set(['cargo', 'tanker', 'passenger', 'fishing', 'sailing', 'tug', 'military', 'sar']));
   const [satelliteTypes, setSatelliteTypes] = useState(new Set(['leo', 'meo', 'geo']));
-  const [flightProvider, setFlightProvider] = useState('opensky');
+  const [flightProvider, setFlightProvider] = useState('all');
   const geoIP = useGeoIP();
 
   useEffect(() => {

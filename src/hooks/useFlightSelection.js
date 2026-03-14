@@ -182,7 +182,8 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
       if (!icao24 || isSame) return;
 
       try {
-        const trackPoints = await getProvider(providerName).fetchTrack(icao24);
+        const effectiveProvider = providerName === 'all' ? 'opensky' : providerName;
+        const trackPoints = await getProvider(effectiveProvider).fetchTrack(icao24);
         if (token !== pendingRef.current) return;
         if (!trackPoints || trackPoints.length < 2) return;
 

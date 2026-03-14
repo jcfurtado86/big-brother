@@ -6,5 +6,8 @@ import airplaneslive from './airplaneslive/airplanesLiveService';
 
 const providers = { opensky, airplaneslive };
 
-export const PROVIDER_LIST = Object.values(providers);
+export const PROVIDER_LIST = [
+  { name: 'all', label: 'Todos' },
+  ...Object.values(providers),
+];
 export const getProvider = (name) => providers[name] ?? providers.opensky;
