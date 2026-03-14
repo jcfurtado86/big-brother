@@ -16,3 +16,11 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.4);
   z-index: 10;
 }
+
+.fps {
+  color: #69F0AE;
+}
+
+.fpsLow {
+  color: #FF5252;
+}
