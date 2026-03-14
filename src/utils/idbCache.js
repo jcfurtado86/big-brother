@@ -1,6 +1,6 @@
 const DB_NAME = 'bb_cache';
-const DB_VERSION = 1;
-const STORES = ['tle', 'flights'];
+const DB_VERSION = 2;
+const STORES = ['tle', 'flights', 'vessels'];
 
 let dbPromise = null;
 

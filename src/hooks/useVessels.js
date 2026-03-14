@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { connectVesselStream } from '../providers/vesselService';
 import { computeBboxFromViewer } from '../utils/bboxUtils';
+import { idbGet, idbSet } from '../utils/idbCache';
 
 const STALE_MS = 10 * 60 * 1000;
 const CLEANUP_INTERVAL = 60_000;
@@ -82,6 +83,23 @@ export function useVessels(viewer, enabled = false) {
 
     const vesselsMap = vesselsMapRef.current;
 
+    // Load cached vessels from IDB while WebSocket connects
+    idbGet('vessels', 'vessels_all').then(cached => {
+      if (!cached || !enabled) return;
+      const now = Date.now();
+      let loaded = 0;
+      for (const [mmsi, v] of cached.entries) {
+        if (now - v.fetchedAt < STALE_MS) {
+          vesselsMap.set(mmsi, v);
+          loaded++;
+        }
+      }
+      if (loaded > 0) {
+        console.log('[vessels] loaded', loaded, 'from IDB cache');
+        setVessels(new Map(vesselsMap));
+      }
+    });
+
     const initialBbox = computeBboxFromViewer(viewer);
     console.log('[vessels] connecting — bbox:', initialBbox);
 
@@ -92,11 +110,12 @@ export function useVessels(viewer, enabled = false) {
     );
     streamRef.current = stream;
 
-    // Flush accumulated updates to React state
+    // Flush accumulated updates to React state + persist to IDB
     const flushId = setInterval(() => {
       if (vesselsMap.size > 0) {
         console.log('[vessels] total:', vesselsMap.size);
         setVessels(new Map(vesselsMap));
+        idbSet('vessels', 'vessels_all', { ts: Date.now(), entries: [...vesselsMap] });
       }
     }, FLUSH_INTERVAL);
 
