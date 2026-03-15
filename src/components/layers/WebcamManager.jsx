@@ -11,7 +11,7 @@ export default function WebcamManager({ onWebcamSelect }) {
   const webcams = useLayerState('webcams');
 
   const activeTypes = webcams.show ? webcams.types : emptySet;
-  const pointsMap = useWebcamData(viewer, webcams.show);
+  const pointsMap = useWebcamData(viewer, webcams.show, webcams.provider);
   const { stateRef, setSelected } = useWebcamLayer(viewer, pointsMap, activeTypes);
 
   useSelectionHandler('webcams', {

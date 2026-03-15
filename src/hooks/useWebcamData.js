@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { fetchWebcamsForViewer, loadWebcamCache } from '../providers/webcamService';
+import { fetchOtcmCameras } from '../providers/otcmService';
 import { computeBboxFromViewer } from '../utils/bboxUtils';
 import { getSetting } from '../providers/settingsStore';
 import { useLoading } from '../contexts/LoadingContext';
 
 /**
- * Webcam data hook — fetches from Windy API based on current viewport,
- * accumulates results in IDB cache across sessions.
- * Only active below WEBCAM_MAX_ALT.
+ * Webcam data hook — fetches from selected provider based on current viewport.
+ * Windy: viewport-based API fetch with IDB cache.
+ * OTCM: static dataset, fetched once and filtered client-side.
  */
-export function useWebcamData(viewer, enabled = false) {
+export function useWebcamData(viewer, enabled = false, provider = 'windy') {
   const [pointsMap, setPointsMap] = useState(new Map());
   const debounceRef = useRef(null);
   const abortRef = useRef(null);
@@ -32,7 +33,12 @@ export function useWebcamData(viewer, enabled = false) {
 
     loadStart();
     try {
-      const all = await fetchWebcamsForViewer(viewer, controller.signal);
+      let all;
+      if (provider === 'otcm') {
+        all = await fetchOtcmCameras();
+      } else {
+        all = await fetchWebcamsForViewer(viewer, controller.signal);
+      }
       if (controller.signal.aborted) return;
 
       // Filter to visible bbox
@@ -59,7 +65,7 @@ export function useWebcamData(viewer, enabled = false) {
     } finally {
       loadDone();
     }
-  }, [viewer, loadStart, loadDone]);
+  }, [viewer, provider, loadStart, loadDone]);
 
   useEffect(() => {
     if (!viewer || !enabled) {
@@ -67,9 +73,13 @@ export function useWebcamData(viewer, enabled = false) {
       return;
     }
 
-    // Hydrate from IDB cache on mount
+    // Hydrate from cache on mount
     loadStart();
-    loadWebcamCache().then(() => {
+    const hydrate = provider === 'otcm'
+      ? fetchOtcmCameras().then(() => {})
+      : loadWebcamCache().then(() => {});
+
+    hydrate.then(() => {
       fetchVisible();
     }).finally(() => loadDone());
 
@@ -93,7 +103,7 @@ export function useWebcamData(viewer, enabled = false) {
       clearTimeout(debounceRef.current);
       abortRef.current?.abort();
     };
-  }, [viewer, enabled, fetchVisible]);
+  }, [viewer, enabled, provider, fetchVisible]);
 
   return pointsMap;
 }

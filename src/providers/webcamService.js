@@ -95,6 +95,7 @@ function parseWebcam(wc) {
     region: loc.region ?? '',
     country: loc.country ?? '',
     countryCode: loc.countryCode ?? '',
+    provider: 'Windy',
     status: wc.status ?? 'unknown',
     playerUrl: `https://webcams.windy.com/webcams/public/embed/player/${wcId}/${category === 'live' ? 'live' : 'day'}`,
     playerFallbackUrl: `https://webcams.windy.com/webcams/public/embed/player/${wcId}/day`,

@@ -57,6 +57,7 @@ export default function WebcamCard({ webcam, onClose }) {
   // Always embed the day/timelapse player (works reliably in iframe)
   const embedUrl = webcam.playerFallbackUrl ?? webcam.playerUrl;
   const liveUrl = webcam.category === 'live' ? webcam.playerUrl : null;
+  const streamUrl = webcam.streamUrl ?? null;
   const previewUrl = webcam.imageUrl;
 
   const toggle = useCallback(() => {
@@ -166,11 +167,33 @@ export default function WebcamCard({ webcam, onClose }) {
               title={webcam.title}
             />
           )
+        ) : streamUrl ? (
+          fullscreen ? (
+            <div style={playerWrapStyle}>
+              <video
+                src={streamUrl}
+                style={playerStyle}
+                controls
+                autoPlay
+                muted
+                title={webcam.title}
+              />
+            </div>
+          ) : (
+            <video
+              src={streamUrl}
+              style={playerStyle}
+              controls
+              autoPlay
+              muted
+              title={webcam.title}
+            />
+          )
         ) : previewUrl ? (
           <img src={previewUrl} alt={webcam.title} style={imgStyle} />
         ) : null}
 
-        {(embedUrl || previewUrl) && (
+        {(embedUrl || streamUrl || previewUrl) && (
           <button
             onClick={toggle}
             style={{
@@ -196,9 +219,9 @@ export default function WebcamCard({ webcam, onClose }) {
       {/* Grid details — hidden in fullscreen */}
       {!fullscreen && (
         <>
-          {liveUrl && (
+          {(liveUrl || streamUrl) && (
             <a
-              href={liveUrl}
+              href={liveUrl || streamUrl}
               target="_blank"
               rel="noreferrer"
               style={{
@@ -221,6 +244,7 @@ export default function WebcamCard({ webcam, onClose }) {
           )}
           <div className={styles.grid}>
             <Row label="Status" value={meta.label} />
+            <Row label="Provedor" value={webcam.provider ?? 'Windy'} />
             <Row label="Pais" value={webcam.country} />
             <Row label="Posicao" value={
               webcam.lat != null

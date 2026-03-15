@@ -11,6 +11,7 @@ import { ACLED_CATEGORIES, ACLED_CATEGORY_META } from '../providers/acledIcons';
 import { NUCLEAR_CATEGORIES, NUCLEAR_CATEGORY_META } from '../providers/nuclearIcons';
 import { AIRSPACE_CATEGORIES, AIRSPACE_CATEGORY_META } from '../providers/airspaceIcons';
 import { WEBCAM_CATEGORIES, WEBCAM_CATEGORY_META } from '../providers/webcamIcons';
+import { WEBCAM_PROVIDER_LIST } from '../providers/webcamProviders';
 import { PROVIDER_LIST } from '../providers/flightProviders';
 import { SEA_ROUTE_CATEGORIES, SEA_ROUTE_CATEGORY_META, AIR_ROUTE_CATEGORIES, AIR_ROUTE_CATEGORY_META } from '../providers/constants';
 import { layers } from '../providers/layers';
@@ -148,6 +149,18 @@ export default function ControlPanel() {
       {/* Cameras */}
       <Card icon="📷" label="Cameras">
         <Toggle label="Cameras ao vivo" active={webcams.show} onToggle={() => toggle('webcams')} />
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Provedor</span>
+          <select
+            className={styles.select}
+            value={webcams.provider}
+            onChange={e => setField('webcams', 'provider', e.target.value)}
+          >
+            {WEBCAM_PROVIDER_LIST.map(p => (
+              <option key={p.name} value={p.name}>{p.label}</option>
+            ))}
+          </select>
+        </div>
         <TypeFilter types={WEBCAM_CATEGORIES} activeSet={webcams.types} onChange={t => setTypes('webcams', t)} items={WEBCAM_CATEGORY_META} />
       </Card>
 
