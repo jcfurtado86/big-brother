@@ -20,9 +20,12 @@ import { useSatellites }      from '../hooks/useSatellites';
 import { useSatelliteLayer }  from '../hooks/useSatelliteLayer';
 import { useTelecom }         from '../hooks/useTelecom';
 import { useTelecomLayer }    from '../hooks/useTelecomLayer';
+import { useAdsbReceivers }   from '../hooks/useAdsbReceivers';
+import { useAisStations }     from '../hooks/useAisStations';
+import { useReceiverLayer }   from '../hooks/useReceiverLayer';
 import { computeBboxFromViewer } from '../utils/bboxUtils';
 
-export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, showFlights, flightTypes, showAirports, airportTypes, showWeather, weatherOpacity, showVessels, vesselTypes, showSatellites, onSatelliteSelect, satelliteTypes, showTelecom, telecomTypes, flightProvider, showAirRoutes, showSeaRoutes, airRouteTypes, seaRouteTypes }) {
+export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, showFlights, flightTypes, showAirports, airportTypes, showWeather, weatherOpacity, showVessels, vesselTypes, showSatellites, onSatelliteSelect, satelliteTypes, showTelecom, telecomTypes, flightProvider, showAirRoutes, showSeaRoutes, airRouteTypes, seaRouteTypes, showAdsbReceivers, showAisStations }) {
   const viewerRef = useRef(null);
   const wrapperRef = useRef(null);
   const [viewer, setViewer] = useState(null);
@@ -177,6 +180,12 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
   const activeTelecomTypes = showTelecom ? effectiveTelecomTypes : emptySet;
   const { pointsMap: telecomPoints, lines: telecomLines } = useTelecom(viewer, showTelecom);
   const { stateRef: telecomStateRef } = useTelecomLayer(viewer, telecomPoints, telecomLines, activeTelecomTypes);
+
+  // Receivers (antenas ADS-B e AIS)
+  const adsbReceivers = useAdsbReceivers(showAdsbReceivers);
+  const aisStations   = useAisStations(showAisStations);
+  useReceiverLayer(viewer, adsbReceivers, 'adsb', showAdsbReceivers);
+  useReceiverLayer(viewer, aisStations, 'ais', showAisStations);
 
   // Visibility filter — camera-change + type toggles, all in one hook
   useVisibilityFilter(viewer, [

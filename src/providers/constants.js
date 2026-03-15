@@ -97,6 +97,12 @@ export const AIR_ROUTE_CATEGORY_META = {
   long:   { label: 'Longa (>5000km)', color: '#E65100' },
 };
 
+// ── Receivers (antenas) ───────────────────────────────────────────────────────
+export const ADSB_RECEIVERS_POLL_MS  = 5 * 60 * 1000;  // polling a cada 5 min
+export const AIS_STATION_FLUSH_MS    = 3_000;           // flush WS → state
+export const RECEIVER_MAX_ALT        = 3_000_000;       // metros — acima disso esconde
+export const RECEIVER_CIRCLE_SEGMENTS = 64;             // vértices por círculo de range
+
 // ── Category heuristics ─────────────────────────────────────────────────────
 export const VEL_HEAVY            = 210;           // m/s
 export const VEL_REGIONAL         = 130;

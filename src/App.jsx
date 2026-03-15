@@ -45,6 +45,8 @@ export default function App() {
   const [showSeaRoutes, setShowSeaRoutes] = useState(false);
   const [airRouteTypes, setAirRouteTypes] = useState(new Set(['short', 'medium', 'long']));
   const [seaRouteTypes, setSeaRouteTypes] = useState(new Set(['major', 'middle', 'minor']));
+  const [showAdsbReceivers, setShowAdsbReceivers] = useState(false);
+  const [showAisStations, setShowAisStations] = useState(false);
   const geoIP = useGeoIP();
 
   useEffect(() => {
@@ -96,6 +98,8 @@ export default function App() {
         showSeaRoutes={showSeaRoutes}
         airRouteTypes={airRouteTypes}
         seaRouteTypes={seaRouteTypes}
+        showAdsbReceivers={showAdsbReceivers}
+        showAisStations={showAisStations}
       />
       <SearchBox onSelect={handleLocationSelect} />
       <InfoBar coords={coords} mouseCoords={mouseCoords} />
@@ -141,6 +145,10 @@ export default function App() {
         onSeaRoutesToggle={() => setShowSeaRoutes(v => !v)}
         seaRouteTypes={seaRouteTypes}
         onSeaRouteTypesChange={setSeaRouteTypes}
+        showAdsbReceivers={showAdsbReceivers}
+        onAdsbReceiversToggle={() => setShowAdsbReceivers(v => !v)}
+        showAisStations={showAisStations}
+        onAisStationsToggle={() => setShowAisStations(v => !v)}
       />
       <FlightCard flight={selectedFlight} onClose={() => setSelectedFlight(null)} flightProvider={flightProvider} showAirRoutes={showAirRoutes} onAirRoutesToggle={() => setShowAirRoutes(v => !v)} />
       <AirportCard airport={selectedAirport} onClose={() => setSelectedAirport(null)} />

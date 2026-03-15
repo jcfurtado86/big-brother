@@ -75,6 +75,8 @@ export default function ControlPanel({
   flightProvider, onFlightProviderChange,
   showAirRoutes, onAirRoutesToggle, airRouteTypes, onAirRouteTypesChange,
   showSeaRoutes, onSeaRoutesToggle, seaRouteTypes, onSeaRouteTypesChange,
+  showAdsbReceivers, onAdsbReceiversToggle,
+  showAisStations, onAisStationsToggle,
 }) {
   return (
     <div className={styles.panel}>
@@ -97,6 +99,8 @@ export default function ControlPanel({
         <Separator />
         <Toggle label="Rotas marítimas" active={showSeaRoutes} onToggle={onSeaRoutesToggle} />
         <TypeFilter types={SEA_ROUTE_CATEGORIES} activeSet={seaRouteTypes} onChange={onSeaRouteTypesChange} items={SEA_ROUTE_CATEGORY_META} />
+        <Separator />
+        <Toggle label="Antenas AIS" active={showAisStations} onToggle={onAisStationsToggle} />
       </Card>
 
       {/* Tráfego Aéreo */}
@@ -121,6 +125,8 @@ export default function ControlPanel({
         <Separator />
         <Toggle label="Aeroportos" active={showAirports} onToggle={onAirportsToggle} />
         <TypeFilter types={AIRPORT_TYPES} activeSet={airportTypes} onChange={onAirportTypesChange} items={AIRPORT_TYPE_META} />
+        <Separator />
+        <Toggle label="Antenas ADS-B" active={showAdsbReceivers} onToggle={onAdsbReceiversToggle} />
       </Card>
 
       {/* Ambiente — mapa base, iluminação, nuvens */}

@@ -38,9 +38,9 @@ export default function aisProxyPlugin() {
 
       const wss = new WebSocketServer({ noServer: true });
 
-      // Intercepta upgrade requests em /ws/vessels
+      // Intercepta upgrade requests em /ws/vessels e /ws/ais-stations
       server.httpServer.on('upgrade', (req, socket, head) => {
-        if (req.url !== '/ws/vessels') return; // deixa o Vite HMR passar
+        if (req.url !== '/ws/vessels' && req.url !== '/ws/ais-stations') return;
 
         wss.handleUpgrade(req, socket, head, (clientWs) => {
           wss.emit('connection', clientWs, req);
@@ -102,7 +102,7 @@ export default function aisProxyPlugin() {
         });
       });
 
-      console.log('[ais-proxy] WebSocket proxy ready on /ws/vessels');
+      console.log('[ais-proxy] WebSocket proxy ready on /ws/vessels + /ws/ais-stations');
     },
   };
 }

@@ -42,6 +42,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace('/api/openinframap', ''),
       },
+      '/api/mlat': {
+        target: 'https://mlat.adsb.lol',
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api/mlat', ''),
+      },
     },
   },
 });
