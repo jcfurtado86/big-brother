@@ -36,7 +36,7 @@ export default function Globe({ initialView, flyTarget, resetKey, onCameraChange
     check();
   }, []);
 
-  // 3D terrain via Cesium Ion + reveal globe only after everything loads
+  // Reveal globe after imagery tiles load
   useEffect(() => {
     if (!viewer) return;
     const wrapper = wrapperRef.current;
@@ -49,35 +49,44 @@ export default function Globe({ initialView, flyTarget, resetKey, onCameraChange
       console.log('[globe] revealed');
     };
 
-    const waitForTiles = () => {
-      if (viewer.scene.globe.tilesLoaded) {
-        reveal();
-      } else {
-        const remove = viewer.scene.globe.tileLoadProgressEvent.addEventListener((remaining) => {
-          if (remaining === 0) { remove(); reveal(); }
-        });
-      }
-    };
-
     const token = import.meta.env.VITE_CESIUM_ION_TOKEN;
-    if (!token) {
-      console.warn('[terrain] no VITE_CESIUM_ION_TOKEN — using flat ellipsoid');
-      waitForTiles();
+    if (token) Ion.defaultAccessToken = token;
+
+    if (viewer.scene.globe.tilesLoaded) {
+      reveal();
     } else {
-      Ion.defaultAccessToken = token;
-      console.log('[terrain] loading Cesium World Terrain...');
-      createWorldTerrainAsync().then(tp => {
-        viewer.terrainProvider = tp;
-        console.log('[terrain] 3D terrain active');
-        waitForTiles();
-      }).catch(e => {
-        console.error('[terrain] failed:', e.message);
-        waitForTiles();
+      const remove = viewer.scene.globe.tileLoadProgressEvent.addEventListener((remaining) => {
+        if (remaining === 0) { remove(); reveal(); }
       });
     }
 
     setTimeout(reveal, 8000);
   }, [viewer]);
+
+  // 3D terrain toggle
+  const worldTerrainRef = useRef(null);
+  const flatTerrain = useRef(new EllipsoidTerrainProvider());
+
+  useEffect(() => {
+    if (!viewer) return;
+    if (!envCfg.terrain) {
+      viewer.terrainProvider = flatTerrain.current;
+      return;
+    }
+    if (!import.meta.env.VITE_CESIUM_ION_TOKEN) return;
+
+    if (worldTerrainRef.current) {
+      viewer.terrainProvider = worldTerrainRef.current;
+    } else {
+      createWorldTerrainAsync().then(tp => {
+        worldTerrainRef.current = tp;
+        viewer.terrainProvider = tp;
+        console.log('[terrain] 3D terrain active');
+      }).catch(e => {
+        console.error('[terrain] failed:', e.message);
+      });
+    }
+  }, [viewer, envCfg.terrain]);
 
   // Bbox tracking
   const [bbox, setBbox] = useState(undefined);

@@ -10,7 +10,7 @@ const INITIAL_STATE = {
   airRoutes:   { show: false, types: new Set(['short', 'medium', 'long']) },
   seaRoutes:   { show: false, types: new Set(['major', 'middle', 'minor']) },
   receivers:   { adsbShow: false, aisShow: false, adsbOpacity: 0.15, aisOpacity: 0.15 },
-  environment: { layerId: 'satellite', lighting: false },
+  environment: { layerId: 'satellite', lighting: false, terrain: false },
 };
 
 function layerReducer(state, action) {

@@ -173,6 +173,7 @@ export default function ControlPanel() {
             </button>
           ))}
         </div>
+        <Toggle icon="⛰️" label="Relevo 3D" active={env.terrain} onToggle={() => toggleF('environment', 'terrain')} />
         <Toggle icon="🌙" label="Ciclo dia/noite" active={env.lighting} onToggle={() => toggleF('environment', 'lighting')} />
         <div className={styles.row} style={{ cursor: 'default' }}>
           <span className={styles.rowIcon}>☁️</span>
