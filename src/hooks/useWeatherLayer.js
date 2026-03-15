@@ -1,12 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { Rectangle as CesiumRectangle, ImageMaterialProperty, Color, CallbackProperty } from 'cesium';
-import { OWM_TILE_URL } from '../providers/constants';
+import { OWM_TILE_URL, WEATHER_ZOOM, WEATHER_REFRESH_MS } from '../providers/constants';
 
 const OWM_KEY    = import.meta.env.VITE_OWM_API_KEY || '';
-const ZOOM       = 2;        // 4×4 = 16 tiles per layer
-const N          = 1 << ZOOM;
-const REFRESH_MS = 60 * 60 * 1000;  // 60 min — keeps under OWM free tier (1000 calls/day)
-const CACHE_TTL  = REFRESH_MS;      // cache válido pelo mesmo período
+const N          = 1 << WEATHER_ZOOM;
+const CACHE_TTL  = WEATHER_REFRESH_MS;
 
 const LAYERS = [
   { layer: 'clouds_new', alt: 25_000 },
@@ -18,7 +16,7 @@ const LAYERS = [
 const tileCache = new Map();
 
 function tileCacheKey(layerName, x, y) {
-  return `${layerName}/${ZOOM}/${x}/${y}`;
+  return `${layerName}/${WEATHER_ZOOM}/${x}/${y}`;
 }
 
 function boostAlpha(blob) {
@@ -50,7 +48,7 @@ async function fetchTileBlob(layerName, x, y) {
     return cached.blobUrl;
   }
 
-  const url = `${OWM_TILE_URL}/${layerName}/${ZOOM}/${x}/${y}.png?appid=${OWM_KEY}`;
+  const url = `${OWM_TILE_URL}/${layerName}/${WEATHER_ZOOM}/${x}/${y}.png?appid=${OWM_KEY}`;
   try {
     const res = await fetch(url);
     if (!res.ok) return cached?.blobUrl ?? url;
@@ -104,7 +102,7 @@ function addCachedEntities(viewer, list, opacityRef) {
         const cached = tileCache.get(key);
         if (!cached) continue;
 
-        const b = tileBounds(ZOOM, x, y);
+        const b = tileBounds(WEATHER_ZOOM, x, y);
         const entity = viewer.entities.add({
           rectangle: {
             coordinates: CesiumRectangle.fromDegrees(b.west, b.south, b.east, b.north),
@@ -130,6 +128,11 @@ export function useWeatherLayer(viewer, active, opacity = 0.5) {
   const opacityRef   = useRef(opacity);
   opacityRef.current = opacity;
 
+  // Trigger render when opacity slider changes
+  useEffect(() => {
+    if (viewer && active) viewer.scene.requestRender();
+  }, [viewer, active, opacity]);
+
   // Rebuild tiles quando liga/desliga ou viewer muda
   useEffect(() => {
     if (!viewer || !active || !OWM_KEY) return;
@@ -146,7 +149,7 @@ export function useWeatherLayer(viewer, active, opacity = 0.5) {
     }
 
     update();
-    intervalRef.current = setInterval(update, REFRESH_MS);
+    intervalRef.current = setInterval(update, WEATHER_REFRESH_MS);
 
     return () => {
       cancelled = true;

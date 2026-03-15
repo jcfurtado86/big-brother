@@ -18,7 +18,7 @@ const TYPE_LABEL = {
   unknown:    'Unknown',
 };
 
-export default function FlightCard({ flight, onClose, flightProvider }) {
+export default function FlightCard({ flight, onClose, flightProvider, showAirRoutes, onAirRoutesToggle }) {
   const meta = useAircraftMeta(flight?.icao24 ?? null, flightProvider, flight);
 
   if (!flight) return null;
@@ -111,6 +111,16 @@ export default function FlightCard({ flight, onClose, flightProvider }) {
           <span className={isEmergencySquawk ? styles.emergency : styles.value}>{squawk}</span>
         </>}
       </div>
+
+      <div className={styles.divider} />
+
+      <label className={styles.toggleRow} onClick={onAirRoutesToggle}>
+        <span className={styles.toggleLabel}>Rotas aéreas</span>
+        <span className={styles.toggleSwitch}>
+          <input type="checkbox" checked={showAirRoutes} readOnly />
+          <span className={styles.toggleTrack} />
+        </span>
+      </label>
     </div>
   );
 }

@@ -2,13 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { connectVesselStream } from '../providers/vesselService';
 import { computeBboxFromViewer } from '../utils/bboxUtils';
 import { idbGet, idbSet, idbPurgeExpired } from '../utils/idbCache';
+import { VESSEL_STALE_MS, VESSEL_CLEANUP_MS, VESSEL_FLUSH_MS, VESSEL_BBOX_DEBOUNCE } from '../providers/constants';
 
-const STALE_MS = 10 * 60 * 1000;
 // Purge expired vessel cache on startup
-idbPurgeExpired('vessels', STALE_MS);
-const CLEANUP_INTERVAL = 60_000;
-const FLUSH_INTERVAL   = 2_000;
-const BBOX_DEBOUNCE_MS = 2_000;
+idbPurgeExpired('vessels', VESSEL_STALE_MS);
 
 const USE_MOCK = import.meta.env.VITE_MOCK_VESSELS === 'true';
 
@@ -91,7 +88,7 @@ export function useVessels(viewer, enabled = false) {
       const now = Date.now();
       let loaded = 0;
       for (const [mmsi, v] of cached.entries) {
-        if (now - v.fetchedAt < STALE_MS) {
+        if (now - v.fetchedAt < VESSEL_STALE_MS) {
           vesselsMap.set(mmsi, v);
           loaded++;
         }
@@ -121,14 +118,14 @@ export function useVessels(viewer, enabled = false) {
         setVessels(new Map(vesselsMap));
         idbSet('vessels', 'vessels_all', { ts: Date.now(), entries: [...vesselsMap] });
       }
-    }, FLUSH_INTERVAL);
+    }, VESSEL_FLUSH_MS);
 
     // Evict stale vessels
     const cleanupId = setInterval(() => {
       const now = Date.now();
       let removed = 0;
       for (const [mmsi, v] of vesselsMap) {
-        if (now - v.fetchedAt > STALE_MS) {
+        if (now - v.fetchedAt > VESSEL_STALE_MS) {
           vesselsMap.delete(mmsi);
           removed++;
         }
@@ -137,7 +134,7 @@ export function useVessels(viewer, enabled = false) {
         console.log('[vessels] evicted', removed, '| remaining:', vesselsMap.size);
         setVessels(new Map(vesselsMap));
       }
-    }, CLEANUP_INTERVAL);
+    }, VESSEL_CLEANUP_MS);
 
     return () => {
       stream.close();
@@ -169,7 +166,7 @@ export function useVessels(viewer, enabled = false) {
 
         console.log('[vessels] updating bbox:', bbox);
         stream.updateBbox(bbox);
-      }, BBOX_DEBOUNCE_MS);
+      }, VESSEL_BBOX_DEBOUNCE);
     };
 
     const removeListener = viewer.camera.changed.addEventListener(onCameraChanged);

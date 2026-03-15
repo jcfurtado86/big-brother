@@ -6,10 +6,8 @@ import { useBillboardLayer } from './useBillboardLayer';
 import {
   SELECTED_SATELLITE_COLOR,
   SATELLITE_BATCH_SIZE, SATELLITE_LABEL_BATCH,
-  TICK_INTERVAL_MS,
+  TICK_INTERVAL_MS, SAT_ICON_SIZE,
 } from '../providers/constants';
-
-const SAT_SIZE = 24;
 
 export function useSatelliteLayer(viewer, satellitesMap, visibleTypes) {
   const config = useMemo(() => ({
@@ -31,8 +29,8 @@ export function useSatelliteLayer(viewer, satellitesMap, visibleTypes) {
         id: `sat_${id}`,
         position: cart,
         image: getSatelliteIcon(),
-        width: SAT_SIZE,
-        height: SAT_SIZE,
+        width: SAT_ICON_SIZE,
+        height: SAT_ICON_SIZE,
         show,
         color: SATELLITE_CATEGORY_COLOR[category],
       });
@@ -45,7 +43,7 @@ export function useSatelliteLayer(viewer, satellitesMap, visibleTypes) {
           tle,
           lat, lon, alt,
           velocity: pos?.velocity ?? null,
-          _h: SAT_SIZE,
+          _h: SAT_ICON_SIZE,
           _name: tle.name,
           _category: category,
         },

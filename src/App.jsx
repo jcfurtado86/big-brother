@@ -40,6 +40,8 @@ export default function App() {
   const [showTelecom, setShowTelecom] = useState(false);
   const [telecomTypes, setTelecomTypes] = useState(new Set(['mast', 'comm_line', 'data_center']));
   const [flightProvider, setFlightProvider] = useState('all');
+  const [showAirRoutes, setShowAirRoutes] = useState(false);
+  const [showSeaRoutes, setShowSeaRoutes] = useState(false);
   const geoIP = useGeoIP();
 
   useEffect(() => {
@@ -125,9 +127,9 @@ export default function App() {
         telecomTypes={telecomTypes}
         onTelecomTypesChange={setTelecomTypes}
       />
-      <FlightCard flight={selectedFlight} onClose={() => setSelectedFlight(null)} flightProvider={flightProvider} />
+      <FlightCard flight={selectedFlight} onClose={() => setSelectedFlight(null)} flightProvider={flightProvider} showAirRoutes={showAirRoutes} onAirRoutesToggle={() => setShowAirRoutes(v => !v)} />
       <AirportCard airport={selectedAirport} onClose={() => setSelectedAirport(null)} />
-      <VesselCard vessel={selectedVessel} onClose={() => setSelectedVessel(null)} />
+      <VesselCard vessel={selectedVessel} onClose={() => setSelectedVessel(null)} showSeaRoutes={showSeaRoutes} onSeaRoutesToggle={() => setShowSeaRoutes(v => !v)} />
       <SatelliteCard satellite={selectedSatellite} onClose={() => setSelectedSatellite(null)} />
     </>
   );

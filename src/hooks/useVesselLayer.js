@@ -2,13 +2,11 @@ import { useMemo } from 'react';
 import { Cartesian3, Math as CesiumMath } from 'cesium';
 import { getVesselCategory, getVesselIcon, VESSEL_CATEGORY_COLOR } from '../providers/vesselIcons';
 import { useBillboardLayer } from './useBillboardLayer';
-import { SELECTED_VESSEL_COLOR, VESSEL_BATCH_SIZE, VESSEL_LABEL_BATCH } from '../providers/constants';
+import { SELECTED_VESSEL_COLOR, VESSEL_BATCH_SIZE, VESSEL_LABEL_BATCH, VESSEL_MIN_LEN, VESSEL_MAX_LEN, VESSEL_MIN_PX, VESSEL_MAX_PX } from '../providers/constants';
 
-const MIN_LEN = 10, MAX_LEN = 400;
-const MIN_PX  = 28, MAX_PX  = 56;
 function vesselSize(length) {
-  const l = Math.max(MIN_LEN, Math.min(MAX_LEN, length || MIN_LEN));
-  return Math.round(MIN_PX + (MAX_PX - MIN_PX) * (l - MIN_LEN) / (MAX_LEN - MIN_LEN));
+  const l = Math.max(VESSEL_MIN_LEN, Math.min(VESSEL_MAX_LEN, length || VESSEL_MIN_LEN));
+  return Math.round(VESSEL_MIN_PX + (VESSEL_MAX_PX - VESSEL_MIN_PX) * (l - VESSEL_MIN_LEN) / (VESSEL_MAX_LEN - VESSEL_MIN_LEN));
 }
 
 export function useVesselLayer(viewer, vesselsMap, visibleTypes) {

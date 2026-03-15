@@ -34,7 +34,7 @@ function Row({ label, value }) {
   </>;
 }
 
-export default function VesselCard({ vessel, onClose }) {
+export default function VesselCard({ vessel, onClose, showSeaRoutes, onSeaRoutesToggle }) {
   if (!vessel) return null;
 
   const category = getVesselCategory(vessel.shipType);
@@ -100,6 +100,16 @@ export default function VesselCard({ vessel, onClose }) {
 
         <Row label="Último sinal" value={vessel.timeUtc ? new Date(vessel.timeUtc).toLocaleTimeString('pt-BR') : null} />
       </div>
+
+      <div className={styles.divider} />
+
+      <label className={styles.toggleRow} onClick={onSeaRoutesToggle}>
+        <span className={styles.toggleLabel}>Rotas marítimas</span>
+        <span className={styles.toggleSwitch}>
+          <input type="checkbox" checked={showSeaRoutes} readOnly />
+          <span className={styles.toggleTrack} />
+        </span>
+      </label>
     </div>
   );
 }

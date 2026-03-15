@@ -19,6 +19,13 @@ export const DEAD_RECKONING_MS    = 500;
 export const PLANE_BATCH_SIZE     = 20;            // billboards por frame
 export const CALLSIGN_BATCH_SIZE  = 30;            // labels por idle slice
 export const FETCH_PADDING        = 0.5;           // expansão do bbox de busca
+export const FLIGHT_RETRY_MS      = Number(import.meta.env.VITE_RETRY_INTERVAL_MS ?? 1_200_000);
+export const FLIGHT_CACHE_TTL_MS  = Number(import.meta.env.VITE_FLIGHT_CACHE_TTL_MS ?? 5 * 60_000);
+
+// ── Flight providers ────────────────────────────────────────────────────────
+export const AL_POLL_MS           = 10_000;        // airplanes.live polling
+export const AL_RETRY_MS          = 5_000;         // airplanes.live retry
+export const AL_MIN_GAP_MS        = 1_100;         // min gap between AL requests
 
 // ── Labels ──────────────────────────────────────────────────────────────────
 export const LABEL_NEAR           = 2_000_000;     // metros (100% visível abaixo)
@@ -30,20 +37,43 @@ export const LABEL_ALWAYS         = new NearFarScalar(1, 1.0, 1e10, 1.0);
 export const SELECTED_PLANE_COLOR = Color.fromCssColorString('#FF0000');
 export const TRACK_COLOR          = Color.fromCssColorString('#A020F0').withAlpha(0.9);
 
-// ── Vessels ───────────────────────────────────────────────────────────────
+// ── Vessels ─────────────────────────────────────────────────────────────────
 export const SELECTED_VESSEL_COLOR = Color.fromCssColorString('#FF0000');
 export const VESSEL_BATCH_SIZE     = 20;
 export const VESSEL_LABEL_BATCH    = 30;
+export const VESSEL_STALE_MS       = 10 * 60 * 1000;  // 10 min — eviction threshold
+export const VESSEL_CLEANUP_MS     = 60_000;           // intervalo de limpeza
+export const VESSEL_FLUSH_MS       = 2_000;            // flush WS → React state
+export const VESSEL_BBOX_DEBOUNCE  = 2_000;            // debounce da atualização de bbox
+export const VESSEL_MIN_LEN        = 10;               // metros (escala de ícone)
+export const VESSEL_MAX_LEN        = 400;
+export const VESSEL_MIN_PX         = 28;               // pixels (tamanho de ícone)
+export const VESSEL_MAX_PX         = 56;
 
-// ── Satellites ─────────────────────────────────────────────────────────────
+// ── Satellites ──────────────────────────────────────────────────────────────
 export const SELECTED_SATELLITE_COLOR = Color.fromCssColorString('#FF0000');
 export const SATELLITE_BATCH_SIZE     = 50;
 export const SATELLITE_LABEL_BATCH    = 30;
 export const SATELLITE_POLL_MS        = 24 * 60 * 60 * 1000;  // 1 fetch por dia
+export const SAT_ICON_SIZE            = 24;
 
-// ── Tick / Follow ─────────────────────────────────────────────────────────
+// ── Tick / Follow ───────────────────────────────────────────────────────────
 export const TICK_INTERVAL_MS         = 500;  // propagação + camera follow
 export const CELESTRAK_URL            = 'https://celestrak.org/NORAD/elements/gp.php';
+
+// ── Telecom ─────────────────────────────────────────────────────────────────
+export const TELECOM_DEBOUNCE_MS  = 500;
+export const TELECOM_MIN_ZOOM     = 5;
+export const TELECOM_MAX_ZOOM     = 14;
+export const TELECOM_MAX_TILES    = 40;
+export const TELECOM_MAST_SIZE    = 20;            // pixels
+export const TELECOM_DC_SIZE      = 24;            // pixels
+export const TELECOM_TTL_MS       = 7 * 24 * 60 * 60 * 1000;  // 7 dias — IDB cache
+export const TELECOM_MAX_CACHE    = 200;           // max in-memory tiles
+
+// ── Weather ─────────────────────────────────────────────────────────────────
+export const WEATHER_ZOOM         = 2;             // tile zoom (4×4 = 16 tiles)
+export const WEATHER_REFRESH_MS   = 60 * 60 * 1000;  // 60 min
 
 // ── Category heuristics ─────────────────────────────────────────────────────
 export const VEL_HEAVY            = 210;           // m/s
@@ -54,7 +84,7 @@ export const ALT_HEAVY            = 9_000;         // metros
 // ── Search ──────────────────────────────────────────────────────────────────
 export const SEARCH_LIMIT         = 6;
 
-// ── External APIs ─────────────────────────────────────────────────────────
+// ── External APIs ───────────────────────────────────────────────────────────
 export const NOMINATIM_URL     = 'https://nominatim.openstreetmap.org/search';
 export const OWM_TILE_URL      = 'https://tile.openweathermap.org/map';
 export const AIRLINE_LOGO_CDN  = (iata) => `https://images.kiwi.com/airlines/64/${iata}.png`;

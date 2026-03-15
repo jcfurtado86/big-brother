@@ -27,17 +27,12 @@ export function useCameraFollow(viewer) {
       viewer.camera.pitch,
       Cartesian3.distance(viewer.camera.position, planePos)
     );
-    // Orienta a camera para o aviao e destranca imediatamente os controles normais.
     viewer.camera.lookAt(planePos, hpr);
     viewer.camera.lookAtTransform(Matrix4.IDENTITY);
     followRef.current       = true;
     lastPlanePosRef.current = planePos.clone();
   }, [viewer]);
 
-  /**
-   * Chame a cada tick do intervalo de animacao com a nova posicao do aviao.
-   * Translada a camera pelo delta ECEF, preservando zoom e angulo livres.
-   */
   const updateFollow = useCallback((newPos) => {
     if (!followRef.current || !lastPlanePosRef.current || !viewer) return;
     const delta = Cartesian3.subtract(newPos, lastPlanePosRef.current, new Cartesian3());

@@ -1,6 +1,8 @@
 // Airplanes.live flight data provider.
 // Implements the standard provider interface for the flight provider registry.
 
+import { AL_POLL_MS, AL_RETRY_MS, AL_MIN_GAP_MS } from '../constants';
+
 // ── Category mapping ─────────────────────────────────────────────────────────
 // Airplanes.live uses ADS-B category strings (A1-A7, B1-B7, C1-C3).
 // Map to numeric codes compatible with the existing planeIcons system.
@@ -79,10 +81,9 @@ function bboxToPointRadius(bbox) {
 }
 
 // ── Serialized rate limiter (1 req/s) ────────────────────────────────────────
-// Queue-based: only one request in flight at a time, with MIN_GAP_MS between
+// Queue-based: only one request in flight at a time, with AL_MIN_GAP_MS between
 // the *completion* of one request and the *start* of the next.
 
-const MIN_GAP_MS = 1100;
 let lastFinishedAt = 0;
 let pending = Promise.resolve();
 
@@ -91,7 +92,7 @@ function throttledFetch(url, opts) {
     // Skip already-aborted requests — don't waste a queue slot or rate-limit budget
     if (opts?.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     const now = Date.now();
-    const wait = Math.max(0, MIN_GAP_MS - (now - lastFinishedAt));
+    const wait = Math.max(0, AL_MIN_GAP_MS - (now - lastFinishedAt));
     if (wait > 0) {
       await new Promise(r => setTimeout(r, wait));
       if (opts?.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
@@ -111,8 +112,8 @@ function throttledFetch(url, opts) {
 export default {
   name: 'airplaneslive',
   label: 'Airplanes.live',
-  pollInterval: 10_000,
-  retryInterval: 5_000,
+  pollInterval: AL_POLL_MS,
+  retryInterval: AL_RETRY_MS,
 
   async fetchFlights(bbox = null, signal = undefined) {
     let url;

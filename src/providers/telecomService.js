@@ -1,14 +1,11 @@
 import Pbf from 'pbf';
 import { VectorTile } from '@mapbox/vector-tile';
 import { idbGet, idbSet, idbGetAllEntries, idbPurgeExpired } from '../utils/idbCache';
+import { TELECOM_TTL_MS, TELECOM_MAX_CACHE } from './constants';
 
 const TELECOM_LAYERS = ['telecoms_mast', 'telecoms_data_center', 'telecoms_communication_line'];
 const TILE_URL = '/api/openinframap/tiles/{z}/{x}/{y}.pbf';
 const IDB_STORE = 'telecom';
-const TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-
-// Zoom level for telecom tile fetching
-export const TELECOM_ZOOM = 10;
 
 // ── Tile coordinate math ─────────────────────────────────────────────────────
 
@@ -35,7 +32,6 @@ export function getTilesForBbox(bbox, zoom) {
 // ── Fetch + decode ───────────────────────────────────────────────────────────
 
 const tileCache = new Map();
-const MAX_CACHE = 200;
 
 function tileKey(z, x, y) { return `${z}/${x}/${y}`; }
 
@@ -45,7 +41,7 @@ export async function fetchTelecomTile(z, x, y, signal) {
 
   // Check IDB cache
   const cached = await idbGet(IDB_STORE, key);
-  if (cached && (Date.now() - cached.ts) < TTL_MS) {
+  if (cached && (Date.now() - cached.ts) < TELECOM_TTL_MS) {
     memCachePut(key, cached.data);
     return cached.data;
   }
@@ -64,7 +60,7 @@ export async function fetchTelecomTile(z, x, y, signal) {
 }
 
 function memCachePut(key, data) {
-  if (tileCache.size >= MAX_CACHE) {
+  if (tileCache.size >= TELECOM_MAX_CACHE) {
     const oldest = tileCache.keys().next().value;
     tileCache.delete(oldest);
   }
@@ -74,7 +70,7 @@ function memCachePut(key, data) {
 // Load all cached tiles from IDB (for hydrating on startup)
 export async function loadAllCachedTiles() {
   // Purge expired entries first
-  idbPurgeExpired(IDB_STORE, TTL_MS);
+  idbPurgeExpired(IDB_STORE, TELECOM_TTL_MS);
 
   const entries = await idbGetAllEntries(IDB_STORE);
   const now = Date.now();
@@ -82,7 +78,7 @@ export async function loadAllCachedTiles() {
   const lines = [];
 
   for (const [key, cached] of entries) {
-    if ((now - cached.ts) >= TTL_MS) continue; // skip any still in flight
+    if ((now - cached.ts) >= TELECOM_TTL_MS) continue; // skip any still in flight
     memCachePut(key, cached.data);
     for (const p of cached.data.points) points.set(p.id, p);
     lines.push(...cached.data.lines);

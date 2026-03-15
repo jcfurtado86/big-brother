@@ -48,9 +48,12 @@ export function useSceneConfig(viewer, { lighting } = {}) {
     if (lighting) {
       viewer.clock.clockStep = ClockStep.SYSTEM_CLOCK;
       viewer.clock.shouldAnimate = true;
+      // Allow periodic re-renders so the day/night terminator moves
+      viewer.scene.maximumRenderTimeChange = 1.0;
     } else {
       viewer.clock.clockStep = ClockStep.SYSTEM_CLOCK_MULTIPLIER;
       viewer.clock.shouldAnimate = false;
+      viewer.scene.maximumRenderTimeChange = Infinity;
     }
   }, [viewer, lighting]);
 }

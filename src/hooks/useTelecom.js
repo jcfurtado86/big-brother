@@ -1,11 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Cartesian2, Math as CesiumMath } from 'cesium';
 import { fetchTelecomTile, getTilesForBbox, loadAllCachedTiles } from '../providers/telecomService';
-
-const DEBOUNCE_MS = 500;
-const MIN_ZOOM = 5;
-const MAX_ZOOM = 14;
-const MAX_TILES = 40;
+import { TELECOM_DEBOUNCE_MS, TELECOM_MIN_ZOOM, TELECOM_MAX_ZOOM, TELECOM_MAX_TILES } from '../providers/constants';
 
 function zoomFromAltitude(alt) {
   // Approximate: higher altitude = lower zoom
@@ -75,10 +71,10 @@ export function useTelecom(viewer, enabled = false) {
 
       const carto = viewer.camera.positionCartographic;
       const alt = carto ? carto.height : 1_000_000;
-      const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoomFromAltitude(alt)));
+      const zoom = Math.max(TELECOM_MIN_ZOOM, Math.min(TELECOM_MAX_ZOOM, zoomFromAltitude(alt)));
 
       const tiles = getTilesForBbox(bbox, zoom);
-      if (tiles.length > MAX_TILES) return;
+      if (tiles.length > TELECOM_MAX_TILES) return;
 
       const newTileKeys = new Set(tiles.map(t => `${t.z}/${t.x}/${t.y}`));
       const toFetch = tiles.filter(t => !loadedTilesRef.current.has(`${t.z}/${t.x}/${t.y}`));
@@ -126,7 +122,7 @@ export function useTelecom(viewer, enabled = false) {
 
     function onCameraChange() {
       clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(loadVisibleTiles, DEBOUNCE_MS);
+      debounceRef.current = setTimeout(loadVisibleTiles, TELECOM_DEBOUNCE_MS);
     }
 
     // Hydrate from IDB cache first (shows previously loaded data immediately)

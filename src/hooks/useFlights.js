@@ -1,13 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { getProvider } from '../providers/flightProviders';
 import { idbGet, idbSet, idbDelete, idbPurgeExpired } from '../utils/idbCache';
-import { FETCH_PADDING } from '../providers/constants';
-
-const RETRY_INTERVAL = Number(import.meta.env.VITE_RETRY_INTERVAL_MS ?? 1_200_000);
-const CACHE_TTL_MS   = Number(import.meta.env.VITE_FLIGHT_CACHE_TTL_MS ?? 5 * 60_000);
+import { FETCH_PADDING, FLIGHT_RETRY_MS, FLIGHT_CACHE_TTL_MS } from '../providers/constants';
 
 // Purge expired flight cache entries on startup
-idbPurgeExpired('flights', CACHE_TTL_MS);
+idbPurgeExpired('flights', FLIGHT_CACHE_TTL_MS);
 
 const USE_DEV_CACHE = import.meta.env.VITE_FLIGHT_CACHE === 'true';
 const USE_MOCK      = import.meta.env.VITE_MOCK_FLIGHTS === 'true';
@@ -41,7 +38,7 @@ async function loadFlightCache(provider, bbox) {
   const key = makeCacheKey(provider, bbox);
   const data = await idbGet('flights', key);
   if (!data) return null;
-  if (Date.now() - data.ts > CACHE_TTL_MS) { idbDelete('flights', key); return null; }
+  if (Date.now() - data.ts > FLIGHT_CACHE_TTL_MS) { idbDelete('flights', key); return null; }
   return new Map(data.entries);
 }
 
@@ -170,7 +167,7 @@ export function useFlights(enabled = true, bbox = undefined, providerName = 'ope
         if (parsed === null) {
           fetchedBboxRef.current = isGlobal ? null : fetchBbox;
           fetchedAtRef.current   = Date.now();
-          schedule(provider.retryInterval ?? RETRY_INTERVAL);
+          schedule(provider.retryInterval ?? FLIGHT_RETRY_MS);
           return;
         }
 
@@ -185,7 +182,7 @@ export function useFlights(enabled = true, bbox = undefined, providerName = 'ope
         setFlights(prev => {
           const merged = new Map();
           for (const [icao, flight] of prev) {
-            if (now - flight.fetchedAt < CACHE_TTL_MS) merged.set(icao, flight);
+            if (now - flight.fetchedAt < FLIGHT_CACHE_TTL_MS) merged.set(icao, flight);
           }
           for (const [icao, flight] of parsed) {
             merged.set(icao, flight);
@@ -204,7 +201,7 @@ export function useFlights(enabled = true, bbox = undefined, providerName = 'ope
       } catch (e) {
         if (e.name === 'AbortError') return;
         console.error('[flights] fetch error:', e);
-        if (!cancelled) schedule(provider.retryInterval ?? RETRY_INTERVAL);
+        if (!cancelled) schedule(provider.retryInterval ?? FLIGHT_RETRY_MS);
       }
     }
 
