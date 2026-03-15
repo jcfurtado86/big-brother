@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import {
   BillboardCollection,
+  Cartesian2,
   Cartesian3,
   NearFarScalar,
   Math as CesiumMath,
@@ -15,9 +16,34 @@ import {
   RECEIVER_RANGE_M,
   RECEIVER_ICON_SIZE,
 } from '../providers/receiverIcons';
-import { RECEIVER_MAX_ALT, RECEIVER_VIEWPORT_PAD } from '../providers/constants';
+import { RECEIVER_MAX_ALT, RECEIVER_VIEWPORT_PAD, LABEL_VISIBLE } from '../providers/constants';
 
 const SCALE_BY_DIST = new NearFarScalar(1e5, 1.2, 1.5e7, 0.15);
+const LABEL_SCALE   = LABEL_VISIBLE();
+
+const LABEL_FONT = '12px monospace';
+const LABEL_PAD_X = 4, LABEL_PAD_Y = 3;
+const _ctx = document.createElement('canvas').getContext('2d');
+
+function buildLabelCanvas(text) {
+  _ctx.font = LABEL_FONT;
+  const tw = Math.ceil(_ctx.measureText(text).width);
+  const W = tw + LABEL_PAD_X * 2;
+  const H = 12 + LABEL_PAD_Y * 2;
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(0, 0, W, H, 3);
+  else ctx.rect(0, 0, W, H);
+  ctx.fill();
+  ctx.font = LABEL_FONT;
+  ctx.fillStyle = '#fff';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, LABEL_PAD_X, H / 2);
+  return { canvas: c, W, H };
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -103,6 +129,7 @@ export function useReceiverLayer(viewer, receiversMap, type, enabled) {
     for (const [id, entry] of rendered) {
       if (!receiversMap.has(id)) {
         bbs.remove(entry.billboard);
+        if (entry.label) bbs.remove(entry.label);
         ds.entities.remove(entry.entity);
         rendered.delete(id);
       }
@@ -125,6 +152,7 @@ export function useReceiverLayer(viewer, receiversMap, type, enabled) {
         const data = receiversMap.get(id);
         if (!data || !inBbox(data.lat, data.lon, bbox)) {
           bbs.remove(entry.billboard);
+          if (entry.label) bbs.remove(entry.label);
           ds.entities.remove(entry.entity);
           rendered.delete(id);
         }
@@ -148,20 +176,32 @@ export function useReceiverLayer(viewer, receiversMap, type, enabled) {
           scaleByDistance: SCALE_BY_DIST,
         });
 
+        const labelText = data.user || data.name || String(id);
+        const { canvas: labelImg, W: lW, H: lH } = buildLabelCanvas(labelText);
+        const label = bbs.add({
+          position:                pos,
+          image:                   labelImg,
+          width:                   lW,
+          height:                  lH,
+          pixelOffset:             new Cartesian2(0, RECEIVER_ICON_SIZE / 2 + lH / 2 + 4),
+          scaleByDistance:         LABEL_SCALE,
+          translucencyByDistance:  LABEL_SCALE,
+        });
+
         const entity = ds.entities.add({
           position: pos,
-          ellipse: {
-            semiMajorAxis: rangeM,
-            semiMinorAxis: rangeM,
+          ellipsoid: {
+            radii: new Cartesian3(rangeM, rangeM, rangeM * 0.15),
             material: new ColorMaterialProperty(fillColor),
-            outline:      true,
-            outlineColor: outColor,
-            outlineWidth: 1.5,
-            height:       0,
+            minimumCone: 0,
+            maximumCone: CesiumMath.PI_OVER_TWO,
+            outline: false,
+            slicePartitions: 24,
+            stackPartitions: 8,
           },
         });
 
-        rendered.set(id, { billboard, entity });
+        rendered.set(id, { billboard, label, entity });
         added++;
       }
 
