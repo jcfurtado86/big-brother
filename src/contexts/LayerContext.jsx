@@ -7,6 +7,7 @@ const INITIAL_STATE = {
   airports:    { show: false, types: new Set(['large_airport', 'medium_airport']) },
   telecom:     { show: false, types: new Set(['mast', 'comm_line', 'data_center']) },
   atc:         { show: false, types: new Set(['control_tower', 'radar']) },
+  military:    { show: false, types: new Set(['airfield', 'barracks', 'base', 'checkpoint', 'danger_area', 'naval_base', 'nuclear_explosion_site', 'office', 'range', 'training_area']) },
   weather:     { show: true,  opacity: 0 },
   airRoutes:   { show: false, types: new Set(['short', 'medium', 'long']) },
   seaRoutes:   { show: false, types: new Set(['major', 'middle', 'minor']) },

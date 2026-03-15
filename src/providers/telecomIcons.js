@@ -1,10 +1,7 @@
 import { Color } from 'cesium';
+import { svgToBlobUrl } from '../utils/svgUtils';
 import towerRaw from '../assets/svg/telecom/tower2.svg?raw';
 import dataCenterRaw from '../assets/svg/telecom/data_center.svg?raw';
-
-function svgToBlobUrl(raw) {
-  return URL.createObjectURL(new Blob([raw], { type: 'image/svg+xml' }));
-}
 
 const TELECOM_ICONS = {
   mast:        svgToBlobUrl(towerRaw),

@@ -1,13 +1,8 @@
 import { NearFarScalar, Color } from 'cesium';
+import { svgToBlobUrl } from '../utils/svgUtils';
 import { AIRPORT_MAX_ALT } from './constants';
 import airportRaw from '../assets/svg/airports/airport2.svg?raw';
 import helipadRaw from '../assets/svg/airports/helipad2.svg?raw';
-
-// ── SVG → blob URL (cores em grayscale, tintado via Cesium billboard.color) ──
-
-function svgToBlobUrl(raw) {
-  return URL.createObjectURL(new Blob([raw], { type: 'image/svg+xml' }));
-}
 
 const AIRPORT_ICONS = {
   airport: svgToBlobUrl(airportRaw),

@@ -1,16 +1,11 @@
 import { Color } from 'cesium';
+import { svgToBlobUrl } from '../utils/svgUtils';
 import controlTowerRaw from '../assets/svg/airports/control_tower.svg?raw';
 import radarRaw from '../assets/svg/atc/radar.svg?raw';
 
-function svgToBlobUrl(raw) {
-  // SVGs must be white so Cesium billboard.color can tint them
-  const white = raw.replace(/<svg /,'<svg fill="white" ');
-  return URL.createObjectURL(new Blob([white], { type: 'image/svg+xml' }));
-}
-
 const ATC_ICONS = {
-  control_tower: svgToBlobUrl(controlTowerRaw),
-  radar:         svgToBlobUrl(radarRaw),
+  control_tower: svgToBlobUrl(controlTowerRaw, true),
+  radar:         svgToBlobUrl(radarRaw, true),
 };
 
 export function getAtcIcon(category) {
