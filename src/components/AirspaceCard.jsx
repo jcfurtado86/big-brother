@@ -1,13 +1,5 @@
 import { AIRSPACE_CATEGORY_META } from '../providers/airspaceIcons';
-import styles from './NuclearCard.module.css';
-
-function Row({ label, value }) {
-  if (value == null || value === '') return null;
-  return <>
-    <span className={styles.label}>{label}</span>
-    <span className={styles.value}>{value}</span>
-  </>;
-}
+import { Row, styles } from './DetailCardParts';
 
 export default function AirspaceCard({ airspace, onClose }) {
   if (!airspace) return null;

@@ -1,13 +1,5 @@
 import { ATC_CATEGORY_META } from '../providers/atcIcons';
-import styles from './AtcCard.module.css';
-
-function Row({ label, value }) {
-  if (value == null || value === '') return null;
-  return <>
-    <span className={styles.label}>{label}</span>
-    <span className={styles.value}>{value}</span>
-  </>;
-}
+import { Row, styles } from './DetailCardParts';
 
 export default function AtcCard({ atc, onClose }) {
   if (!atc) return null;

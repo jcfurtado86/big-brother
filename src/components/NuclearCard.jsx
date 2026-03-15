@@ -1,23 +1,5 @@
 import { NUCLEAR_CATEGORY_META, REACTOR_TYPE_LABELS } from '../providers/nuclearIcons';
-import styles from './NuclearCard.module.css';
-
-function Row({ label, value }) {
-  if (value == null || value === '') return null;
-  return <>
-    <span className={styles.label}>{label}</span>
-    <span className={styles.value}>{value}</span>
-  </>;
-}
-
-function LinkRow({ label, url, text }) {
-  if (!url) return null;
-  return <>
-    <span className={styles.label}>{label}</span>
-    <span className={styles.value}>
-      <a className={styles.link} href={url} target="_blank" rel="noreferrer">{text || url}</a>
-    </span>
-  </>;
-}
+import { Row, LinkRow, styles } from './DetailCardParts';
 
 function formatStatus(status) {
   const meta = NUCLEAR_CATEGORY_META[status];

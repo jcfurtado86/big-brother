@@ -10,6 +10,10 @@ const API_KEY = import.meta.env.VITE_OPENAIP_API_KEY;
 const WANTED_TYPES = [1, 2, 3];
 const PAGE_LIMIT = 1000;
 
+const TYPE_MAP = { 1: 'restricted', 2: 'danger', 3: 'prohibited' };
+const UNIT_MAP = { 0: 'M', 1: 'FT', 6: 'FL' };
+const DATUM_MAP = { 0: 'GND', 1: 'MSL', 2: 'STD' };
+
 let globalCache = null;
 
 export async function fetchAllAirspaces(signal) {
@@ -54,10 +58,9 @@ export async function fetchAllAirspaces(signal) {
     page++;
   }
 
-  console.log('[Airspace] Fetch OK:', allZones.length, 'zonas (' +
-    allZones.filter(z => z.category === 'restricted').length + ' restritas, ' +
-    allZones.filter(z => z.category === 'danger').length + ' perigo, ' +
-    allZones.filter(z => z.category === 'prohibited').length + ' proibidas)');
+  const counts = {};
+  for (const z of allZones) counts[z.category] = (counts[z.category] || 0) + 1;
+  console.log('[Airspace] Fetch OK:', allZones.length, 'zonas', counts);
 
   globalCache = allZones;
   idbSet(IDB_STORE, IDB_KEY, { ts: Date.now(), data: allZones });
@@ -75,33 +78,27 @@ function parseAirspace(item) {
   for (const [lon, lat] of coords) { latSum += lat; lonSum += lon; }
   const n = coords.length;
 
-  const typeMap = { 1: 'restricted', 2: 'danger', 3: 'prohibited' };
-  const category = typeMap[item.type] || 'restricted';
-
-  const unitMap = { 0: 'M', 1: 'FT', 6: 'FL' };
-  const datumMap = { 0: 'GND', 1: 'MSL', 2: 'STD' };
-
   return {
     id: `asp_${item._id}`,
     name: item.name || '',
-    category,
+    category: TYPE_MAP[item.type] || 'restricted',
     country: item.country || '',
-    coordinates: coords, // [[lon, lat], ...]
+    coordinates: coords,
     lat: latSum / n,
     lon: lonSum / n,
-    upperLimit: formatLimit(item.upperLimit, unitMap, datumMap),
-    lowerLimit: formatLimit(item.lowerLimit, unitMap, datumMap),
+    upperLimit: formatLimit(item.upperLimit),
+    lowerLimit: formatLimit(item.lowerLimit),
     upperLimitValue: item.upperLimit?.value ?? 0,
     lowerLimitValue: item.lowerLimit?.value ?? 0,
-    upperLimitUnit: unitMap[item.upperLimit?.unit] || '',
-    lowerLimitUnit: unitMap[item.lowerLimit?.unit] || '',
+    upperLimitUnit: UNIT_MAP[item.upperLimit?.unit] || '',
+    lowerLimitUnit: UNIT_MAP[item.lowerLimit?.unit] || '',
   };
 }
 
-function formatLimit(limit, unitMap, datumMap) {
+function formatLimit(limit) {
   if (!limit) return '';
-  const unit = unitMap[limit.unit] || '';
-  const datum = datumMap[limit.referenceDatum] || '';
+  const unit = UNIT_MAP[limit.unit] || '';
+  const datum = DATUM_MAP[limit.referenceDatum] || '';
   if (unit === 'FL') return `FL${limit.value}`;
   return `${limit.value} ${unit} ${datum}`.trim();
 }

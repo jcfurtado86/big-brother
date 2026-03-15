@@ -39,7 +39,10 @@ export function useGlobalPointsData(viewer, enabled, { fetchFn, maxAltKey, debou
         visible.set(p.id, p);
       }
     }
-    setPointsMap(visible);
+    setPointsMap(prev => {
+      if (prev.size === visible.size && [...prev.keys()].every(k => visible.has(k))) return prev;
+      return visible;
+    });
   }, [viewer, maxAltKey]);
 
   useEffect(() => {
