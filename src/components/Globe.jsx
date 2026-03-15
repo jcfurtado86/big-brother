@@ -19,9 +19,10 @@ import VesselManager from './layers/VesselManager';
 import FlightManager from './layers/FlightManager';
 import AtcManager from './layers/AtcManager';
 import MilitaryManager from './layers/MilitaryManager';
+import NuclearManager from './layers/NuclearManager';
 import VisibilityManager from './layers/VisibilityManager';
 
-export default function Globe({ initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, onSatelliteSelect, onTelecomSelect, onReceiverSelect, onAtcSelect, onMilitarySelect }) {
+export default function Globe({ initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, onSatelliteSelect, onTelecomSelect, onReceiverSelect, onAtcSelect, onMilitarySelect, onNuclearSelect }) {
   const envCfg = useLayerState('environment');
 
   const viewerRef = useRef(null);
@@ -208,6 +209,7 @@ export default function Globe({ initialView, flyTarget, resetKey, onCameraChange
         <AirportManager bbox={bbox} onAirportSelect={onAirportSelect} />
         <AtcManager onAtcSelect={onAtcSelect} />
         <MilitaryManager onMilitarySelect={onMilitarySelect} />
+        <NuclearManager onNuclearSelect={onNuclearSelect} />
         <TelecomManager cameraAltitude={cameraAltitude} telecomStateRef={telecomExtRef} onTelecomSelect={onTelecomSelect} />
         <SatelliteManager satelliteStateRef={satelliteStateRef} onSatelliteSelect={onSatelliteSelect} />
         <VesselManager vesselStateRef={vesselStateRef} onVesselSelect={onVesselSelect} />

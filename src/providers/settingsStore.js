@@ -80,6 +80,9 @@ export const SETTINGS_SCHEMA = [
     { key: 'MILITARY_DEBOUNCE_MS', label: 'Debounce câmera (ms)',   desc: 'Tempo de espera antes de filtrar dados militares ao mover o mapa', default: C.MILITARY_DEBOUNCE_MS, min: 500, max: 10_000, step: 500 },
     { key: 'MILITARY_MAX_ALT',     label: 'Alt máx visível (m)',    desc: 'Altitude máxima da câmera para exibir instalações militares', default: C.MILITARY_MAX_ALT,     min: 100_000, max: 200_000_000, step: 10_000_000 },
   ]},
+  { section: 'Nuclear', items: [
+    { key: 'NUCLEAR_ICON_SIZE',    label: 'Ícone (px)',             desc: 'Tamanho do ícone de usina nuclear em pixels', default: C.NUCLEAR_ICON_SIZE,    min: 10, max: 64, step: 2 },
+  ]},
   { section: 'Busca', items: [
     { key: 'SEARCH_LIMIT',      label: 'Resultados máx',         desc: 'Número máximo de resultados exibidos na busca', default: C.SEARCH_LIMIT,      min: 1,    max: 20,   step: 1 },
   ]},

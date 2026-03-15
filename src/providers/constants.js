@@ -169,6 +169,9 @@ export const MILITARY_DEBOUNCE_MS  = 1_000;
 export const MILITARY_MAX_ALT     = 100_000_000;
 export const MILITARY_TTL_MS      = 7 * 24 * 60 * 60 * 1000;
 
+// ── Nuclear ──────────────────────────────────────────────────────────────────
+export const NUCLEAR_ICON_SIZE     = 28;
+
 // ── Category heuristics ─────────────────────────────────────────────────────
 export const VEL_HEAVY            = 210;           // m/s
 export const VEL_REGIONAL         = 130;

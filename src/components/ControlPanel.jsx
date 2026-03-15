@@ -7,6 +7,7 @@ import { VESSEL_CATEGORIES, VESSEL_CATEGORY_META } from '../providers/vesselIcon
 import { TELECOM_CATEGORIES, TELECOM_CATEGORY_META } from '../providers/telecomIcons';
 import { ATC_CATEGORIES, ATC_CATEGORY_META } from '../providers/atcIcons';
 import { MILITARY_CATEGORIES, MILITARY_CATEGORY_META } from '../providers/militaryIcons';
+import { NUCLEAR_CATEGORIES, NUCLEAR_CATEGORY_META } from '../providers/nuclearIcons';
 import { PROVIDER_LIST } from '../providers/flightProviders';
 import { SEA_ROUTE_CATEGORIES, SEA_ROUTE_CATEGORY_META, AIR_ROUTE_CATEGORIES, AIR_ROUTE_CATEGORY_META } from '../providers/constants';
 import { layers } from '../providers/layers';
@@ -100,6 +101,7 @@ export default function ControlPanel() {
   const telecom    = useLayerState('telecom');
   const atc        = useLayerState('atc');
   const military   = useLayerState('military');
+  const nuclear    = useLayerState('nuclear');
   const weather    = useLayerState('weather');
   const airRoutes  = useLayerState('airRoutes');
   const seaRoutes  = useLayerState('seaRoutes');
@@ -132,6 +134,12 @@ export default function ControlPanel() {
       <Card icon="🎖️" label="Militar">
         <Toggle label="Bases militares" active={military.show} onToggle={() => toggle('military')} />
         <TypeFilter types={MILITARY_CATEGORIES} activeSet={military.types} onChange={t => setTypes('military', t)} items={MILITARY_CATEGORY_META} />
+      </Card>
+
+      {/* Nuclear */}
+      <Card icon="☢️" label="Nuclear">
+        <Toggle label="Usinas nucleares" active={nuclear.show} onToggle={() => toggle('nuclear')} />
+        <TypeFilter types={NUCLEAR_CATEGORIES} activeSet={nuclear.types} onChange={t => setTypes('nuclear', t)} items={NUCLEAR_CATEGORY_META} />
       </Card>
 
       {/* Trafego Maritimo */}
