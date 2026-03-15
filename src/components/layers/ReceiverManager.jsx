@@ -11,8 +11,8 @@ export default function ReceiverManager({ onReceiverSelect }) {
 
   const adsbReceivers = useAdsbReceivers(receivers.adsbShow);
   const aisStations   = useAisStations(receivers.aisShow);
-  const { receiversRef: adsbReceiversRef } = useReceiverLayer(viewer, adsbReceivers, 'adsb', receivers.adsbShow, receivers.opacity);
-  const { receiversRef: aisStationsRef }  = useReceiverLayer(viewer, aisStations, 'ais', receivers.aisShow, receivers.opacity);
+  const { receiversRef: adsbReceiversRef } = useReceiverLayer(viewer, adsbReceivers, 'adsb', receivers.adsbShow, receivers.adsbOpacity);
+  const { receiversRef: aisStationsRef }  = useReceiverLayer(viewer, aisStations, 'ais', receivers.aisShow, receivers.aisOpacity);
 
   useSelectionHandler('receiver', {
     match: (id) => id?.startsWith('receiver_'),

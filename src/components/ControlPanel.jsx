@@ -130,7 +130,7 @@ export default function ControlPanel() {
         <TypeFilter types={SEA_ROUTE_CATEGORIES} activeSet={seaRoutes.types} onChange={t => setTypes('seaRoutes', t)} items={SEA_ROUTE_CATEGORY_META} />
         <Separator />
         <Toggle label="Antenas AIS" active={receivers.aisShow} onToggle={() => toggleF('receivers', 'aisShow')} />
-        <OpacitySlider label="Opacidade antenas" value={receivers.opacity} onChange={v => setField('receivers', 'opacity', v)} />
+        <OpacitySlider label="Opacidade antenas" value={receivers.aisOpacity} onChange={v => setField('receivers', 'aisOpacity', v)} />
       </Card>
 
       {/* Trafego Aereo */}
@@ -157,7 +157,7 @@ export default function ControlPanel() {
         <TypeFilter types={AIRPORT_TYPES} activeSet={airports.types} onChange={t => setTypes('airports', t)} items={AIRPORT_TYPE_META} />
         <Separator />
         <Toggle label="Antenas ADS-B" active={receivers.adsbShow} onToggle={() => toggleF('receivers', 'adsbShow')} />
-        <OpacitySlider label="Opacidade antenas" value={receivers.opacity} onChange={v => setField('receivers', 'opacity', v)} />
+        <OpacitySlider label="Opacidade antenas" value={receivers.adsbOpacity} onChange={v => setField('receivers', 'adsbOpacity', v)} />
       </Card>
 
       {/* Ambiente */}

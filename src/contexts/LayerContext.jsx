@@ -9,7 +9,7 @@ const INITIAL_STATE = {
   weather:     { show: true,  opacity: 0 },
   airRoutes:   { show: false, types: new Set(['short', 'medium', 'long']) },
   seaRoutes:   { show: false, types: new Set(['major', 'middle', 'minor']) },
-  receivers:   { adsbShow: false, aisShow: false, opacity: 0.15 },
+  receivers:   { adsbShow: false, aisShow: false, adsbOpacity: 0.15, aisOpacity: 0.15 },
   environment: { layerId: 'satellite', lighting: false },
 };
 

@@ -6,6 +6,7 @@ import aisProxy from './vite-plugin-aisProxy.js';
 export default defineConfig({
   plugins: [react(), cesium(), aisProxy()],
   server: {
+    host: true,
     proxy: {
       '/api/geoip': {
         target: 'http://ip-api.com',
