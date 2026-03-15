@@ -26,6 +26,7 @@ function SettingRow({ item }) {
   return (
     <div className={styles.row}>
       <span className={styles.label} title={item.key}>{item.label}</span>
+      {item.desc && <span className={styles.helpIcon} title={item.desc}>?</span>}
       <input
         type="number"
         className={`${styles.input} ${modified ? styles.inputModified : ''}`}

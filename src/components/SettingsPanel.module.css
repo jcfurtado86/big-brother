@@ -154,6 +154,26 @@
   font-size: 11px;
 }
 
+.helpIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #666;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: help;
+  flex-shrink: 0;
+  transition: color 0.2s, border-color 0.2s;
+}
+.helpIcon:hover {
+  color: #ccc;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
 .input {
   width: 80px;
   background: rgba(255, 255, 255, 0.08);
