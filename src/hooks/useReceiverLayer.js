@@ -15,9 +15,9 @@ import {
 } from '../providers/receiverIcons';
 import { LABEL_VISIBLE } from '../providers/constants';
 import { getSetting } from '../providers/settingsStore';
+import { inBbox } from '../utils/bboxUtils';
 
 const SCALE_BY_DIST = new NearFarScalar(1e5, 1.2, 1.5e7, 0.15);
-const LABEL_SCALE   = LABEL_VISIBLE();
 
 const LABEL_FONT = '12px monospace';
 const LABEL_PAD_X = 4, LABEL_PAD_Y = 3;
@@ -55,11 +55,6 @@ function getViewportBbox(viewer) {
     east:  CesiumMath.toDegrees(rect.east)  + pad,
     north: CesiumMath.toDegrees(rect.north) + pad,
   };
-}
-
-function inBbox(lat, lon, bbox) {
-  return lat >= bbox.south && lat <= bbox.north &&
-         lon >= bbox.west  && lon <= bbox.east;
 }
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
@@ -138,8 +133,12 @@ export function useReceiverLayer(viewer, receiversMap, type, enabled, opacity = 
     function syncViewport() {
       if (bbs.isDestroyed()) return;
 
+      const maxAlt  = getSetting('RECEIVER_MAX_ALT');
+      const iconSize = getSetting('RECEIVER_ICON_SIZE');
+      const labelScale = LABEL_VISIBLE(getSetting('LABEL_NEAR'), getSetting('LABEL_FAR'));
+
       const alt = viewer.camera.positionCartographic?.height ?? Infinity;
-      const visible = alt < getSetting('RECEIVER_MAX_ALT');
+      const visible = alt < maxAlt;
       bbs.show = visible;
       ds.show  = visible;
       if (!visible) return;
@@ -170,8 +169,8 @@ export function useReceiverLayer(viewer, receiversMap, type, enabled, opacity = 
           id:             `receiver_${type}_${id}`,
           position:       pos,
           image:          icon,
-          width:          getSetting('RECEIVER_ICON_SIZE'),
-          height:         getSetting('RECEIVER_ICON_SIZE'),
+          width:          iconSize,
+          height:         iconSize,
           color,
           scaleByDistance: SCALE_BY_DIST,
         });
@@ -183,9 +182,9 @@ export function useReceiverLayer(viewer, receiversMap, type, enabled, opacity = 
           image:                   labelImg,
           width:                   lW,
           height:                  lH,
-          pixelOffset:             new Cartesian2(0, getSetting('RECEIVER_ICON_SIZE') / 2 + lH / 2 + 4),
-          scaleByDistance:         LABEL_SCALE,
-          translucencyByDistance:  LABEL_SCALE,
+          pixelOffset:             new Cartesian2(0, iconSize / 2 + lH / 2 + 4),
+          scaleByDistance:         labelScale,
+          translucencyByDistance:  labelScale,
         });
 
         const entity = ds.entities.add({

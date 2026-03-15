@@ -4,11 +4,7 @@ import { getAirportIcon, AIRPORT_TYPE_META, AIRPORT_TYPE_COLOR, SELECTED_AIRPORT
 import { LABEL_VISIBLE } from '../providers/constants';
 import { getSetting } from '../providers/settingsStore';
 import AirportWorker from '../workers/airportWorker.js?worker';
-
-function inBbox(lat, lon, bbox) {
-  if (!bbox) return true;
-  return lat >= bbox.south && lat <= bbox.north && lon >= bbox.west && lon <= bbox.east;
-}
+import { inBbox } from '../utils/bboxUtils';
 
 function getCameraAlt(viewer) {
   if (!viewer) return Infinity;

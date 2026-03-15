@@ -61,6 +61,7 @@ export function useSeaRouteLayer(viewer, active, visibleTypes) {
 
       const collection = new PolylineCollection();
       const byCategory = { major: [], middle: [], minor: [] };
+      const lineWidth = getSetting('ROUTE_LINE_WIDTH');
 
       for (const feature of geojson.features) {
         if (feature.geometry.type !== 'MultiLineString') continue;
@@ -77,7 +78,7 @@ export function useSeaRouteLayer(viewer, active, visibleTypes) {
           }
 
           const positions = sampled.map(c => Cartesian3.fromDegrees(c[0], c[1], 0));
-          const polyline = collection.add({ positions, width: getSetting('ROUTE_LINE_WIDTH'), material: makeMaterial(cat), show });
+          const polyline = collection.add({ positions, width: lineWidth, material: makeMaterial(cat), show });
           byCategory[cat].push(polyline);
         }
       }

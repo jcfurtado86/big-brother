@@ -216,10 +216,12 @@ export function useAirRouteLayer(viewer, active, bbox, visibleTypes) {
     }
 
     let cursor = 0;
+    const batchSize = getSetting('ROUTE_BATCH_SIZE');
+    const lineWidth = getSetting('ROUTE_LINE_WIDTH');
 
     function processBatch() {
       if (collection.isDestroyed()) return;
-      const end = Math.min(cursor + getSetting('ROUTE_BATCH_SIZE'), toAdd.length);
+      const end = Math.min(cursor + batchSize, toAdd.length);
 
       for (let j = cursor; j < end; j++) {
         const i = toAdd[j];
@@ -229,7 +231,7 @@ export function useAirRouteLayer(viewer, active, bbox, visibleTypes) {
         if (!positions) continue;
         const polyline = collection.add({
           positions,
-          width: getSetting('ROUTE_LINE_WIDTH'),
+          width: lineWidth,
           material: makeMaterial(catIdx),
         });
         rendered.set(i, { polyline, cat: catIdx });

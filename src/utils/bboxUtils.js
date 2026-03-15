@@ -11,6 +11,12 @@ import { Cartesian2, Cartographic, Ellipsoid, Math as CesiumMath } from 'cesium'
  * Falls back to the arccos horizon formula when fewer than 2 picks succeed
  * (e.g. zoomed-out view of the whole globe).
  */
+export function inBbox(lat, lon, bbox) {
+  if (!bbox) return true;
+  return lat >= bbox.south && lat <= bbox.north &&
+         lon >= bbox.west  && lon <= bbox.east;
+}
+
 export function computeBboxFromViewer(viewer) {
   const { clientWidth: w, clientHeight: h } = viewer.scene.canvas;
 

@@ -31,10 +31,10 @@ function buildLabelBitmap(text) {
   return { bitmap: canvas.transferToImageBitmap(), W, H };
 }
 
-function inBbox(ap, bbox) {
+function inBbox(lat, lon, bbox) {
   if (!bbox) return true;
-  return ap.lat >= bbox.south && ap.lat <= bbox.north &&
-         ap.lon >= bbox.west  && ap.lon <= bbox.east;
+  return lat >= bbox.south && lat <= bbox.north &&
+         lon >= bbox.west  && lon <= bbox.east;
 }
 
 let _airports    = null;
@@ -60,7 +60,7 @@ self.onmessage = async ({ data }) => {
     if (!_airports) return;
 
     const active   = new Set(activeTypes);
-    const filtered = _airports.filter(ap => active.has(ap.type) && inBbox(ap, bbox));
+    const filtered = _airports.filter(ap => active.has(ap.type) && inBbox(ap.lat, ap.lon, bbox));
 
     if (filtered.length === 0) {
       self.postMessage({ type: 'batch', results: [], gen, done: true });

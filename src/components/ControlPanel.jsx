@@ -39,6 +39,28 @@ function Separator() {
   return <div className={styles.separator} />;
 }
 
+function OpacitySlider({ label, value, onChange }) {
+  return (
+    <>
+      <div className={styles.row} style={{ cursor: 'default' }}>
+        <span className={styles.rowLabel}>{label}</span>
+        <span className={styles.sliderValue}>{Math.round(value * 100)}%</span>
+      </div>
+      <div className={styles.sliderRow}>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.05"
+          value={value}
+          onChange={e => onChange(Number(e.target.value))}
+          className={styles.slider}
+        />
+      </div>
+    </>
+  );
+}
+
 function TypeFilter({ types, activeSet, onChange, items }) {
   function toggle(type) {
     const next = new Set(activeSet);
@@ -102,21 +124,7 @@ export default function ControlPanel({
         <TypeFilter types={SEA_ROUTE_CATEGORIES} activeSet={seaRouteTypes} onChange={onSeaRouteTypesChange} items={SEA_ROUTE_CATEGORY_META} />
         <Separator />
         <Toggle label="Antenas AIS" active={showAisStations} onToggle={onAisStationsToggle} />
-        <div className={styles.row} style={{ cursor: 'default' }}>
-          <span className={styles.rowLabel}>Opacidade antenas</span>
-          <span className={styles.sliderValue}>{Math.round(receiverOpacity * 100)}%</span>
-        </div>
-        <div className={styles.sliderRow}>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.05"
-            value={receiverOpacity}
-            onChange={e => onReceiverOpacityChange(Number(e.target.value))}
-            className={styles.slider}
-          />
-        </div>
+        <OpacitySlider label="Opacidade antenas" value={receiverOpacity} onChange={onReceiverOpacityChange} />
       </Card>
 
       {/* Tráfego Aéreo */}
@@ -143,21 +151,7 @@ export default function ControlPanel({
         <TypeFilter types={AIRPORT_TYPES} activeSet={airportTypes} onChange={onAirportTypesChange} items={AIRPORT_TYPE_META} />
         <Separator />
         <Toggle label="Antenas ADS-B" active={showAdsbReceivers} onToggle={onAdsbReceiversToggle} />
-        <div className={styles.row} style={{ cursor: 'default' }}>
-          <span className={styles.rowLabel}>Opacidade antenas</span>
-          <span className={styles.sliderValue}>{Math.round(receiverOpacity * 100)}%</span>
-        </div>
-        <div className={styles.sliderRow}>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.05"
-            value={receiverOpacity}
-            onChange={e => onReceiverOpacityChange(Number(e.target.value))}
-            className={styles.slider}
-          />
-        </div>
+        <OpacitySlider label="Opacidade antenas" value={receiverOpacity} onChange={onReceiverOpacityChange} />
       </Card>
 
       {/* Ambiente — mapa base, iluminação, nuvens */}
