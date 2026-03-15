@@ -104,6 +104,7 @@ export const AIS_STATION_FLUSH_MS     = 3_000;           // flush WS → state
 export const RECEIVER_MAX_ALT         = 100_000_000;     // metros — acima disso esconde (praticamente sempre visível)
 export const RECEIVER_CIRCLE_SEGMENTS = 64;              // vértices por círculo de range
 export const RECEIVER_VIEWPORT_PAD    = 3;               // graus de padding no viewport
+export const RECEIVER_ICON_SIZE       = 44;              // pixels
 
 // ── Category heuristics ─────────────────────────────────────────────────────
 export const VEL_HEAVY            = 210;           // m/s

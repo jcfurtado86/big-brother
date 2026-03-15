@@ -25,7 +25,7 @@ import { useAisStations }     from '../hooks/useAisStations';
 import { useReceiverLayer }   from '../hooks/useReceiverLayer';
 import { computeBboxFromViewer } from '../utils/bboxUtils';
 
-export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, showFlights, flightTypes, showAirports, airportTypes, showWeather, weatherOpacity, showVessels, vesselTypes, showSatellites, onSatelliteSelect, satelliteTypes, showTelecom, telecomTypes, flightProvider, showAirRoutes, showSeaRoutes, airRouteTypes, seaRouteTypes, showAdsbReceivers, showAisStations, onTelecomSelect, onReceiverSelect }) {
+export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, showFlights, flightTypes, showAirports, airportTypes, showWeather, weatherOpacity, showVessels, vesselTypes, showSatellites, onSatelliteSelect, satelliteTypes, showTelecom, telecomTypes, flightProvider, showAirRoutes, showSeaRoutes, airRouteTypes, seaRouteTypes, showAdsbReceivers, showAisStations, receiverOpacity, onTelecomSelect, onReceiverSelect }) {
   const viewerRef = useRef(null);
   const wrapperRef = useRef(null);
   const [viewer, setViewer] = useState(null);
@@ -184,8 +184,8 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
   // Receivers (antenas ADS-B e AIS)
   const adsbReceivers = useAdsbReceivers(showAdsbReceivers);
   const aisStations   = useAisStations(showAisStations);
-  const { receiversRef: adsbReceiversRef } = useReceiverLayer(viewer, adsbReceivers, 'adsb', showAdsbReceivers);
-  const { receiversRef: aisStationsRef }  = useReceiverLayer(viewer, aisStations, 'ais', showAisStations);
+  const { receiversRef: adsbReceiversRef } = useReceiverLayer(viewer, adsbReceivers, 'adsb', showAdsbReceivers, receiverOpacity);
+  const { receiversRef: aisStationsRef }  = useReceiverLayer(viewer, aisStations, 'ais', showAisStations, receiverOpacity);
 
   // Visibility filter — camera-change + type toggles, all in one hook
   useVisibilityFilter(viewer, [

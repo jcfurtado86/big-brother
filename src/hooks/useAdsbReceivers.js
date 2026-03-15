@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchAdsbReceivers, loadCachedReceivers } from '../providers/receiverService';
-import { ADSB_RECEIVERS_POLL_MS } from '../providers/constants';
+import { getSetting } from '../providers/settingsStore';
 
 /**
  * Hook que busca localizações de feeders ADS-B do adsb.lol MLAT.
@@ -40,7 +40,7 @@ export function useAdsbReceivers(enabled) {
     }
 
     fetchRemote();
-    const id = setInterval(fetchRemote, ADSB_RECEIVERS_POLL_MS);
+    const id = setInterval(fetchRemote, getSetting('ADSB_RECEIVERS_POLL_MS'));
 
     return () => {
       cancelled = true;

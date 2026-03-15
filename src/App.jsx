@@ -50,6 +50,7 @@ export default function App() {
   const [selectedTelecom, setSelectedTelecom] = useState(null);
   const [showAdsbReceivers, setShowAdsbReceivers] = useState(false);
   const [showAisStations, setShowAisStations] = useState(false);
+  const [receiverOpacity, setReceiverOpacity] = useState(0.15);
   const [selectedReceiver, setSelectedReceiver] = useState(null);
   const geoIP = useGeoIP();
 
@@ -104,6 +105,7 @@ export default function App() {
         seaRouteTypes={seaRouteTypes}
         showAdsbReceivers={showAdsbReceivers}
         showAisStations={showAisStations}
+        receiverOpacity={receiverOpacity}
         onTelecomSelect={setSelectedTelecom}
         onReceiverSelect={setSelectedReceiver}
       />
@@ -155,10 +157,12 @@ export default function App() {
         onAdsbReceiversToggle={() => setShowAdsbReceivers(v => !v)}
         showAisStations={showAisStations}
         onAisStationsToggle={() => setShowAisStations(v => !v)}
+        receiverOpacity={receiverOpacity}
+        onReceiverOpacityChange={setReceiverOpacity}
       />
-      <FlightCard flight={selectedFlight} onClose={() => setSelectedFlight(null)} flightProvider={flightProvider} showAirRoutes={showAirRoutes} onAirRoutesToggle={() => setShowAirRoutes(v => !v)} />
+      <FlightCard flight={selectedFlight} onClose={() => setSelectedFlight(null)} flightProvider={flightProvider} />
       <AirportCard airport={selectedAirport} onClose={() => setSelectedAirport(null)} />
-      <VesselCard vessel={selectedVessel} onClose={() => setSelectedVessel(null)} showSeaRoutes={showSeaRoutes} onSeaRoutesToggle={() => setShowSeaRoutes(v => !v)} />
+      <VesselCard vessel={selectedVessel} onClose={() => setSelectedVessel(null)} />
       <SatelliteCard satellite={selectedSatellite} onClose={() => setSelectedSatellite(null)} />
       <TelecomCard telecom={selectedTelecom} onClose={() => setSelectedTelecom(null)} />
       <ReceiverCard receiver={selectedReceiver} onClose={() => setSelectedReceiver(null)} />

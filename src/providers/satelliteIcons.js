@@ -1,5 +1,5 @@
 import { Color } from 'cesium';
-import satRaw from '../assets/svg/satellites/satellite.svg?raw';
+import satRaw from '../assets/svg/satellites/satellite4.svg?raw';
 
 const SAT_URL = URL.createObjectURL(
   new Blob([satRaw], { type: 'image/svg+xml' })

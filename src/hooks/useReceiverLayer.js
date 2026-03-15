@@ -11,12 +11,10 @@ import {
 import {
   getReceiverIcon,
   RECEIVER_COLOR,
-  RECEIVER_RANGE_COLOR,
-  RECEIVER_RANGE_OUTLINE_COLOR,
   RECEIVER_RANGE_M,
-  RECEIVER_ICON_SIZE,
 } from '../providers/receiverIcons';
-import { RECEIVER_MAX_ALT, RECEIVER_VIEWPORT_PAD, LABEL_VISIBLE } from '../providers/constants';
+import { LABEL_VISIBLE } from '../providers/constants';
+import { getSetting } from '../providers/settingsStore';
 
 const SCALE_BY_DIST = new NearFarScalar(1e5, 1.2, 1.5e7, 0.15);
 const LABEL_SCALE   = LABEL_VISIBLE();
@@ -50,11 +48,12 @@ function buildLabelCanvas(text) {
 function getViewportBbox(viewer) {
   const rect = viewer.camera.computeViewRectangle();
   if (!rect) return null;
+  const pad = getSetting('RECEIVER_VIEWPORT_PAD');
   return {
-    west:  CesiumMath.toDegrees(rect.west)  - RECEIVER_VIEWPORT_PAD,
-    south: CesiumMath.toDegrees(rect.south) - RECEIVER_VIEWPORT_PAD,
-    east:  CesiumMath.toDegrees(rect.east)  + RECEIVER_VIEWPORT_PAD,
-    north: CesiumMath.toDegrees(rect.north) + RECEIVER_VIEWPORT_PAD,
+    west:  CesiumMath.toDegrees(rect.west)  - pad,
+    south: CesiumMath.toDegrees(rect.south) - pad,
+    east:  CesiumMath.toDegrees(rect.east)  + pad,
+    north: CesiumMath.toDegrees(rect.north) + pad,
   };
 }
 
@@ -71,7 +70,7 @@ function inBbox(lat, lon, bbox) {
  * - collection.show / dataSource.show para toggle O(1)
  * - Remoção granular
  */
-export function useReceiverLayer(viewer, receiversMap, type, enabled) {
+export function useReceiverLayer(viewer, receiversMap, type, enabled, opacity = 0.15) {
   const billboardsRef  = useRef(null);
   const dataSourceRef  = useRef(null);
   // Map<id, { billboard, entity }> — referências para remoção granular
@@ -121,8 +120,7 @@ export function useReceiverLayer(viewer, receiversMap, type, enabled) {
     const rendered  = renderedRef.current;
     const rangeM    = RECEIVER_RANGE_M[type];
     const color     = RECEIVER_COLOR[type];
-    const fillColor = RECEIVER_RANGE_COLOR[type];
-    const outColor  = RECEIVER_RANGE_OUTLINE_COLOR[type];
+    const fillColor = RECEIVER_COLOR[type].withAlpha(opacity);
     const icon      = getReceiverIcon();
 
     // Remove receivers que sumiram do receiversMap entre polls
@@ -132,6 +130,8 @@ export function useReceiverLayer(viewer, receiversMap, type, enabled) {
         if (entry.label) bbs.remove(entry.label);
         ds.entities.remove(entry.entity);
         rendered.delete(id);
+      } else {
+        entry.entity.ellipsoid.material = new ColorMaterialProperty(fillColor);
       }
     }
 
@@ -139,7 +139,7 @@ export function useReceiverLayer(viewer, receiversMap, type, enabled) {
       if (bbs.isDestroyed()) return;
 
       const alt = viewer.camera.positionCartographic?.height ?? Infinity;
-      const visible = alt < RECEIVER_MAX_ALT;
+      const visible = alt < getSetting('RECEIVER_MAX_ALT');
       bbs.show = visible;
       ds.show  = visible;
       if (!visible) return;
@@ -170,8 +170,8 @@ export function useReceiverLayer(viewer, receiversMap, type, enabled) {
           id:             `receiver_${type}_${id}`,
           position:       pos,
           image:          icon,
-          width:          RECEIVER_ICON_SIZE,
-          height:         RECEIVER_ICON_SIZE,
+          width:          getSetting('RECEIVER_ICON_SIZE'),
+          height:         getSetting('RECEIVER_ICON_SIZE'),
           color,
           scaleByDistance: SCALE_BY_DIST,
         });
@@ -183,7 +183,7 @@ export function useReceiverLayer(viewer, receiversMap, type, enabled) {
           image:                   labelImg,
           width:                   lW,
           height:                  lH,
-          pixelOffset:             new Cartesian2(0, RECEIVER_ICON_SIZE / 2 + lH / 2 + 4),
+          pixelOffset:             new Cartesian2(0, getSetting('RECEIVER_ICON_SIZE') / 2 + lH / 2 + 4),
           scaleByDistance:         LABEL_SCALE,
           translucencyByDistance:  LABEL_SCALE,
         });
@@ -211,7 +211,7 @@ export function useReceiverLayer(viewer, receiversMap, type, enabled) {
     syncViewport();
     const remove = viewer.camera.changed.addEventListener(syncViewport);
     return () => remove();
-  }, [receiversMap, type, enabled, viewer]);
+  }, [receiversMap, type, enabled, viewer, opacity]);
 
   return { receiversRef };
 }

@@ -77,6 +77,7 @@ export default function ControlPanel({
   showSeaRoutes, onSeaRoutesToggle, seaRouteTypes, onSeaRouteTypesChange,
   showAdsbReceivers, onAdsbReceiversToggle,
   showAisStations, onAisStationsToggle,
+  receiverOpacity, onReceiverOpacityChange,
 }) {
   return (
     <div className={styles.panel}>
@@ -101,6 +102,21 @@ export default function ControlPanel({
         <TypeFilter types={SEA_ROUTE_CATEGORIES} activeSet={seaRouteTypes} onChange={onSeaRouteTypesChange} items={SEA_ROUTE_CATEGORY_META} />
         <Separator />
         <Toggle label="Antenas AIS" active={showAisStations} onToggle={onAisStationsToggle} />
+        <div className={styles.row} style={{ cursor: 'default' }}>
+          <span className={styles.rowLabel}>Opacidade antenas</span>
+          <span className={styles.sliderValue}>{Math.round(receiverOpacity * 100)}%</span>
+        </div>
+        <div className={styles.sliderRow}>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={receiverOpacity}
+            onChange={e => onReceiverOpacityChange(Number(e.target.value))}
+            className={styles.slider}
+          />
+        </div>
       </Card>
 
       {/* Tráfego Aéreo */}
@@ -127,6 +143,21 @@ export default function ControlPanel({
         <TypeFilter types={AIRPORT_TYPES} activeSet={airportTypes} onChange={onAirportTypesChange} items={AIRPORT_TYPE_META} />
         <Separator />
         <Toggle label="Antenas ADS-B" active={showAdsbReceivers} onToggle={onAdsbReceiversToggle} />
+        <div className={styles.row} style={{ cursor: 'default' }}>
+          <span className={styles.rowLabel}>Opacidade antenas</span>
+          <span className={styles.sliderValue}>{Math.round(receiverOpacity * 100)}%</span>
+        </div>
+        <div className={styles.sliderRow}>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={receiverOpacity}
+            onChange={e => onReceiverOpacityChange(Number(e.target.value))}
+            className={styles.slider}
+          />
+        </div>
       </Card>
 
       {/* Ambiente — mapa base, iluminação, nuvens */}

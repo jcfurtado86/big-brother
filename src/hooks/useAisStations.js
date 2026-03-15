@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { connectAisStationStream } from '../providers/receiverService';
-import { AIS_STATION_FLUSH_MS, RECEIVER_TTL_MS } from '../providers/constants';
+import { RECEIVER_TTL_MS } from '../providers/constants';
+import { getSetting } from '../providers/settingsStore';
 import { idbGet, idbSet } from '../utils/idbCache';
 
 const IDB_STORE = 'receivers';
@@ -51,7 +52,7 @@ export function useAisStations(enabled) {
         dirty = false;
         setStations(new Map(mapRef.current));
       }
-    }, AIS_STATION_FLUSH_MS);
+    }, getSetting('AIS_STATION_FLUSH_MS'));
 
     // Salva no IDB periodicamente
     const saveId = setInterval(() => {

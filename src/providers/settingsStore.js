@@ -62,6 +62,13 @@ export const SETTINGS_SCHEMA = [
     { key: 'ROUTE_BBOX_PADDING',label: 'Padding bbox (°)',       default: C.ROUTE_BBOX_PADDING,min: 0,    max: 20,   step: 1 },
     { key: 'ROUTE_BATCH_SIZE',  label: 'Batch size',             default: C.ROUTE_BATCH_SIZE,  min: 10,   max: 500,  step: 10 },
   ]},
+  { section: 'Antenas', items: [
+    { key: 'RECEIVER_ICON_SIZE',       label: 'Ícone (px)',             default: C.RECEIVER_ICON_SIZE,       min: 10,   max: 128,  step: 2 },
+    { key: 'RECEIVER_MAX_ALT',         label: 'Alt máx visível (m)',    default: C.RECEIVER_MAX_ALT,         min: 1_000_000, max: 200_000_000, step: 10_000_000 },
+    { key: 'RECEIVER_VIEWPORT_PAD',    label: 'Padding viewport (°)',   default: C.RECEIVER_VIEWPORT_PAD,    min: 0,    max: 10,   step: 1 },
+    { key: 'ADSB_RECEIVERS_POLL_MS',   label: 'Polling ADS-B (ms)',     default: C.ADSB_RECEIVERS_POLL_MS,   min: 60_000, max: 7_200_000, step: 60_000 },
+    { key: 'AIS_STATION_FLUSH_MS',     label: 'Flush AIS (ms)',         default: C.AIS_STATION_FLUSH_MS,     min: 500,  max: 30_000, step: 500 },
+  ]},
   { section: 'Busca', items: [
     { key: 'SEARCH_LIMIT',      label: 'Resultados máx',         default: C.SEARCH_LIMIT,      min: 1,    max: 20,   step: 1 },
   ]},
