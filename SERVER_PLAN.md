@@ -264,3 +264,5 @@ Taiwan TDX	Taiwan	muitas	OAuth2 + registro
 Coreia ITS	Coreia do Sul	muitas	Geo-restrito (só IPs coreanos)
 CET São Paulo	Brasil	dezenas	Sem API, scraping necessário, sem coordenadas
 DER-SP	Brasil	desconhecido	Dados em XLSX, imagens via scraping
+
+dificuldade de encontrar cameras. como fazer? card com lista de todas as cameras?

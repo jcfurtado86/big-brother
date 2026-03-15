@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useLayoutEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
 import { WEBCAM_CATEGORY_META } from '../providers/webcamIcons';
 import { Row, styles } from './DetailCardParts';
 
@@ -83,6 +83,26 @@ export default function WebcamCard({ webcam, onClose }) {
       { transform: 'translate(0, 0)', opacity: 1 },
     ], { duration: DURATION, easing: EASING });
   }, [fullscreen]);
+
+  // Auto-refresh media that isn't a true live stream (iframe/HLS)
+  const isSnapshot = !embedUrl && !streamUrl && !!previewUrl;
+  const isClip = !embedUrl && !!streamUrl && !streamUrl.includes('.m3u8');
+  const refreshBase = isSnapshot ? previewUrl : isClip ? streamUrl : null;
+  const [mediaSrc, setMediaSrc] = useState(refreshBase);
+
+  const bustCache = useCallback((url) => {
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}_t=${Date.now()}`;
+  }, []);
+
+  // Unified refresh: snapshots every 10s, clips every 60s (server update cadence)
+  useEffect(() => {
+    if (!refreshBase) return;
+    setMediaSrc(refreshBase);
+    const interval = isSnapshot ? 10_000 : 60_000;
+    const id = setInterval(() => setMediaSrc(bustCache(refreshBase)), interval);
+    return () => clearInterval(id);
+  }, [refreshBase, isSnapshot, bustCache]);
 
   const containerStyle = fullscreen ? FS_STYLE : CARD_STYLE;
 
@@ -171,7 +191,7 @@ export default function WebcamCard({ webcam, onClose }) {
           fullscreen ? (
             <div style={playerWrapStyle}>
               <video
-                src={streamUrl}
+                src={isClip ? mediaSrc : streamUrl}
                 style={playerStyle}
                 controls
                 autoPlay
@@ -181,7 +201,7 @@ export default function WebcamCard({ webcam, onClose }) {
             </div>
           ) : (
             <video
-              src={streamUrl}
+              src={isClip ? mediaSrc : streamUrl}
               style={playerStyle}
               controls
               autoPlay
@@ -190,7 +210,7 @@ export default function WebcamCard({ webcam, onClose }) {
             />
           )
         ) : previewUrl ? (
-          <img src={previewUrl} alt={webcam.title} style={imgStyle} />
+          <img src={mediaSrc} alt={webcam.title} style={imgStyle} />
         ) : null}
 
         {(embedUrl || streamUrl || previewUrl) && (

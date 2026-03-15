@@ -99,7 +99,7 @@ export default function App() {
       <NuclearCard nuclear={selectedNuclear} onClose={() => setSelectedNuclear(null)} />
       <AirspaceCard airspace={selectedAirspace} onClose={() => setSelectedAirspace(null)} />
       <AcledCard acled={selectedAcled} onClose={() => setSelectedAcled(null)} />
-      <WebcamCard webcam={selectedWebcam} onClose={() => setSelectedWebcam(null)} />
+      <WebcamCard key={selectedWebcam?.id} webcam={selectedWebcam} onClose={() => setSelectedWebcam(null)} />
       <SettingsPanel />
       <LoadingSpinner />
     </LayerProvider>
