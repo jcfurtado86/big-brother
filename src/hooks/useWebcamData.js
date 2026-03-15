@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { fetchWebcamsForViewer, loadWebcamCache } from '../providers/webcamService';
 import { fetchOtcmCameras } from '../providers/otcmService';
+import { fetchDotCameras } from '../providers/dotService';
 import { computeBboxFromViewer } from '../utils/bboxUtils';
 import { getSetting } from '../providers/settingsStore';
 import { useLoading } from '../contexts/LoadingContext';
@@ -13,6 +14,7 @@ async function fetchByProvider(provider, viewer, signal) {
   const fetchers = {
     windy: () => fetchWebcamsForViewer(viewer, signal),
     otcm:  () => fetchOtcmCameras(),
+    dot:   () => fetchDotCameras(),
   };
 
   if (provider === 'all') {
@@ -32,6 +34,7 @@ function hydrateByProvider(provider) {
   const hydrators = {
     windy: () => loadWebcamCache(),
     otcm:  () => fetchOtcmCameras(),
+    dot:   () => fetchDotCameras(),
   };
 
   if (provider === 'all') {
