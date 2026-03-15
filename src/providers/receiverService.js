@@ -8,23 +8,27 @@
 // ── ADS-B Feeders (adsb.lol MLAT) ──────────────────────────────────────────
 
 const REGIONS_URL = '/api/mlat/syncmap/mirror_regions.json';
-const SYNC_URL    = (region) => `/api/mlat/syncmap/sync/${region}/sync.json`;
+const SYNC_URL    = (region) => `/api/mlat/api/0/mlat-server/${region}/sync.json`;
 
 /**
  * Busca regiões disponíveis no MLAT server.
  * @returns {Promise<string[]>} lista de nomes de região
  */
 async function fetchRegions(signal) {
+  const fallback = ['0A', '0B', '0C', '0D', '1A', '2A', '2B', '2C'];
   try {
     const res = await fetch(REGIONS_URL, { signal });
-    if (!res.ok) return ['eur', 'nam', 'sam', 'oce', 'apac', 'afr']; // fallback
+    if (!res.ok) return fallback;
     const data = await res.json();
-    // Format: array of strings or object with region keys
-    if (Array.isArray(data)) return data;
-    if (typeof data === 'object') return Object.keys(data);
-    return ['eur'];
+    // Format: { "0": { region: "0A", name: "...", enabled: true }, ... }
+    if (typeof data === 'object' && !Array.isArray(data)) {
+      return Object.values(data)
+        .filter(r => r.enabled !== false)
+        .map(r => r.region);
+    }
+    return fallback;
   } catch {
-    return ['eur', 'nam', 'sam', 'oce', 'apac', 'afr'];
+    return fallback;
   }
 }
 

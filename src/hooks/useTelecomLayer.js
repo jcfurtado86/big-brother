@@ -23,7 +23,7 @@ export function useTelecomLayer(viewer, pointsMap, lines, visibleTypes) {
       const billboard = billboards.add({
         id: `telecom_${id}`,
         position: pos,
-        image: getTelecomIcon(),
+        image: getTelecomIcon(category),
         width: sz,
         height: sz,
         show,
@@ -39,6 +39,7 @@ export function useTelecomLayer(viewer, pointsMap, lines, visibleTypes) {
           _name: point.name || point.operator || category,
           _country: null,
           _category: category,
+          _point: point,
         },
       };
     },

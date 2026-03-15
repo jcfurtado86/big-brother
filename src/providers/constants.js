@@ -66,8 +66,8 @@ export const TELECOM_DEBOUNCE_MS  = 500;
 export const TELECOM_MIN_ZOOM     = 5;
 export const TELECOM_MAX_ZOOM     = 14;
 export const TELECOM_MAX_TILES    = 40;
-export const TELECOM_MAST_SIZE    = 20;            // pixels
-export const TELECOM_DC_SIZE      = 24;            // pixels
+export const TELECOM_MAST_SIZE    = 10;            // pixels
+export const TELECOM_DC_SIZE      = 12;            // pixels
 export const TELECOM_TTL_MS       = 7 * 24 * 60 * 60 * 1000;  // 7 dias — IDB cache
 export const TELECOM_MAX_CACHE    = 200;           // max in-memory tiles
 

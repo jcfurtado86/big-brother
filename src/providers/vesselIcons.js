@@ -1,9 +1,9 @@
 import { Color } from 'cesium';
-import hullRaw from '../assets/svg/vessels/hull.svg?raw';
+import vesselRaw from '../assets/svg/vessels/vessel2.svg?raw';
 
 // SVG branco único — cor aplicada via Cesium billboard.color
-const HULL_URL = URL.createObjectURL(
-  new Blob([hullRaw], { type: 'image/svg+xml' })
+const VESSEL_URL = URL.createObjectURL(
+  new Blob([vesselRaw], { type: 'image/svg+xml' })
 );
 
 // AIS ship type ranges → category
@@ -63,5 +63,5 @@ export const VESSEL_CATEGORY_COLOR = {
 export const VESSEL_TYPES = Object.keys(VESSEL_CATEGORY_META);
 
 export function getVesselIcon() {
-  return HULL_URL;
+  return VESSEL_URL;
 }

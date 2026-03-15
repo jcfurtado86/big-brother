@@ -25,7 +25,7 @@ import { useAisStations }     from '../hooks/useAisStations';
 import { useReceiverLayer }   from '../hooks/useReceiverLayer';
 import { computeBboxFromViewer } from '../utils/bboxUtils';
 
-export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, showFlights, flightTypes, showAirports, airportTypes, showWeather, weatherOpacity, showVessels, vesselTypes, showSatellites, onSatelliteSelect, satelliteTypes, showTelecom, telecomTypes, flightProvider, showAirRoutes, showSeaRoutes, airRouteTypes, seaRouteTypes, showAdsbReceivers, showAisStations }) {
+export default function Globe({ layers, activeLayerId, lighting, initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, showFlights, flightTypes, showAirports, airportTypes, showWeather, weatherOpacity, showVessels, vesselTypes, showSatellites, onSatelliteSelect, satelliteTypes, showTelecom, telecomTypes, flightProvider, showAirRoutes, showSeaRoutes, airRouteTypes, seaRouteTypes, showAdsbReceivers, showAisStations, onTelecomSelect }) {
   const viewerRef = useRef(null);
   const wrapperRef = useRef(null);
   const [viewer, setViewer] = useState(null);
@@ -208,7 +208,7 @@ export default function Globe({ layers, activeLayerId, lighting, initialView, fl
     onFlightSelect?.(flights.get(icao) ?? null);
   }, [flights, onFlightSelect]);
 
-  useFlightSelection(viewer, flightStateRef, handleFlightSelect, airportDataRef, onAirportSelect, setSelectedAirport, vesselStateRef, onVesselSelect, setSelectedVessel, satelliteStateRef, onSatelliteSelect, setSelectedSatellite, flightProvider);
+  useFlightSelection(viewer, flightStateRef, handleFlightSelect, airportDataRef, onAirportSelect, setSelectedAirport, vesselStateRef, onVesselSelect, setSelectedVessel, satelliteStateRef, onSatelliteSelect, setSelectedSatellite, telecomStateRef, onTelecomSelect, flightProvider);
   useWeatherLayer(viewer, showWeather, weatherOpacity);
   useSeaRouteLayer(viewer, showSeaRoutes, seaRouteTypes);
   useAirRouteLayer(viewer, showAirRoutes, bbox, airRouteTypes);

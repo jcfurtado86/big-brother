@@ -1,17 +1,12 @@
 import { Color } from 'cesium';
-import adsbRaw from '../assets/svg/receivers/adsb-antenna.svg?raw';
-import aisRaw from '../assets/svg/receivers/ais-station.svg?raw';
+import antennaRaw from '../assets/svg/telecom/antenna.svg?raw';
 
-function svgUrl(raw, fill) {
-  const colored = raw.replace(/currentColor/g, fill);
-  return URL.createObjectURL(new Blob([colored], { type: 'image/svg+xml' }));
-}
+const ANTENNA_ICON = URL.createObjectURL(
+  new Blob([antennaRaw], { type: 'image/svg+xml' })
+);
 
-const ADSB_ICON = svgUrl(adsbRaw, '#40C4FF');
-const AIS_ICON  = svgUrl(aisRaw, '#69F0AE');
-
-export function getReceiverIcon(type) {
-  return type === 'adsb' ? ADSB_ICON : AIS_ICON;
+export function getReceiverIcon() {
+  return ANTENNA_ICON;
 }
 
 export const RECEIVER_COLOR = {

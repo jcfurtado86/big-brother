@@ -14,7 +14,7 @@ import { TRACK_COLOR } from '../providers/constants';
 import { getSetting } from '../providers/settingsStore';
 import { parseTLEOrbitalElements } from '../providers/satelliteService';
 
-export function useFlightSelection(viewer, flightStateRef, setSelected, airportDataRef, onAirportSelect, setSelectedAirport, vesselStateRef, onVesselSelect, setSelectedVessel, satelliteStateRef, onSatelliteSelect, setSelectedSatellite, providerName = 'opensky') {
+export function useFlightSelection(viewer, flightStateRef, setSelected, airportDataRef, onAirportSelect, setSelectedAirport, vesselStateRef, onVesselSelect, setSelectedVessel, satelliteStateRef, onSatelliteSelect, setSelectedSatellite, telecomStateRef, onTelecomSelect, providerName = 'opensky') {
   const selectionRef    = useRef(null); // { entity, icao24 }
   const pendingRef      = useRef(0);
   const liveIntervalRef = useRef(null);
@@ -27,6 +27,7 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
   const setSelectedVesselRef   = useRef(setSelectedVessel);
   const onSatelliteSelectRef   = useRef(onSatelliteSelect);
   const setSelectedSatelliteRef = useRef(setSelectedSatellite);
+  const onTelecomSelectRef     = useRef(onTelecomSelect);
   useEffect(() => { setSelectedRef.current = setSelected; }, [setSelected]);
   useEffect(() => { onAirportSelectRef.current = onAirportSelect; }, [onAirportSelect]);
   useEffect(() => { setSelectedAirportRef.current = setSelectedAirport; }, [setSelectedAirport]);
@@ -34,6 +35,7 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
   useEffect(() => { setSelectedVesselRef.current = setSelectedVessel; }, [setSelectedVessel]);
   useEffect(() => { onSatelliteSelectRef.current = onSatelliteSelect; }, [onSatelliteSelect]);
   useEffect(() => { setSelectedSatelliteRef.current = setSelectedSatellite; }, [setSelectedSatellite]);
+  useEffect(() => { onTelecomSelectRef.current = onTelecomSelect; }, [onTelecomSelect]);
 
   const { startFollow, stopFollow, updateFollow } = useCameraFollow(viewer);
 
@@ -93,6 +95,7 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
       onVesselSelectRef.current?.(null);
       setSelectedSatelliteRef.current?.(null);
       onSatelliteSelectRef.current?.(null);
+      onTelecomSelectRef.current?.(null);
     };
 
     // ── Click dispatch ─────────────────────────────────────────────────
@@ -172,6 +175,23 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
         }
         return;
       }
+
+      // Telecom
+      if (rawId?.startsWith('telecom_')) {
+        const telecomId = rawId.slice(8);
+        const entry = telecomStateRef?.current?.get(telecomId);
+        clearAll();
+        if (entry?._point) {
+          onTelecomSelectRef.current?.({
+            ...entry._point,
+            category: entry._category,
+          });
+        }
+        return;
+      }
+
+      // Receiver — no card, just ignore
+      if (rawId?.startsWith('receiver_')) return;
 
       // Flight (default — no prefix)
       const icao24 = rawId;

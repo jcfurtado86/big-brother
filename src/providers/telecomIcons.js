@@ -1,12 +1,18 @@
 import { Color } from 'cesium';
-import towerRaw from '../assets/svg/telecom/tower.svg?raw';
+import towerRaw from '../assets/svg/telecom/tower2.svg?raw';
+import dataCenterRaw from '../assets/svg/telecom/data_center.svg?raw';
 
-const TOWER_URL = URL.createObjectURL(
-  new Blob([towerRaw], { type: 'image/svg+xml' })
-);
+function svgToBlobUrl(raw) {
+  return URL.createObjectURL(new Blob([raw], { type: 'image/svg+xml' }));
+}
 
-export function getTelecomIcon() {
-  return TOWER_URL;
+const TELECOM_ICONS = {
+  mast:        svgToBlobUrl(towerRaw),
+  data_center: svgToBlobUrl(dataCenterRaw),
+};
+
+export function getTelecomIcon(category) {
+  return TELECOM_ICONS[category] ?? TELECOM_ICONS.mast;
 }
 
 // Mapeia layer name do OpenInfraMap → categoria interna
