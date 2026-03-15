@@ -1,165 +1,177 @@
 import { useEffect, useRef } from 'react';
 import {
   BillboardCollection,
-  PolylineCollection,
   Cartesian3,
   NearFarScalar,
-  Color,
-  Material,
+  Math as CesiumMath,
+  CustomDataSource,
+  ColorMaterialProperty,
 } from 'cesium';
 import {
   getReceiverIcon,
   RECEIVER_COLOR,
+  RECEIVER_RANGE_COLOR,
   RECEIVER_RANGE_OUTLINE_COLOR,
   RECEIVER_RANGE_M,
   RECEIVER_ICON_SIZE,
 } from '../providers/receiverIcons';
-import { RECEIVER_MAX_ALT, RECEIVER_CIRCLE_SEGMENTS } from '../providers/constants';
+import { RECEIVER_MAX_ALT, RECEIVER_VIEWPORT_PAD } from '../providers/constants';
 
-const SCALE_BY_DIST = new NearFarScalar(1e5, 1.2, 3e6, 0.3);
+const SCALE_BY_DIST = new NearFarScalar(1e5, 1.2, 1.5e7, 0.15);
 
-/**
- * Gera posições de um círculo na superfície terrestre.
- * @param {number} lat - centro (graus)
- * @param {number} lon - centro (graus)
- * @param {number} radiusM - raio em metros
- * @param {number} segments - número de vértices
- * @returns {Cartesian3[]}
- */
-function circlePositions(lat, lon, radiusM, segments) {
-  const positions = [];
-  const latRad = lat * Math.PI / 180;
-  const lonRad = lon * Math.PI / 180;
-  const R = 6_371_000; // raio da terra
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-  for (let i = 0; i <= segments; i++) {
-    const angle = (2 * Math.PI * i) / segments;
-    const dLat = (radiusM / R) * Math.cos(angle);
-    const dLon = (radiusM / (R * Math.cos(latRad))) * Math.sin(angle);
-    positions.push(
-      Cartesian3.fromRadians(lonRad + dLon, latRad + dLat)
-    );
-  }
-  return positions;
+function getViewportBbox(viewer) {
+  const rect = viewer.camera.computeViewRectangle();
+  if (!rect) return null;
+  return {
+    west:  CesiumMath.toDegrees(rect.west)  - RECEIVER_VIEWPORT_PAD,
+    south: CesiumMath.toDegrees(rect.south) - RECEIVER_VIEWPORT_PAD,
+    east:  CesiumMath.toDegrees(rect.east)  + RECEIVER_VIEWPORT_PAD,
+    north: CesiumMath.toDegrees(rect.north) + RECEIVER_VIEWPORT_PAD,
+  };
 }
 
+function inBbox(lat, lon, bbox) {
+  return lat >= bbox.south && lat <= bbox.north &&
+         lon >= bbox.west  && lon <= bbox.east;
+}
+
+// ── Hook ──────────────────────────────────────────────────────────────────────
+
 /**
- * Hook que renderiza receptores/antenas no mapa com ícone + círculo de alcance.
- *
- * @param {object} viewer - Cesium viewer
- * @param {Map} receiversMap - Map<id, {lat, lon, ...}>
- * @param {string} type - 'adsb' | 'ais'
- * @param {boolean} enabled
+ * Renderiza receptores/antenas no mapa com ícone + círculo de alcance preenchido.
+ * - Viewport culling: só cria primitivos para receivers visíveis
+ * - collection.show / dataSource.show para toggle O(1)
+ * - Remoção granular
  */
 export function useReceiverLayer(viewer, receiversMap, type, enabled) {
-  const billboardsRef = useRef(null);
-  const polylinesRef  = useRef(null);
-  const renderedRef   = useRef(new Set());
+  const billboardsRef  = useRef(null);
+  const dataSourceRef  = useRef(null);
+  // Map<id, { billboard, entity }> — referências para remoção granular
+  const renderedRef    = useRef(new Map());
+  const receiversRef   = useRef(receiversMap);
+  receiversRef.current = receiversMap;
 
   // Cria/destrói collections
   useEffect(() => {
     if (!viewer) return;
 
     const billboards = new BillboardCollection();
-    const polylines  = new PolylineCollection();
-    viewer.scene.primitives.add(polylines);
     viewer.scene.primitives.add(billboards);
     billboardsRef.current = billboards;
-    polylinesRef.current  = polylines;
+
+    const ds = new CustomDataSource(`receiver-range-${type}`);
+    viewer.dataSources.add(ds);
+    dataSourceRef.current = ds;
 
     return () => {
       if (!billboards.isDestroyed()) viewer.scene.primitives.remove(billboards);
-      if (!polylines.isDestroyed()) viewer.scene.primitives.remove(polylines);
+      viewer.dataSources.remove(ds, true);
       billboardsRef.current = null;
-      polylinesRef.current  = null;
+      dataSourceRef.current = null;
       renderedRef.current.clear();
     };
-  }, [viewer]);
+  }, [viewer, type]);
 
-  // Sync receiversMap → billboards + circles
+  // Sync viewport
   useEffect(() => {
-    const bbs  = billboardsRef.current;
-    const pls  = polylinesRef.current;
-    if (!bbs || !pls || bbs.isDestroyed()) return;
+    if (!viewer) return;
 
-    const rendered = renderedRef.current;
-    const rangeM   = RECEIVER_RANGE_M[type];
-    const color    = RECEIVER_COLOR[type];
-    const outColor = RECEIVER_RANGE_OUTLINE_COLOR[type];
-    const icon     = getReceiverIcon(type);
+    const bbs = billboardsRef.current;
+    const ds  = dataSourceRef.current;
+    if (!bbs || bbs.isDestroyed() || !ds) return;
 
     if (!enabled) {
-      // Esconde tudo
-      for (let i = 0; i < bbs.length; i++) bbs.get(i).show = false;
-      for (let i = 0; i < pls.length; i++) pls.get(i).show = false;
-      if (viewer) viewer.scene.requestRender();
-      return;
-    }
-
-    // Remove velhos que saíram do map
-    // (simplificado: rebuild completo quando map muda significativamente)
-    if (rendered.size > 0 && receiversMap.size === 0) {
-      bbs.removeAll();
-      pls.removeAll();
-      rendered.clear();
-      if (viewer) viewer.scene.requestRender();
-      return;
-    }
-
-    // Adiciona novos
-    let added = 0;
-    for (const [id, data] of receiversMap) {
-      if (rendered.has(id)) continue;
-      rendered.add(id);
-
-      const pos = Cartesian3.fromDegrees(data.lon, data.lat, 0);
-
-      bbs.add({
-        position:        pos,
-        image:           icon,
-        width:           RECEIVER_ICON_SIZE,
-        height:          RECEIVER_ICON_SIZE,
-        color,
-        scaleByDistance:  SCALE_BY_DIST,
-        show:            true,
-      });
-
-      // Círculo de range como polyline
-      const circlePos = circlePositions(data.lat, data.lon, rangeM, RECEIVER_CIRCLE_SEGMENTS);
-      pls.add({
-        positions: circlePos,
-        width:     1.5,
-        material:  Material.fromType('Color', { color: outColor }),
-        show:      true,
-      });
-
-      added++;
-    }
-
-    if (added > 0 && viewer) {
-      console.log(`[receiver-layer:${type}] added ${added} receivers (total: ${rendered.size})`);
+      bbs.show = false;
+      ds.show  = false;
       viewer.scene.requestRender();
+      return;
     }
-  }, [receiversMap, type, enabled, viewer]);
 
-  // Visibility by camera altitude
-  useEffect(() => {
-    if (!viewer || !enabled) return;
+    bbs.show = true;
+    ds.show  = true;
 
-    function onCameraChanged() {
-      const bbs = billboardsRef.current;
-      const pls = polylinesRef.current;
-      if (!bbs || bbs.isDestroyed()) return;
+    const rendered  = renderedRef.current;
+    const rangeM    = RECEIVER_RANGE_M[type];
+    const color     = RECEIVER_COLOR[type];
+    const fillColor = RECEIVER_RANGE_COLOR[type];
+    const outColor  = RECEIVER_RANGE_OUTLINE_COLOR[type];
+    const icon      = getReceiverIcon();
+
+    // Remove receivers que sumiram do receiversMap entre polls
+    for (const [id, entry] of rendered) {
+      if (!receiversMap.has(id)) {
+        bbs.remove(entry.billboard);
+        ds.entities.remove(entry.entity);
+        rendered.delete(id);
+      }
+    }
+
+    function syncViewport() {
+      if (bbs.isDestroyed()) return;
 
       const alt = viewer.camera.positionCartographic?.height ?? Infinity;
-      const show = alt < RECEIVER_MAX_ALT;
+      const visible = alt < RECEIVER_MAX_ALT;
+      bbs.show = visible;
+      ds.show  = visible;
+      if (!visible) return;
 
-      for (let i = 0; i < bbs.length; i++) bbs.get(i).show = show;
-      for (let i = 0; i < pls.length; i++) pls.get(i).show = show;
+      const bbox = getViewportBbox(viewer);
+      if (!bbox) return;
+
+      // Remove receivers fora do viewport
+      for (const [id, entry] of rendered) {
+        const data = receiversMap.get(id);
+        if (!data || !inBbox(data.lat, data.lon, bbox)) {
+          bbs.remove(entry.billboard);
+          ds.entities.remove(entry.entity);
+          rendered.delete(id);
+        }
+      }
+
+      // Adiciona receivers dentro do viewport
+      let added = 0;
+      for (const [id, data] of receiversMap) {
+        if (rendered.has(id)) continue;
+        if (!inBbox(data.lat, data.lon, bbox)) continue;
+
+        const pos = Cartesian3.fromDegrees(data.lon, data.lat, 0);
+
+        const billboard = bbs.add({
+          id:             `receiver_${type}_${id}`,
+          position:       pos,
+          image:          icon,
+          width:          RECEIVER_ICON_SIZE,
+          height:         RECEIVER_ICON_SIZE,
+          color,
+          scaleByDistance: SCALE_BY_DIST,
+        });
+
+        const entity = ds.entities.add({
+          position: pos,
+          ellipse: {
+            semiMajorAxis: rangeM,
+            semiMinorAxis: rangeM,
+            material: new ColorMaterialProperty(fillColor),
+            outline:      true,
+            outlineColor: outColor,
+            outlineWidth: 1.5,
+            height:       0,
+          },
+        });
+
+        rendered.set(id, { billboard, entity });
+        added++;
+      }
+
+      if (added > 0) viewer.scene.requestRender();
     }
 
-    onCameraChanged();
-    const remove = viewer.camera.changed.addEventListener(onCameraChanged);
+    syncViewport();
+    const remove = viewer.camera.changed.addEventListener(syncViewport);
     return () => remove();
-  }, [viewer, enabled]);
+  }, [receiversMap, type, enabled, viewer]);
+
+  return { receiversRef };
 }

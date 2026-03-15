@@ -30,4 +30,4 @@ export const RECEIVER_RANGE_M = {
   ais:  85_000,   // ~46 NM
 };
 
-export const RECEIVER_ICON_SIZE = 22;
+export const RECEIVER_ICON_SIZE = 44;

@@ -5,10 +5,15 @@
  * AIS:   Coleta estações base via WebSocket (AIS Message Type 4)
  */
 
+import { idbGet, idbSet, idbPurgeExpired } from '../utils/idbCache';
+import { RECEIVER_TTL_MS } from './constants';
+
 // ── ADS-B Feeders (adsb.lol MLAT) ──────────────────────────────────────────
 
 const REGIONS_URL = '/api/mlat/syncmap/mirror_regions.json';
 const SYNC_URL    = (region) => `/api/mlat/api/0/mlat-server/${region}/sync.json`;
+const IDB_STORE   = 'receivers';
+const IDB_KEY     = 'adsb_all';
 
 /**
  * Busca regiões disponíveis no MLAT server.
@@ -52,11 +57,13 @@ async function fetchRegionSync(region, signal) {
       if (lat === 0 && lon === 0) continue;
 
       receivers.set(`${region}_${id}`, {
-        id:     `${region}_${id}`,
+        id:       `${region}_${id}`,
         lat,
         lon,
-        user:   info.user || id,
+        user:     info.user || id,
         region,
+        badSyncs: info.bad_syncs ?? 0,
+        peers:    info.peers ? Object.keys(info.peers).length : 0,
       });
     }
   } catch {
@@ -66,7 +73,23 @@ async function fetchRegionSync(region, signal) {
 }
 
 /**
+ * Carrega receivers do cache IDB.
+ * @returns {Promise<Map|null>} Map ou null se cache expirado/inexistente
+ */
+export async function loadCachedReceivers() {
+  idbPurgeExpired(IDB_STORE, RECEIVER_TTL_MS);
+  const cached = await idbGet(IDB_STORE, IDB_KEY);
+  if (!cached || (Date.now() - cached.ts) >= RECEIVER_TTL_MS) return null;
+
+  const map = new Map();
+  for (const r of cached.data) map.set(r.id, r);
+  console.log(`[receivers] loaded ${map.size} ADS-B feeders from cache`);
+  return map;
+}
+
+/**
  * Busca todos os feeders ADS-B de todas as regiões.
+ * Salva no IDB ao final.
  * @returns {Promise<Map<string, {id, lat, lon, user, region}>>}
  */
 export async function fetchAdsbReceivers(signal) {
@@ -85,7 +108,10 @@ export async function fetchAdsbReceivers(signal) {
     }
   }
 
-  console.log(`[receivers] ADS-B feeders loaded: ${all.size}`);
+  console.log(`[receivers] ADS-B feeders fetched: ${all.size}`);
+  if (all.size > 0) {
+    idbSet(IDB_STORE, IDB_KEY, { ts: Date.now(), data: [...all.values()] });
+  }
   return all;
 }
 

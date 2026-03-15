@@ -14,7 +14,7 @@ import { TRACK_COLOR } from '../providers/constants';
 import { getSetting } from '../providers/settingsStore';
 import { parseTLEOrbitalElements } from '../providers/satelliteService';
 
-export function useFlightSelection(viewer, flightStateRef, setSelected, airportDataRef, onAirportSelect, setSelectedAirport, vesselStateRef, onVesselSelect, setSelectedVessel, satelliteStateRef, onSatelliteSelect, setSelectedSatellite, telecomStateRef, onTelecomSelect, providerName = 'opensky') {
+export function useFlightSelection(viewer, flightStateRef, setSelected, airportDataRef, onAirportSelect, setSelectedAirport, vesselStateRef, onVesselSelect, setSelectedVessel, satelliteStateRef, onSatelliteSelect, setSelectedSatellite, telecomStateRef, onTelecomSelect, adsbReceiversRef, aisStationsRef, onReceiverSelect, providerName = 'opensky') {
   const selectionRef    = useRef(null); // { entity, icao24 }
   const pendingRef      = useRef(0);
   const liveIntervalRef = useRef(null);
@@ -28,6 +28,7 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
   const onSatelliteSelectRef   = useRef(onSatelliteSelect);
   const setSelectedSatelliteRef = useRef(setSelectedSatellite);
   const onTelecomSelectRef     = useRef(onTelecomSelect);
+  const onReceiverSelectRef    = useRef(onReceiverSelect);
   useEffect(() => { setSelectedRef.current = setSelected; }, [setSelected]);
   useEffect(() => { onAirportSelectRef.current = onAirportSelect; }, [onAirportSelect]);
   useEffect(() => { setSelectedAirportRef.current = setSelectedAirport; }, [setSelectedAirport]);
@@ -36,6 +37,7 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
   useEffect(() => { onSatelliteSelectRef.current = onSatelliteSelect; }, [onSatelliteSelect]);
   useEffect(() => { setSelectedSatelliteRef.current = setSelectedSatellite; }, [setSelectedSatellite]);
   useEffect(() => { onTelecomSelectRef.current = onTelecomSelect; }, [onTelecomSelect]);
+  useEffect(() => { onReceiverSelectRef.current = onReceiverSelect; }, [onReceiverSelect]);
 
   const { startFollow, stopFollow, updateFollow } = useCameraFollow(viewer);
 
@@ -96,6 +98,7 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
       setSelectedSatelliteRef.current?.(null);
       onSatelliteSelectRef.current?.(null);
       onTelecomSelectRef.current?.(null);
+      onReceiverSelectRef.current?.(null);
     };
 
     // ── Click dispatch ─────────────────────────────────────────────────
@@ -190,8 +193,21 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
         return;
       }
 
-      // Receiver — no card, just ignore
-      if (rawId?.startsWith('receiver_')) return;
+      // Receiver (ADS-B / AIS)
+      if (rawId?.startsWith('receiver_')) {
+        // id format: receiver_{type}_{receiverId}
+        const rest = rawId.slice(9); // after "receiver_"
+        const isAdsb = rest.startsWith('adsb_');
+        const receiverId = isAdsb ? rest.slice(5) : rest.slice(4); // skip "adsb_" or "ais_"
+        const receiverType = isAdsb ? 'adsb' : 'ais';
+        const mapRef = isAdsb ? adsbReceiversRef : aisStationsRef;
+        const data = mapRef?.current?.get(receiverId);
+        clearAll();
+        if (data) {
+          onReceiverSelectRef.current?.({ ...data, type: receiverType });
+        }
+        return;
+      }
 
       // Flight (default — no prefix)
       const icao24 = rawId;

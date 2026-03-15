@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { fetchAdsbReceivers } from '../providers/receiverService';
+import { fetchAdsbReceivers, loadCachedReceivers } from '../providers/receiverService';
 import { ADSB_RECEIVERS_POLL_MS } from '../providers/constants';
 
 /**
  * Hook que busca localizações de feeders ADS-B do adsb.lol MLAT.
- * Faz polling a cada ADSB_RECEIVERS_POLL_MS (5 min).
+ * - Carrega do IDB cache imediatamente (render instantâneo)
+ * - Faz fetch remoto e depois poll a cada 1h
+ * - Quando desligado, para de consumir a API
  *
  * @param {boolean} enabled
  * @returns {Map<string, {id, lat, lon, user, region}>}
@@ -14,19 +16,22 @@ export function useAdsbReceivers(enabled) {
   const abortRef = useRef(null);
 
   useEffect(() => {
-    if (!enabled) {
-      setReceivers(new Map());
-      return;
-    }
+    if (!enabled) return;
 
     let cancelled = false;
 
-    async function load() {
+    // Carrega cache IDB primeiro (instantâneo)
+    loadCachedReceivers().then(cached => {
+      if (cancelled || !cached) return;
+      setReceivers(cached);
+    });
+
+    async function fetchRemote() {
       if (cancelled) return;
       abortRef.current = new AbortController();
       try {
         const data = await fetchAdsbReceivers(abortRef.current.signal);
-        if (!cancelled) setReceivers(data);
+        if (!cancelled && data.size > 0) setReceivers(data);
       } catch (e) {
         if (e.name !== 'AbortError') {
           console.warn('[adsb-receivers]', e.message);
@@ -34,8 +39,8 @@ export function useAdsbReceivers(enabled) {
       }
     }
 
-    load();
-    const id = setInterval(load, ADSB_RECEIVERS_POLL_MS);
+    fetchRemote();
+    const id = setInterval(fetchRemote, ADSB_RECEIVERS_POLL_MS);
 
     return () => {
       cancelled = true;

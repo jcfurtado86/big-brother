@@ -98,10 +98,12 @@ export const AIR_ROUTE_CATEGORY_META = {
 };
 
 // ── Receivers (antenas) ───────────────────────────────────────────────────────
-export const ADSB_RECEIVERS_POLL_MS  = 5 * 60 * 1000;  // polling a cada 5 min
-export const AIS_STATION_FLUSH_MS    = 3_000;           // flush WS → state
-export const RECEIVER_MAX_ALT        = 3_000_000;       // metros — acima disso esconde
-export const RECEIVER_CIRCLE_SEGMENTS = 64;             // vértices por círculo de range
+export const ADSB_RECEIVERS_POLL_MS   = 60 * 60 * 1000;  // polling a cada 1 hora
+export const RECEIVER_TTL_MS          = 24 * 60 * 60 * 1000; // cache IDB 24h
+export const AIS_STATION_FLUSH_MS     = 3_000;           // flush WS → state
+export const RECEIVER_MAX_ALT         = 100_000_000;     // metros — acima disso esconde (praticamente sempre visível)
+export const RECEIVER_CIRCLE_SEGMENTS = 64;              // vértices por círculo de range
+export const RECEIVER_VIEWPORT_PAD    = 3;               // graus de padding no viewport
 
 // ── Category heuristics ─────────────────────────────────────────────────────
 export const VEL_HEAVY            = 210;           // m/s
