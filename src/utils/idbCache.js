@@ -1,6 +1,6 @@
 const DB_NAME = 'bb_cache';
-const DB_VERSION = 7;
-const STORES = ['tle', 'flights', 'vessels', 'telecom', 'receivers'];
+const DB_VERSION = 8;
+const STORES = ['tle', 'flights', 'vessels', 'telecom', 'receivers', 'atc'];
 
 // Clean up legacy databases from older versions
 indexedDB.deleteDatabase('bb_satellite_cache');

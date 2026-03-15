@@ -25,7 +25,7 @@ export default function TelecomManager({ cameraAltitude, telecomStateRef: extern
 
   const activeTelecomTypes = telecom.show ? effectiveTelecomTypes : emptySet;
   const { pointsMap: telecomPoints, lines: telecomLines } = useTelecom(viewer, telecom.show);
-  const { stateRef: telecomStateRef } = useTelecomLayer(viewer, telecomPoints, telecomLines, activeTelecomTypes);
+  const { stateRef: telecomStateRef, setSelected } = useTelecomLayer(viewer, telecomPoints, telecomLines, activeTelecomTypes);
 
   externalRef.current = { stateRef: telecomStateRef, activeTypes: activeTelecomTypes };
 
@@ -33,6 +33,7 @@ export default function TelecomManager({ cameraAltitude, telecomStateRef: extern
     match: (id) => id?.startsWith('telecom_'),
     onSelect: (id) => {
       const telecomId = id.slice(8);
+      setSelected(telecomId);
       const entry = telecomStateRef?.current?.get(telecomId);
       if (entry?._point) {
         onTelecomSelect?.({
@@ -42,6 +43,7 @@ export default function TelecomManager({ cameraAltitude, telecomStateRef: extern
       }
     },
     onClear: () => {
+      setSelected(null);
       onTelecomSelect?.(null);
     },
   });

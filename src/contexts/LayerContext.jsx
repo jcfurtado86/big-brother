@@ -6,6 +6,7 @@ const INITIAL_STATE = {
   satellites:  { show: false, types: new Set(['leo', 'meo', 'geo']) },
   airports:    { show: false, types: new Set(['large_airport', 'medium_airport']) },
   telecom:     { show: false, types: new Set(['mast', 'comm_line', 'data_center']) },
+  atc:         { show: false, types: new Set(['control_tower', 'radar']) },
   weather:     { show: true,  opacity: 0 },
   airRoutes:   { show: false, types: new Set(['short', 'medium', 'long']) },
   seaRoutes:   { show: false, types: new Set(['major', 'middle', 'minor']) },

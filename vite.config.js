@@ -1,7 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import cesium from 'vite-plugin-cesium';
+import { Agent } from 'node:https';
 import aisProxy from './vite-plugin-aisProxy.js';
+
+const ipv4Agent = new Agent({ family: 4 });
 
 export default defineConfig({
   plugins: [react(), cesium(), aisProxy()],
@@ -47,6 +50,12 @@ export default defineConfig({
         target: 'https://mlat.adsb.lol',
         changeOrigin: true,
         rewrite: (path) => path.replace('/api/mlat', ''),
+      },
+      '/api/overpass': {
+        target: 'https://lz4.overpass-api.de',
+        changeOrigin: true,
+        agent: ipv4Agent,
+        rewrite: (path) => path.replace('/api/overpass', '/api'),
       },
     },
   },

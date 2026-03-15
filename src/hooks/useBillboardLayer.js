@@ -160,6 +160,20 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
     }
   }, [entitiesMap, viewer]);
 
+  // Visibility toggle — react to visibleTypes changes
+  useEffect(() => {
+    const state = stateRef.current;
+    if (!state.size) return;
+    for (const entry of state.values()) {
+      const shouldShow = visibleTypes.has(entry._category);
+      if (entry.billboard.show !== shouldShow) {
+        entry.billboard.show = shouldShow;
+        if (entry.label) entry.label.show = shouldShow;
+      }
+    }
+    if (viewer) viewer.scene.requestRender();
+  }, [visibleTypes, viewer]);
+
   // Selection highlight
   const setSelected = useCallback((id) => {
     const state = stateRef.current;

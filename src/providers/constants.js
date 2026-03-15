@@ -151,6 +151,20 @@ export const RECEIVER_VIEWPORT_PAD    = 3;
 // Tamanho do ícone de antena/receptor em pixels
 export const RECEIVER_ICON_SIZE       = 44;
 
+// ── ATC (radares + torres de controle) ───────────────────────────────────
+// Tempo de espera antes de buscar novos dados ATC ao mover o mapa
+export const ATC_DEBOUNCE_MS      = 2_000;
+// Altitude máxima da câmera para exibir dados ATC
+export const ATC_MAX_ALT          = 100_000_000;
+// Tamanho do ícone de torre de controle em pixels
+export const ATC_TOWER_SIZE       = 28;
+// Tamanho do ícone de radar em pixels
+export const ATC_RADAR_SIZE       = 24;
+// TTL do cache IDB de dados ATC (7 dias)
+export const ATC_TTL_MS           = 7 * 24 * 60 * 60 * 1000;
+// Número máximo de entradas ATC em cache na memória
+export const ATC_MAX_CACHE        = 500;
+
 // ── Category heuristics ─────────────────────────────────────────────────────
 export const VEL_HEAVY            = 210;           // m/s
 export const VEL_REGIONAL         = 130;

@@ -11,6 +11,7 @@ import VesselCard from './components/VesselCard';
 import SatelliteCard from './components/SatelliteCard';
 import TelecomCard from './components/TelecomCard';
 import ReceiverCard from './components/ReceiverCard';
+import AtcCard from './components/AtcCard';
 import SettingsPanel from './components/SettingsPanel';
 import { LayerProvider } from './contexts/LayerContext';
 import { useGeoIP } from './hooks/useGeoIP';
@@ -28,6 +29,7 @@ export default function App() {
   const [selectedSatellite, setSelectedSatellite] = useState(null);
   const [selectedTelecom, setSelectedTelecom] = useState(null);
   const [selectedReceiver, setSelectedReceiver] = useState(null);
+  const [selectedAtc, setSelectedAtc] = useState(null);
   const geoIP = useGeoIP();
 
   useEffect(() => {
@@ -61,6 +63,7 @@ export default function App() {
         onSatelliteSelect={setSelectedSatellite}
         onTelecomSelect={setSelectedTelecom}
         onReceiverSelect={setSelectedReceiver}
+        onAtcSelect={setSelectedAtc}
       />
       <SearchBox onSelect={handleLocationSelect} />
       <InfoBar coords={coords} mouseCoords={mouseCoords} />
@@ -73,6 +76,7 @@ export default function App() {
       <SatelliteCard satellite={selectedSatellite} onClose={() => setSelectedSatellite(null)} />
       <TelecomCard telecom={selectedTelecom} onClose={() => setSelectedTelecom(null)} />
       <ReceiverCard receiver={selectedReceiver} onClose={() => setSelectedReceiver(null)} />
+      <AtcCard atc={selectedAtc} onClose={() => setSelectedAtc(null)} />
       <SettingsPanel />
     </LayerProvider>
   );

@@ -5,6 +5,7 @@ import { SATELLITE_CATEGORIES, SATELLITE_CATEGORY_META } from '../providers/sate
 import { FLIGHT_CATEGORIES, FLIGHT_CATEGORY_META } from '../providers/planeIcons';
 import { VESSEL_CATEGORIES, VESSEL_CATEGORY_META } from '../providers/vesselIcons';
 import { TELECOM_CATEGORIES, TELECOM_CATEGORY_META } from '../providers/telecomIcons';
+import { ATC_CATEGORIES, ATC_CATEGORY_META } from '../providers/atcIcons';
 import { PROVIDER_LIST } from '../providers/flightProviders';
 import { SEA_ROUTE_CATEGORIES, SEA_ROUTE_CATEGORY_META, AIR_ROUTE_CATEGORIES, AIR_ROUTE_CATEGORY_META } from '../providers/constants';
 import { layers } from '../providers/layers';
@@ -96,6 +97,7 @@ export default function ControlPanel() {
   const satellites = useLayerState('satellites');
   const airports   = useLayerState('airports');
   const telecom    = useLayerState('telecom');
+  const atc        = useLayerState('atc');
   const weather    = useLayerState('weather');
   const airRoutes  = useLayerState('airRoutes');
   const seaRoutes  = useLayerState('seaRoutes');
@@ -115,10 +117,13 @@ export default function ControlPanel() {
         <TypeFilter types={SATELLITE_CATEGORIES} activeSet={satellites.types} onChange={t => setTypes('satellites', t)} items={SATELLITE_CATEGORY_META} />
       </Card>
 
-      {/* Telecom */}
-      <Card icon="📡" label="Telecom">
-        <Toggle label="Infraestrutura" active={telecom.show} onToggle={() => toggle('telecom')} />
+      {/* Telecom + ATC */}
+      <Card icon="📡" label="Infraestrutura">
+        <Toggle label="Telecom" active={telecom.show} onToggle={() => toggle('telecom')} />
         <TypeFilter types={TELECOM_CATEGORIES} activeSet={telecom.types} onChange={t => setTypes('telecom', t)} items={TELECOM_CATEGORY_META} />
+        <Separator />
+        <Toggle label="Radares e Torres ATC" active={atc.show} onToggle={() => toggle('atc')} />
+        <TypeFilter types={ATC_CATEGORIES} activeSet={atc.types} onChange={t => setTypes('atc', t)} items={ATC_CATEGORY_META} />
       </Card>
 
       {/* Trafego Maritimo */}

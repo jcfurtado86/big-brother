@@ -69,6 +69,12 @@ export const SETTINGS_SCHEMA = [
     { key: 'ADSB_RECEIVERS_POLL_MS',   label: 'Polling ADS-B (ms)',     desc: 'Intervalo de polling das antenas ADS-B em milissegundos', default: C.ADSB_RECEIVERS_POLL_MS,   min: 60_000, max: 7_200_000, step: 60_000 },
     { key: 'AIS_STATION_FLUSH_MS',     label: 'Flush AIS (ms)',         desc: 'Intervalo de transferência dos dados AIS do WebSocket para o estado React', default: C.AIS_STATION_FLUSH_MS,     min: 500,  max: 30_000, step: 500 },
   ]},
+  { section: 'Radares / ATC', items: [
+    { key: 'ATC_DEBOUNCE_MS',  label: 'Debounce câmera (ms)',   desc: 'Tempo de espera antes de buscar novos dados ATC ao mover o mapa', default: C.ATC_DEBOUNCE_MS,  min: 500,  max: 10_000, step: 500 },
+    { key: 'ATC_MAX_ALT',      label: 'Alt máx visível (m)',    desc: 'Altitude máxima da câmera para exibir dados ATC', default: C.ATC_MAX_ALT,      min: 100_000, max: 200_000_000, step: 10_000_000 },
+    { key: 'ATC_TOWER_SIZE',   label: 'Ícone torre (px)',       desc: 'Tamanho do ícone de torre de controle em pixels', default: C.ATC_TOWER_SIZE,   min: 10, max: 64, step: 2 },
+    { key: 'ATC_RADAR_SIZE',   label: 'Ícone radar (px)',       desc: 'Tamanho do ícone de radar em pixels', default: C.ATC_RADAR_SIZE,   min: 10, max: 64, step: 2 },
+  ]},
   { section: 'Busca', items: [
     { key: 'SEARCH_LIMIT',      label: 'Resultados máx',         desc: 'Número máximo de resultados exibidos na busca', default: C.SEARCH_LIMIT,      min: 1,    max: 20,   step: 1 },
   ]},

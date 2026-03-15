@@ -98,16 +98,19 @@ export function SelectionProvider({ children }) {
     const hoverHandler = new ScreenSpaceEventHandler(canvas);
     hoverHandler.setInputAction((movement) => {
       if (viewer.isDestroyed()) return;
-      const picks = viewer.scene.drillPick(movement.endPosition, 5);
-      const hit = picks.find(p => defined(p) && typeof p.id === 'string');
-      canvas.style.cursor = hit ? 'pointer' : 'default';
+      try {
+        const picks = viewer.scene.drillPick(movement.endPosition, 5);
+        const hit = picks.find(p => defined(p) && typeof p.id === 'string');
+        canvas.style.cursor = hit ? 'pointer' : 'default';
+      } catch { /* Cesium internal error — ignore */ }
     }, ScreenSpaceEventType.MOUSE_MOVE);
 
     // Click dispatch
     const handler = new ScreenSpaceEventHandler(canvas);
     handler.setInputAction(async (click) => {
       if (viewer.isDestroyed()) return;
-      const picks = viewer.scene.drillPick(click.position, 5);
+      let picks;
+      try { picks = viewer.scene.drillPick(click.position, 5); } catch { return; }
       const picked = picks.find(p => defined(p) && typeof p.id === 'string');
       viewer.selectedEntity = undefined;
       const rawId = picked?.id ?? null;
