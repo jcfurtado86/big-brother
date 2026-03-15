@@ -7,6 +7,10 @@ import { VESSEL_CATEGORIES, VESSEL_CATEGORY_META } from '../providers/vesselIcon
 import { TELECOM_CATEGORIES, TELECOM_CATEGORY_META } from '../providers/telecomIcons';
 import { PROVIDER_LIST } from '../providers/flightProviders';
 import { SEA_ROUTE_CATEGORIES, SEA_ROUTE_CATEGORY_META, AIR_ROUTE_CATEGORIES, AIR_ROUTE_CATEGORY_META } from '../providers/constants';
+import { layers } from '../providers/layers';
+import { useLayerState, useLayerDispatch } from '../contexts/LayerContext';
+
+const layerOptions = layers.map(({ id, label }) => ({ id, label }));
 
 function Card({ icon, label, defaultOpen = false, children }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -85,93 +89,95 @@ function TypeFilter({ types, activeSet, onChange, items }) {
   });
 }
 
-export default function ControlPanel({
-  layerOptions, currentLayer, onLayerChange,
-  lighting, onLightingToggle,
-  showWeather, onWeatherToggle, weatherOpacity, onWeatherOpacityChange,
-  showFlights, onFlightsToggle, flightTypes, onFlightTypesChange,
-  showAirports, onAirportsToggle, airportTypes, onAirportTypesChange,
-  showVessels, onVesselsToggle, vesselTypes, onVesselTypesChange,
-  showSatellites, onSatellitesToggle, satelliteTypes, onSatelliteTypesChange,
-  showTelecom, onTelecomToggle, telecomTypes, onTelecomTypesChange,
-  flightProvider, onFlightProviderChange,
-  showAirRoutes, onAirRoutesToggle, airRouteTypes, onAirRouteTypesChange,
-  showSeaRoutes, onSeaRoutesToggle, seaRouteTypes, onSeaRouteTypesChange,
-  showAdsbReceivers, onAdsbReceiversToggle,
-  showAisStations, onAisStationsToggle,
-  receiverOpacity, onReceiverOpacityChange,
-}) {
+export default function ControlPanel() {
+  const dispatch = useLayerDispatch();
+  const flights    = useLayerState('flights');
+  const vessels    = useLayerState('vessels');
+  const satellites = useLayerState('satellites');
+  const airports   = useLayerState('airports');
+  const telecom    = useLayerState('telecom');
+  const weather    = useLayerState('weather');
+  const airRoutes  = useLayerState('airRoutes');
+  const seaRoutes  = useLayerState('seaRoutes');
+  const receivers  = useLayerState('receivers');
+  const env        = useLayerState('environment');
+
+  const toggle     = (layer)        => dispatch({ type: 'TOGGLE_SHOW', layer });
+  const toggleF    = (layer, field) => dispatch({ type: 'TOGGLE_FIELD', layer, field });
+  const setTypes   = (layer, types) => dispatch({ type: 'SET_TYPES', layer, types });
+  const setField   = (layer, field, value) => dispatch({ type: 'SET_FIELD', layer, field, value });
+
   return (
     <div className={styles.panel}>
-      {/* Satélites */}
-      <Card icon="🛰️" label="Satélites">
-        <Toggle label="Satélites" active={showSatellites} onToggle={onSatellitesToggle} />
-        <TypeFilter types={SATELLITE_CATEGORIES} activeSet={satelliteTypes} onChange={onSatelliteTypesChange} items={SATELLITE_CATEGORY_META} />
+      {/* Satelites */}
+      <Card icon="🛰️" label="Satelites">
+        <Toggle label="Satelites" active={satellites.show} onToggle={() => toggle('satellites')} />
+        <TypeFilter types={SATELLITE_CATEGORIES} activeSet={satellites.types} onChange={t => setTypes('satellites', t)} items={SATELLITE_CATEGORY_META} />
       </Card>
 
       {/* Telecom */}
       <Card icon="📡" label="Telecom">
-        <Toggle label="Infraestrutura" active={showTelecom} onToggle={onTelecomToggle} />
-        <TypeFilter types={TELECOM_CATEGORIES} activeSet={telecomTypes} onChange={onTelecomTypesChange} items={TELECOM_CATEGORY_META} />
+        <Toggle label="Infraestrutura" active={telecom.show} onToggle={() => toggle('telecom')} />
+        <TypeFilter types={TELECOM_CATEGORIES} activeSet={telecom.types} onChange={t => setTypes('telecom', t)} items={TELECOM_CATEGORY_META} />
       </Card>
 
-      {/* Tráfego Marítimo */}
-      <Card icon="🚢" label="Tráfego Marítimo">
-        <Toggle label="Embarcações" active={showVessels} onToggle={onVesselsToggle} />
-        <TypeFilter types={VESSEL_CATEGORIES} activeSet={vesselTypes} onChange={onVesselTypesChange} items={VESSEL_CATEGORY_META} />
+      {/* Trafego Maritimo */}
+      <Card icon="🚢" label="Trafego Maritimo">
+        <Toggle label="Embarcacoes" active={vessels.show} onToggle={() => toggle('vessels')} />
+        <TypeFilter types={VESSEL_CATEGORIES} activeSet={vessels.types} onChange={t => setTypes('vessels', t)} items={VESSEL_CATEGORY_META} />
         <Separator />
-        <Toggle label="Rotas marítimas" active={showSeaRoutes} onToggle={onSeaRoutesToggle} />
-        <TypeFilter types={SEA_ROUTE_CATEGORIES} activeSet={seaRouteTypes} onChange={onSeaRouteTypesChange} items={SEA_ROUTE_CATEGORY_META} />
+        <Toggle label="Rotas maritimas" active={seaRoutes.show} onToggle={() => toggle('seaRoutes')} />
+        <TypeFilter types={SEA_ROUTE_CATEGORIES} activeSet={seaRoutes.types} onChange={t => setTypes('seaRoutes', t)} items={SEA_ROUTE_CATEGORY_META} />
         <Separator />
-        <Toggle label="Antenas AIS" active={showAisStations} onToggle={onAisStationsToggle} />
-        <OpacitySlider label="Opacidade antenas" value={receiverOpacity} onChange={onReceiverOpacityChange} />
+        <Toggle label="Antenas AIS" active={receivers.aisShow} onToggle={() => toggleF('receivers', 'aisShow')} />
+        <OpacitySlider label="Opacidade antenas" value={receivers.opacity} onChange={v => setField('receivers', 'opacity', v)} />
       </Card>
 
-      {/* Tráfego Aéreo */}
-      <Card icon="✈️" label="Tráfego Aéreo">
-        <Toggle label="Aeronaves" active={showFlights} onToggle={onFlightsToggle} />
+      {/* Trafego Aereo */}
+      <Card icon="✈️" label="Trafego Aereo">
+        <Toggle label="Aeronaves" active={flights.show} onToggle={() => toggle('flights')} />
         <div className={styles.row}>
           <span className={styles.rowLabel}>Tracker</span>
           <select
             className={styles.select}
-            value={flightProvider}
-            onChange={e => onFlightProviderChange(e.target.value)}
+            value={flights.provider}
+            onChange={e => setField('flights', 'provider', e.target.value)}
           >
             {PROVIDER_LIST.map(p => (
               <option key={p.name} value={p.name}>{p.label}</option>
             ))}
           </select>
         </div>
-        <TypeFilter types={FLIGHT_CATEGORIES} activeSet={flightTypes} onChange={onFlightTypesChange} items={FLIGHT_CATEGORY_META} />
+        <TypeFilter types={FLIGHT_CATEGORIES} activeSet={flights.types} onChange={t => setTypes('flights', t)} items={FLIGHT_CATEGORY_META} />
         <Separator />
-        <Toggle label="Rotas aéreas" active={showAirRoutes} onToggle={onAirRoutesToggle} />
-        <TypeFilter types={AIR_ROUTE_CATEGORIES} activeSet={airRouteTypes} onChange={onAirRouteTypesChange} items={AIR_ROUTE_CATEGORY_META} />
+        <Toggle label="Rotas aereas" active={airRoutes.show} onToggle={() => toggle('airRoutes')} />
+        <TypeFilter types={AIR_ROUTE_CATEGORIES} activeSet={airRoutes.types} onChange={t => setTypes('airRoutes', t)} items={AIR_ROUTE_CATEGORY_META} />
         <Separator />
-        <Toggle label="Aeroportos" active={showAirports} onToggle={onAirportsToggle} />
-        <TypeFilter types={AIRPORT_TYPES} activeSet={airportTypes} onChange={onAirportTypesChange} items={AIRPORT_TYPE_META} />
+        <Toggle label="Aeroportos" active={airports.show} onToggle={() => toggle('airports')} />
+        <TypeFilter types={AIRPORT_TYPES} activeSet={airports.types} onChange={t => setTypes('airports', t)} items={AIRPORT_TYPE_META} />
         <Separator />
-        <Toggle label="Antenas ADS-B" active={showAdsbReceivers} onToggle={onAdsbReceiversToggle} />
-        <OpacitySlider label="Opacidade antenas" value={receiverOpacity} onChange={onReceiverOpacityChange} />
+        <Toggle label="Antenas ADS-B" active={receivers.adsbShow} onToggle={() => toggleF('receivers', 'adsbShow')} />
+        <OpacitySlider label="Opacidade antenas" value={receivers.opacity} onChange={v => setField('receivers', 'opacity', v)} />
       </Card>
 
-      {/* Ambiente — mapa base, iluminação, nuvens */}
+      {/* Ambiente */}
       <Card icon="🌍" label="Ambiente" defaultOpen>
         <div className={styles.layerGroup}>
           {layerOptions.map(l => (
             <button
               key={l.id}
-              className={`${styles.layerBtn} ${currentLayer === l.id ? styles.layerBtnActive : ''}`}
-              onClick={() => onLayerChange(l.id)}
+              className={`${styles.layerBtn} ${env.layerId === l.id ? styles.layerBtnActive : ''}`}
+              onClick={() => setField('environment', 'layerId', l.id)}
             >
               {l.label}
             </button>
           ))}
         </div>
-        <Toggle icon="🌙" label="Ciclo dia/noite" active={lighting} onToggle={onLightingToggle} />
+        <Toggle icon="🌙" label="Ciclo dia/noite" active={env.lighting} onToggle={() => toggleF('environment', 'lighting')} />
         <div className={styles.row} style={{ cursor: 'default' }}>
           <span className={styles.rowIcon}>☁️</span>
           <span className={styles.rowLabel}>Nuvens</span>
-          <span className={styles.sliderValue}>{Math.round(weatherOpacity * 100)}%</span>
+          <span className={styles.sliderValue}>{Math.round(weather.opacity * 100)}%</span>
         </div>
         <div className={styles.sliderRow}>
           <input
@@ -179,12 +185,12 @@ export default function ControlPanel({
             min="0"
             max="1"
             step="0.05"
-            value={weatherOpacity}
+            value={weather.opacity}
             onChange={e => {
               const v = Number(e.target.value);
-              onWeatherOpacityChange(v);
-              if (v > 0 && !showWeather) onWeatherToggle();
-              if (v === 0 && showWeather) onWeatherToggle();
+              setField('weather', 'opacity', v);
+              if (v > 0 && !weather.show) toggle('weather');
+              if (v === 0 && weather.show) toggle('weather');
             }}
             className={styles.slider}
           />

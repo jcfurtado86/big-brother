@@ -6,6 +6,7 @@ import { useAircraftMeta } from '../hooks/useAircraftMeta';
 import { getAirlineLogo, markLogoFailed } from '../providers/airlineLogos';
 import { getAirlineFromCallsign } from '../providers/airlineCodes';
 import { toKt, toFt, toCompass, toVs } from '../utils/unitConversion';
+import { useLayerState } from '../contexts/LayerContext';
 
 const TYPE_LABEL = {
   heavy:      'Heavy (wide-body)',
@@ -18,7 +19,8 @@ const TYPE_LABEL = {
   unknown:    'Unknown',
 };
 
-export default function FlightCard({ flight, onClose, flightProvider }) {
+export default function FlightCard({ flight, onClose }) {
+  const { provider: flightProvider } = useLayerState('flights');
   const meta = useAircraftMeta(flight?.icao24 ?? null, flightProvider, flight);
 
   if (!flight) return null;

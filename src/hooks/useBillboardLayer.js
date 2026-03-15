@@ -78,6 +78,9 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
       }
     }
 
+    // Removed stale entries — need a render even if nothing new is added
+    if (viewer) viewer.scene.requestRender();
+
     // Update existing + enqueue new
     entityQueueRef.current = [];
     for (const [id, data] of entitiesMap) {

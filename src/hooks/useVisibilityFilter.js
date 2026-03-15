@@ -23,6 +23,7 @@ export function useVisibilityFilter(viewer, layers) {
   const typeRefs = layers.map(l => l.types);
   useEffect(() => {
     for (const { stateRef, types, labelKey } of layersRef.current) {
+      if (!stateRef?.current) continue;
       for (const [, entry] of stateRef.current) {
         const show = types?.has(entry._category) ?? true;
         entry.billboard.show = show;

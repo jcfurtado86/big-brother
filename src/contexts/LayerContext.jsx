@@ -1,0 +1,65 @@
+import React, { createContext, useContext, useReducer, useMemo } from 'react';
+
+const INITIAL_STATE = {
+  flights:     { show: false, types: new Set(['heavy', 'large', 'regional', 'light', 'helicopter', 'uav', 'military', 'unknown']), provider: 'all' },
+  vessels:     { show: false, types: new Set(['cargo', 'tanker', 'passenger', 'fishing', 'sailing', 'tug', 'military', 'sar']) },
+  satellites:  { show: false, types: new Set(['leo', 'meo', 'geo']) },
+  airports:    { show: false, types: new Set(['large_airport', 'medium_airport']) },
+  telecom:     { show: false, types: new Set(['mast', 'comm_line', 'data_center']) },
+  weather:     { show: true,  opacity: 0 },
+  airRoutes:   { show: false, types: new Set(['short', 'medium', 'long']) },
+  seaRoutes:   { show: false, types: new Set(['major', 'middle', 'minor']) },
+  receivers:   { adsbShow: false, aisShow: false, opacity: 0.15 },
+  environment: { layerId: 'satellite', lighting: false },
+};
+
+function layerReducer(state, action) {
+  switch (action.type) {
+    case 'TOGGLE_SHOW': {
+      const { layer } = action;
+      const sub = state[layer];
+      return { ...state, [layer]: { ...sub, show: !sub.show } };
+    }
+    case 'TOGGLE_FIELD': {
+      const { layer, field } = action;
+      const sub = state[layer];
+      return { ...state, [layer]: { ...sub, [field]: !sub[field] } };
+    }
+    case 'SET_TYPES': {
+      const { layer, types } = action;
+      const sub = state[layer];
+      return { ...state, [layer]: { ...sub, types } };
+    }
+    case 'SET_FIELD': {
+      const { layer, field, value } = action;
+      const sub = state[layer];
+      return { ...state, [layer]: { ...sub, [field]: value } };
+    }
+    default:
+      return state;
+  }
+}
+
+const StateCtx    = createContext(INITIAL_STATE);
+const DispatchCtx = createContext(() => {});
+
+export function LayerProvider({ children }) {
+  const [state, dispatch] = useReducer(layerReducer, INITIAL_STATE);
+
+  return (
+    <DispatchCtx.Provider value={dispatch}>
+      <StateCtx.Provider value={state}>
+        {children}
+      </StateCtx.Provider>
+    </DispatchCtx.Provider>
+  );
+}
+
+export function useLayerState(key) {
+  const state = useContext(StateCtx);
+  return key ? state[key] : state;
+}
+
+export function useLayerDispatch() {
+  return useContext(DispatchCtx);
+}

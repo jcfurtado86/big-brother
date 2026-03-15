@@ -90,7 +90,7 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
     /** Deselect every entity type, then call clearSelection(). */
     const clearAll = () => {
       clearSelection();
-      setSelectedRef.current(null);
+      setSelectedRef.current?.(null);
       setSelectedAirportRef.current?.(null);
       onAirportSelectRef.current?.(null);
       setSelectedVesselRef.current?.(null);
@@ -215,7 +215,7 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
 
       const token = ++pendingRef.current;
       clearAll();
-      setSelectedRef.current(isSame ? null : icao24);
+      setSelectedRef.current?.(isSame ? null : icao24);
       if (!icao24 || isSame) return;
 
       try {

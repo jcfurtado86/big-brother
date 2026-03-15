@@ -123,6 +123,7 @@ export function useFlights(enabled = true, bbox = undefined, providerName = 'ope
       // ── Global providers: simple fixed-interval poll, no bbox logic ──
       if (isGlobal) {
         if (age < pollInterval && fetchedMapRef.current.size > 0) {
+          if (!cancelled) setFlights(fetchedMapRef.current);
           schedule(pollInterval - age);
           return;
         }

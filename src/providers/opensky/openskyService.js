@@ -58,7 +58,9 @@ export default {
 
   async fetchFlights(_bbox = null, signal = undefined) {
     const headers = await openskyHeaders();
-    const res = await fetch('/api/opensky', { headers, signal });
+    const timeout = AbortSignal.timeout(15_000);
+    const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
+    const res = await fetch('/api/opensky', { headers, signal: combined });
 
     if (res.status === 429) { console.warn('[opensky] rate limited (429)'); return null; }
     if (res.status === 401) { console.warn('[opensky] unauthorized (401)'); invalidateToken(); return null; }
