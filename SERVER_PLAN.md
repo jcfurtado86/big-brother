@@ -113,6 +113,19 @@ Vários datasets hoje são carregados como arquivos estáticos pelo frontend. No
 | Nuclear (usinas) | IAEA PRIS | Mensal | `GET /api/nuclear` |
 | Airspace (zonas) | OpenAIP | Mensal | `GET /api/airspace` |
 | Aeroportos | OurAirports CSV | Mensal | `GET /api/airports` |
+| LiveUAMap (emergentes) | LiveUAMap API | Poll ~5min | `GET /api/liveuamap` |
+
+### LiveUAMap — Eventos Emergentes (Tempo Real)
+
+Complementa o ACLED: enquanto o ACLED entrega dados agregados semanalmente, o LiveUAMap cobre eventos emergentes em tempo real (conflitos, protestos, desastres, terrorismo).
+
+- **API:** `https://a.liveuamap.com/api?a=mpts&resid={region}&time={unix_ts}&count=100&key={api_key}`
+- **Auth:** API key (~$85/ano) — contato: `api@liveuamap.com`
+- **Dados:** JSON com `name`, `lat`, `lng`, `timeDt`
+- **Estratégia:** Servidor faz poll a cada ~5min, acumula eventos da semana atual. Quando o ACLED semanal é atualizado (segunda 7h), os eventos LiveUAMap da semana anterior são descartados (já cobertos pelo ACLED).
+- **Frontend:** Mesmo layer de conflitos, com ícone diferenciado (ex: pulsar/glow) para eventos "quentes" vs históricos ACLED.
+- **Fallback:** Se API key não disponível, scraping como alternativa (projetos open-source existem).
+- notícias geopolíticas (GDELT) usar junto com o timeline e mostrar as noticias do dia
 
 **Vantagens:**
 - Frontend não precisa parsear XLSX/CSV/JSON gigantes — servidor entrega dados já processados
@@ -125,6 +138,7 @@ Vários datasets hoje são carregados como arquivos estáticos pelo frontend. No
 - Worker baixa → processa → salva em Redis (com timestamp)
 - Endpoint REST lê do Redis e retorna JSON
 - Se Redis vazio (cold start), worker roda imediatamente
+
 
 ## Modelo de Cache (Redis)
 
@@ -179,6 +193,7 @@ server/
    - `vesselService.js`: WebSocket aponta para `/ws/vessels` do servidor
    - `satelliteService.js`: `fetch('/api/tle')` → idem
 5. **Remover vite-plugin-aisProxy.js** — servidor cuida do WebSocket
+6. **O FRONT DEVE CONTINUAR COM AS LOGICAS DE CACHE JÁ IMPLEMENTADAS PRA NAO PESAR NO MEU BACKEND**
 
 ## Sequência de Implementação
 

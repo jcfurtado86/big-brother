@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { fetchTLEs, buildMockTLEs } from '../providers/satelliteService';
 import { SATELLITE_POLL_MS } from '../providers/constants';
+import { useLoading } from '../contexts/LoadingContext';
 
 const USE_MOCK = import.meta.env.VITE_MOCK_SATELLITES === 'true';
 
 export function useSatellites(enabled = false) {
   const [satellites, setSatellites] = useState(new Map());
+  const { start: loadStart, done: loadDone } = useLoading();
 
   useEffect(() => {
     if (!enabled) {
@@ -23,11 +25,14 @@ export function useSatellites(enabled = false) {
 
     async function load() {
       if (document.hidden) return;
+      loadStart();
       try {
         const sats = await fetchTLEs(ac.signal, SATELLITE_POLL_MS);
         if (!ac.signal.aborted) setSatellites(sats);
       } catch (e) {
         if (!ac.signal.aborted) console.warn('[satellites] fetch error:', e.message);
+      } finally {
+        loadDone();
       }
     }
 

@@ -17,7 +17,9 @@ import NuclearCard from './components/NuclearCard';
 import AirspaceCard from './components/AirspaceCard';
 import AcledCard from './components/AcledCard';
 import SettingsPanel from './components/SettingsPanel';
+import LoadingSpinner from './components/LoadingSpinner';
 import { LayerProvider } from './contexts/LayerContext';
+import { LoadingProvider } from './contexts/LoadingContext';
 import { useGeoIP } from './hooks/useGeoIP';
 import { DEFAULT_ALT, DEFAULT_PITCH } from './providers/constants';
 
@@ -58,6 +60,7 @@ export default function App() {
   const handleMouseMove = useCallback((pos) => setMouseCoords(pos), []);
 
   return (
+    <LoadingProvider>
     <LayerProvider>
       <Globe
         initialView={initialView}
@@ -94,6 +97,8 @@ export default function App() {
       <AirspaceCard airspace={selectedAirspace} onClose={() => setSelectedAirspace(null)} />
       <AcledCard acled={selectedAcled} onClose={() => setSelectedAcled(null)} />
       <SettingsPanel />
+      <LoadingSpinner />
     </LayerProvider>
+    </LoadingProvider>
   );
 }

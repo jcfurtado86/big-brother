@@ -4,6 +4,7 @@ import { buildCallsignBillboard } from '../utils/callsignCanvas';
 import { LABEL_VISIBLE, LABEL_ALWAYS } from '../providers/constants';
 import { getSetting } from '../providers/settingsStore';
 import { scheduleIdle } from '../utils/scheduleIdle';
+import { useLoading } from '../contexts/LoadingContext';
 
 const SCALE_BY_DIST        = new NearFarScalar(5e5, 1.5, 1.5e7, 0.4);
 const TRANSLUCENCY_BY_DIST = new NearFarScalar(5e5, 1.0, 2e7,  0.5);
@@ -43,6 +44,7 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
   const labelIdleRef     = useRef(null);
   const typesRef         = useRef(visibleTypes);
   typesRef.current       = visibleTypes;
+  const { start: loadStart, done: loadDone } = useLoading();
 
   // Create / destroy billboard collection
   useEffect(() => {
@@ -114,6 +116,8 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
         entityRafRef.current = null;
         if (labelQueueRef.current.length > 0) {
           labelIdleRef.current = scheduleIdle(processLabelBatch);
+        } else {
+          loadDone();
         }
       }
     }
@@ -152,10 +156,12 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
         labelIdleRef.current = scheduleIdle(processLabelBatch);
       } else {
         labelIdleRef.current = null;
+        loadDone();
       }
     }
 
     if (entityQueueRef.current.length > 0) {
+      loadStart();
       entityRafRef.current = requestAnimationFrame(processEntityBatch);
     }
   }, [entitiesMap, viewer]);

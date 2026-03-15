@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getSetting } from '../providers/settingsStore';
 import { computeBboxFromViewer } from '../utils/bboxUtils';
+import { useLoading } from '../contexts/LoadingContext';
 
 /**
  * Shared hook for layers that do a single global fetch + viewport filtering.
@@ -17,6 +18,7 @@ export function useGlobalPointsData(viewer, enabled, { fetchFn, maxAltKey, debou
   const [pointsMap, setPointsMap] = useState(new Map());
   const allPointsRef = useRef(null);
   const debounceRef = useRef(null);
+  const { start: loadStart, done: loadDone } = useLoading();
 
   const filterVisible = useCallback(() => {
     if (!viewer || viewer.isDestroyed() || !allPointsRef.current) return;
@@ -55,12 +57,13 @@ export function useGlobalPointsData(viewer, enabled, { fetchFn, maxAltKey, debou
     }
 
     const controller = new AbortController();
+    loadStart();
 
     fetchFn(controller.signal).then(points => {
       if (controller.signal.aborted || !points) return;
       allPointsRef.current = points;
       filterVisible();
-    });
+    }).finally(() => loadDone());
 
     function onCameraChange() {
       clearTimeout(debounceRef.current);
