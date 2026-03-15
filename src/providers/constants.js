@@ -75,6 +75,26 @@ export const TELECOM_MAX_CACHE    = 200;           // max in-memory tiles
 export const WEATHER_ZOOM         = 2;             // tile zoom (4×4 = 16 tiles)
 export const WEATHER_REFRESH_MS   = 60 * 60 * 1000;  // 60 min
 
+// ── Routes ────────────────────────────────────────────────────────────────────
+export const AIR_ROUTE_ALT        = 10_000;         // metros (altitude de cruzeiro)
+export const ROUTE_LINE_WIDTH     = 3;
+
+// Sea route categories
+export const SEA_ROUTE_CATEGORIES = ['major', 'middle', 'minor'];
+export const SEA_ROUTE_CATEGORY_META = {
+  major:  { label: 'Principais', color: '#00BCD4' },
+  middle: { label: 'Intermediárias', color: '#0097A7' },
+  minor:  { label: 'Secundárias', color: '#00796B' },
+};
+
+// Air route categories (by distance)
+export const AIR_ROUTE_CATEGORIES = ['short', 'medium', 'long'];
+export const AIR_ROUTE_CATEGORY_META = {
+  short:  { label: 'Curta (<1500km)', color: '#FFD54F' },
+  medium: { label: 'Média (1500–5000km)', color: '#F2A800' },
+  long:   { label: 'Longa (>5000km)', color: '#E65100' },
+};
+
 // ── Category heuristics ─────────────────────────────────────────────────────
 export const VEL_HEAVY            = 210;           // m/s
 export const VEL_REGIONAL         = 130;

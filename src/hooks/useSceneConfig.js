@@ -55,5 +55,6 @@ export function useSceneConfig(viewer, { lighting } = {}) {
       viewer.clock.shouldAnimate = false;
       viewer.scene.maximumRenderTimeChange = Infinity;
     }
+    viewer.scene.requestRender();
   }, [viewer, lighting]);
 }

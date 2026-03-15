@@ -6,6 +6,7 @@ import { FLIGHT_CATEGORIES, FLIGHT_CATEGORY_META } from '../providers/planeIcons
 import { VESSEL_CATEGORIES, VESSEL_CATEGORY_META } from '../providers/vesselIcons';
 import { TELECOM_CATEGORIES, TELECOM_CATEGORY_META } from '../providers/telecomIcons';
 import { PROVIDER_LIST } from '../providers/flightProviders';
+import { SEA_ROUTE_CATEGORIES, SEA_ROUTE_CATEGORY_META, AIR_ROUTE_CATEGORIES, AIR_ROUTE_CATEGORY_META } from '../providers/constants';
 
 function Card({ icon, label, defaultOpen = false, children }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -72,6 +73,8 @@ export default function ControlPanel({
   showSatellites, onSatellitesToggle, satelliteTypes, onSatelliteTypesChange,
   showTelecom, onTelecomToggle, telecomTypes, onTelecomTypesChange,
   flightProvider, onFlightProviderChange,
+  showAirRoutes, onAirRoutesToggle, airRouteTypes, onAirRouteTypesChange,
+  showSeaRoutes, onSeaRoutesToggle, seaRouteTypes, onSeaRouteTypesChange,
 }) {
   return (
     <div className={styles.panel}>
@@ -91,6 +94,9 @@ export default function ControlPanel({
       <Card icon="🚢" label="Tráfego Marítimo">
         <Toggle label="Embarcações" active={showVessels} onToggle={onVesselsToggle} />
         <TypeFilter types={VESSEL_CATEGORIES} activeSet={vesselTypes} onChange={onVesselTypesChange} items={VESSEL_CATEGORY_META} />
+        <Separator />
+        <Toggle label="Rotas marítimas" active={showSeaRoutes} onToggle={onSeaRoutesToggle} />
+        <TypeFilter types={SEA_ROUTE_CATEGORIES} activeSet={seaRouteTypes} onChange={onSeaRouteTypesChange} items={SEA_ROUTE_CATEGORY_META} />
       </Card>
 
       {/* Tráfego Aéreo */}
@@ -109,6 +115,9 @@ export default function ControlPanel({
           </select>
         </div>
         <TypeFilter types={FLIGHT_CATEGORIES} activeSet={flightTypes} onChange={onFlightTypesChange} items={FLIGHT_CATEGORY_META} />
+        <Separator />
+        <Toggle label="Rotas aéreas" active={showAirRoutes} onToggle={onAirRoutesToggle} />
+        <TypeFilter types={AIR_ROUTE_CATEGORIES} activeSet={airRouteTypes} onChange={onAirRouteTypesChange} items={AIR_ROUTE_CATEGORY_META} />
         <Separator />
         <Toggle label="Aeroportos" active={showAirports} onToggle={onAirportsToggle} />
         <TypeFilter types={AIRPORT_TYPES} activeSet={airportTypes} onChange={onAirportTypesChange} items={AIRPORT_TYPE_META} />
