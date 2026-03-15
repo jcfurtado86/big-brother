@@ -253,3 +253,14 @@ server/
 - Lógica de categorização, ícones, filtros
 - Componentes React (FlightCard, VesselCard, ControlPanel)
 - Propagação orbital (satellite.js roda no cliente)
+
+
+
+
+AVALIAR DEPOIS (precisa key/registro ou parsing extra)
+Base	País	Cameras	Bloqueio
+Noruega Vegvesen	Noruega	~centenas	Registro por email obrigatório, DATEX II XML
+Taiwan TDX	Taiwan	muitas	OAuth2 + registro
+Coreia ITS	Coreia do Sul	muitas	Geo-restrito (só IPs coreanos)
+CET São Paulo	Brasil	dezenas	Sem API, scraping necessário, sem coordenadas
+DER-SP	Brasil	desconhecido	Dados em XLSX, imagens via scraping

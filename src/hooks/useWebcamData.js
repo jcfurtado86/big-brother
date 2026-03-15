@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { fetchWebcamsForViewer, loadWebcamCache } from '../providers/webcamService';
 import { fetchOtcmCameras } from '../providers/otcmService';
 import { fetchDotCameras } from '../providers/dotService';
+import { fetchGovCameras } from '../providers/govService';
 import { computeBboxFromViewer } from '../utils/bboxUtils';
 import { getSetting } from '../providers/settingsStore';
 import { useLoading } from '../contexts/LoadingContext';
@@ -15,6 +16,7 @@ async function fetchByProvider(provider, viewer, signal) {
     windy: () => fetchWebcamsForViewer(viewer, signal),
     otcm:  () => fetchOtcmCameras(),
     dot:   () => fetchDotCameras(),
+    gov:   () => fetchGovCameras(),
   };
 
   if (provider === 'all') {
@@ -35,6 +37,7 @@ function hydrateByProvider(provider) {
     windy: () => loadWebcamCache(),
     otcm:  () => fetchOtcmCameras(),
     dot:   () => fetchDotCameras(),
+    gov:   () => fetchGovCameras(),
   };
 
   if (provider === 'all') {
