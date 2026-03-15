@@ -2,17 +2,20 @@ import { useMemo } from 'react';
 import { Cartesian3, Math as CesiumMath } from 'cesium';
 import { getVesselCategory, getVesselIcon, VESSEL_CATEGORY_COLOR } from '../providers/vesselIcons';
 import { useBillboardLayer } from './useBillboardLayer';
-import { SELECTED_VESSEL_COLOR, VESSEL_BATCH_SIZE, VESSEL_LABEL_BATCH, VESSEL_MIN_LEN, VESSEL_MAX_LEN, VESSEL_MIN_PX, VESSEL_MAX_PX } from '../providers/constants';
+import { SELECTED_VESSEL_COLOR, VESSEL_MIN_LEN, VESSEL_MAX_LEN } from '../providers/constants';
+import { getSetting } from '../providers/settingsStore';
 
 function vesselSize(length) {
+  const minPx = getSetting('VESSEL_MIN_PX');
+  const maxPx = getSetting('VESSEL_MAX_PX');
   const l = Math.max(VESSEL_MIN_LEN, Math.min(VESSEL_MAX_LEN, length || VESSEL_MIN_LEN));
-  return Math.round(VESSEL_MIN_PX + (VESSEL_MAX_PX - VESSEL_MIN_PX) * (l - VESSEL_MIN_LEN) / (VESSEL_MAX_LEN - VESSEL_MIN_LEN));
+  return Math.round(minPx + (maxPx - minPx) * (l - VESSEL_MIN_LEN) / (VESSEL_MAX_LEN - VESSEL_MIN_LEN));
 }
 
 export function useVesselLayer(viewer, vesselsMap, visibleTypes) {
   const config = useMemo(() => ({
-    batchSize: VESSEL_BATCH_SIZE,
-    labelBatchSize: VESSEL_LABEL_BATCH,
+    batchSize: getSetting('VESSEL_BATCH_SIZE'),
+    labelBatchSize: getSetting('VESSEL_LABEL_BATCH'),
     categoryColors: VESSEL_CATEGORY_COLOR,
     selectedColor: SELECTED_VESSEL_COLOR,
 

@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Cartesian3, PolylineCollection, Material, Color } from 'cesium';
-import {
-  AIR_ROUTE_CATEGORY_META, ROUTE_LINE_WIDTH, AIR_ROUTE_ALT,
-  FLIGHT_ALT_SCALE,
-} from '../providers/constants';
+import { AIR_ROUTE_CATEGORY_META } from '../providers/constants';
+import { getSetting } from '../providers/settingsStore';
 
 /* ── Great-circle arc ──────────────────────────────────────── */
 
@@ -101,12 +99,11 @@ async function loadAirRoutes() {
 
 /* ── Viewport hit test ─────────────────────────────────────── */
 
-const PADDING = 5;
-
 function routeInBbox(lat1, lon1, lat2, lon2, bbox) {
   if (!bbox) return true;
-  const s = bbox.south - PADDING, n = bbox.north + PADDING;
-  const w = bbox.west - PADDING, e = bbox.east + PADDING;
+  const pad = getSetting('ROUTE_BBOX_PADDING');
+  const s = bbox.south - pad, n = bbox.north + pad;
+  const w = bbox.west - pad, e = bbox.east + pad;
   return (lat1 >= s && lat1 <= n && lon1 >= w && lon1 <= e) ||
          (lat2 >= s && lat2 <= n && lon2 >= w && lon2 <= e);
 }
@@ -123,7 +120,6 @@ function makeMaterial(catIdx) {
 
 /* ── Hook ─────────────────────────────────────────────────── */
 
-const BATCH = 100;
 const STRIDE = 5; // values per route
 
 export function useAirRouteLayer(viewer, active, bbox, visibleTypes) {
@@ -178,7 +174,7 @@ export function useAirRouteLayer(viewer, active, bbox, visibleTypes) {
 
     const collection = collectionRef.current;
     const rendered = renderedRef.current;
-    const alt = AIR_ROUTE_ALT * FLIGHT_ALT_SCALE;
+    const alt = getSetting('AIR_ROUTE_ALT') * getSetting('FLIGHT_ALT_SCALE');
     const totalRoutes = routes.length / STRIDE;
 
     // Which routes should be visible (in bbox AND category enabled)
@@ -223,7 +219,7 @@ export function useAirRouteLayer(viewer, active, bbox, visibleTypes) {
 
     function processBatch() {
       if (collection.isDestroyed()) return;
-      const end = Math.min(cursor + BATCH, toAdd.length);
+      const end = Math.min(cursor + getSetting('ROUTE_BATCH_SIZE'), toAdd.length);
 
       for (let j = cursor; j < end; j++) {
         const i = toAdd[j];
@@ -233,7 +229,7 @@ export function useAirRouteLayer(viewer, active, bbox, visibleTypes) {
         if (!positions) continue;
         const polyline = collection.add({
           positions,
-          width: ROUTE_LINE_WIDTH,
+          width: getSetting('ROUTE_LINE_WIDTH'),
           material: makeMaterial(catIdx),
         });
         rendered.set(i, { polyline, cat: catIdx });

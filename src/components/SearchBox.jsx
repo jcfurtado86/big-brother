@@ -1,12 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styles from './SearchBox.module.css';
-import { SEARCH_LIMIT, NOMINATIM_URL } from '../providers/constants';
+import { NOMINATIM_URL } from '../providers/constants';
+import { getSetting } from '../providers/settingsStore';
 
 export default function SearchBox({ onSelect }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const timeoutRef = useRef(null);
   const skipFetchRef = useRef(false);
+  const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setResults([]);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (skipFetchRef.current) {
@@ -24,7 +36,7 @@ export default function SearchBox({ onSelect }) {
 
   async function fetchLocations(q) {
     try {
-      const limit = SEARCH_LIMIT;
+      const limit = getSetting('SEARCH_LIMIT');
       const url = `${NOMINATIM_URL}?q=${encodeURIComponent(q)}&format=json&limit=${limit}`;
       const res = await fetch(url, { headers: { 'Accept-Language': 'pt-BR,pt' } });
       setResults(await res.json());
@@ -41,7 +53,7 @@ export default function SearchBox({ onSelect }) {
   }
 
   return (
-    <div className={styles.wrapper}>
+    <div className={styles.wrapper} ref={wrapperRef}>
       <input
         className={styles.input}
         type="text"

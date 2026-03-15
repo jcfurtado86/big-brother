@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Cartesian3 } from 'cesium';
 import { deadReckon } from '../utils/geoMath';
-import { DEAD_RECKONING_MS, FLIGHT_ALT_SCALE } from '../providers/constants';
+import { getSetting } from '../providers/settingsStore';
 
 export function useDeadReckoning(viewer, billboardsRef, stateRef) {
   useEffect(() => {
@@ -14,13 +14,13 @@ export function useDeadReckoning(viewer, billboardsRef, stateRef) {
       for (const [, entry] of stateRef.current) {
         const dt = now - entry.fetchedAt;
         const { lat, lon } = deadReckon(entry.lat, entry.lon, entry.heading, entry.velocity, dt);
-        const alt = (entry._alt ?? 0) * FLIGHT_ALT_SCALE;
+        const alt = (entry._alt ?? 0) * getSetting('FLIGHT_ALT_SCALE');
         const pos = Cartesian3.fromDegrees(lon, lat, alt);
         entry.billboard.position = pos;
         if (entry.callsign) entry.callsign.position = pos;
       }
       viewer.scene.requestRender();
-    }, DEAD_RECKONING_MS);
+    }, getSetting('DEAD_RECKONING_MS'));
     return () => clearInterval(id);
   }, [viewer, billboardsRef, stateRef]);
 }

@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { BillboardCollection, NearFarScalar } from 'cesium';
 import { buildCallsignBillboard } from '../utils/callsignCanvas';
 import { LABEL_VISIBLE, LABEL_ALWAYS } from '../providers/constants';
+import { getSetting } from '../providers/settingsStore';
 import { scheduleIdle } from '../utils/scheduleIdle';
 
 const SCALE_BY_DIST        = new NearFarScalar(5e5, 1.5, 1.5e7, 0.4);
@@ -166,8 +167,8 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
       if (entry) {
         entry.billboard.color = categoryColors[entry._category] ?? categoryColors.unknown ?? categoryColors.leo;
         if (entry.label) {
-          entry.label.scaleByDistance        = LABEL_VISIBLE();
-          entry.label.translucencyByDistance = LABEL_VISIBLE();
+          entry.label.scaleByDistance        = LABEL_VISIBLE(getSetting('LABEL_NEAR'), getSetting('LABEL_FAR'));
+          entry.label.translucencyByDistance = LABEL_VISIBLE(getSetting('LABEL_NEAR'), getSetting('LABEL_FAR'));
         }
       }
     }

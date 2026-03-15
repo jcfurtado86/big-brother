@@ -1,5 +1,6 @@
 import { Cartesian2 } from 'cesium';
 import { LABEL_VISIBLE } from '../providers/constants';
+import { getSetting } from '../providers/settingsStore';
 import { getFlagImg } from '../providers/countryFlags';
 
 const FONT_SIZE = 14;
@@ -55,7 +56,7 @@ export function buildCallsignBillboard(billboards, pos, h, callsign, country) {
     width:  W,
     height: H,
     pixelOffset:            new Cartesian2(0, labelY),
-    scaleByDistance:        LABEL_VISIBLE(),
-    translucencyByDistance: LABEL_VISIBLE(),
+    scaleByDistance:        LABEL_VISIBLE(getSetting('LABEL_NEAR'), getSetting('LABEL_FAR')),
+    translucencyByDistance: LABEL_VISIBLE(getSetting('LABEL_NEAR'), getSetting('LABEL_FAR')),
   });
 }

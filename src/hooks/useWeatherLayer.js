@@ -1,10 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { Rectangle as CesiumRectangle, ImageMaterialProperty, Color, CallbackProperty } from 'cesium';
-import { OWM_TILE_URL, WEATHER_ZOOM, WEATHER_REFRESH_MS } from '../providers/constants';
+import { OWM_TILE_URL } from '../providers/constants';
+import { getSetting } from '../providers/settingsStore';
 
-const OWM_KEY    = import.meta.env.VITE_OWM_API_KEY || '';
-const N          = 1 << WEATHER_ZOOM;
-const CACHE_TTL  = WEATHER_REFRESH_MS;
+const OWM_KEY = import.meta.env.VITE_OWM_API_KEY || '';
 
 const LAYERS = [
   { layer: 'clouds_new', alt: 25_000 },
@@ -15,8 +14,8 @@ const LAYERS = [
 // key → { blobUrl, fetchedAt }
 const tileCache = new Map();
 
-function tileCacheKey(layerName, x, y) {
-  return `${layerName}/${WEATHER_ZOOM}/${x}/${y}`;
+function tileCacheKey(layerName, x, y, z) {
+  return `${layerName}/${z ?? getSetting('WEATHER_ZOOM')}/${x}/${y}`;
 }
 
 function boostAlpha(blob) {
@@ -41,14 +40,14 @@ function boostAlpha(blob) {
   });
 }
 
-async function fetchTileBlob(layerName, x, y) {
-  const key = tileCacheKey(layerName, x, y);
+async function fetchTileBlob(layerName, x, y, zoom) {
+  const key = tileCacheKey(layerName, x, y, zoom);
   const cached = tileCache.get(key);
-  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL) {
+  if (cached && Date.now() - cached.fetchedAt < getSetting('WEATHER_REFRESH_MS')) {
     return cached.blobUrl;
   }
 
-  const url = `${OWM_TILE_URL}/${layerName}/${WEATHER_ZOOM}/${x}/${y}.png?appid=${OWM_KEY}`;
+  const url = `${OWM_TILE_URL}/${layerName}/${zoom}/${x}/${y}.png?appid=${OWM_KEY}`;
   try {
     const res = await fetch(url);
     if (!res.ok) return cached?.blobUrl ?? url;
@@ -66,11 +65,13 @@ async function fetchTileBlob(layerName, x, y) {
 }
 
 async function fetchAllTiles() {
+  const zoom = getSetting('WEATHER_ZOOM');
+  const n = 1 << zoom;
   const promises = [];
   for (const { layer } of LAYERS) {
-    for (let y = 0; y < N; y++) {
-      for (let x = 0; x < N; x++) {
-        promises.push(fetchTileBlob(layer, x, y));
+    for (let y = 0; y < n; y++) {
+      for (let x = 0; x < n; x++) {
+        promises.push(fetchTileBlob(layer, x, y, zoom));
       }
     }
   }
@@ -95,14 +96,16 @@ function removeEntities(viewer, list) {
 }
 
 function addCachedEntities(viewer, list, opacityRef) {
+  const zoom = getSetting('WEATHER_ZOOM');
+  const n = 1 << zoom;
   for (const { layer, alt } of LAYERS) {
-    for (let y = 0; y < N; y++) {
-      for (let x = 0; x < N; x++) {
-        const key = tileCacheKey(layer, x, y);
+    for (let y = 0; y < n; y++) {
+      for (let x = 0; x < n; x++) {
+        const key = tileCacheKey(layer, x, y, zoom);
         const cached = tileCache.get(key);
         if (!cached) continue;
 
-        const b = tileBounds(WEATHER_ZOOM, x, y);
+        const b = tileBounds(zoom, x, y);
         const entity = viewer.entities.add({
           rectangle: {
             coordinates: CesiumRectangle.fromDegrees(b.west, b.south, b.east, b.north),
@@ -149,7 +152,7 @@ export function useWeatherLayer(viewer, active, opacity = 0.5) {
     }
 
     update();
-    intervalRef.current = setInterval(update, WEATHER_REFRESH_MS);
+    intervalRef.current = setInterval(update, getSetting('WEATHER_REFRESH_MS'));
 
     return () => {
       cancelled = true;

@@ -5,10 +5,8 @@ import { lookupAircraft, preloadAircraftDb } from '../providers/aircraftDb';
 import { buildCallsignBillboard } from '../utils/callsignCanvas';
 import { useDeadReckoning } from './useDeadReckoning';
 import { useBillboardLayer } from './useBillboardLayer';
-import {
-  SELECTED_PLANE_COLOR, PLANE_BATCH_SIZE, CALLSIGN_BATCH_SIZE,
-  FLIGHT_ALT_SCALE,
-} from '../providers/constants';
+import { SELECTED_PLANE_COLOR } from '../providers/constants';
+import { getSetting } from '../providers/settingsStore';
 
 function resolveCategory(icao, adsbCat, velocity, altitude, military) {
   const db       = lookupAircraft(icao);
@@ -21,15 +19,15 @@ function resolveCategory(icao, adsbCat, velocity, altitude, military) {
 
 export function useFlightLayer(viewer, flightsMap, visibleTypes) {
   const config = useMemo(() => ({
-    batchSize: PLANE_BATCH_SIZE,
-    labelBatchSize: CALLSIGN_BATCH_SIZE,
+    batchSize: getSetting('PLANE_BATCH_SIZE'),
+    labelBatchSize: getSetting('CALLSIGN_BATCH_SIZE'),
     categoryColors: FLIGHT_CATEGORY_COLOR,
     selectedColor: SELECTED_PLANE_COLOR,
 
     createBillboard(billboards, icao, flight, typesRef) {
       const { category, typeCode } = resolveCategory(icao, flight.category, flight.velocity, flight.altitude, flight.military);
       const { w, h } = CATEGORY_SIZE[category] ?? CATEGORY_SIZE.unknown;
-      const alt = (flight.altitude ?? 0) * FLIGHT_ALT_SCALE;
+      const alt = (flight.altitude ?? 0) * getSetting('FLIGHT_ALT_SCALE');
       const pos = Cartesian3.fromDegrees(flight.lon, flight.lat, alt);
 
       const show = typesRef.current?.has(category) ?? true;

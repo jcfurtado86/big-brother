@@ -1,7 +1,8 @@
 import Pbf from 'pbf';
 import { VectorTile } from '@mapbox/vector-tile';
 import { idbGet, idbSet, idbGetAllEntries, idbPurgeExpired } from '../utils/idbCache';
-import { TELECOM_TTL_MS, TELECOM_MAX_CACHE } from './constants';
+import { TELECOM_TTL_MS } from './constants';
+import { getSetting } from './settingsStore';
 
 const TELECOM_LAYERS = ['telecoms_mast', 'telecoms_data_center', 'telecoms_communication_line'];
 const TILE_URL = '/api/openinframap/tiles/{z}/{x}/{y}.pbf';
@@ -60,7 +61,7 @@ export async function fetchTelecomTile(z, x, y, signal) {
 }
 
 function memCachePut(key, data) {
-  if (tileCache.size >= TELECOM_MAX_CACHE) {
+  if (tileCache.size >= getSetting('TELECOM_MAX_CACHE')) {
     const oldest = tileCache.keys().next().value;
     tileCache.delete(oldest);
   }

@@ -25,12 +25,12 @@ export const FLIGHT_CACHE_TTL_MS  = Number(import.meta.env.VITE_FLIGHT_CACHE_TTL
 // ── Flight providers ────────────────────────────────────────────────────────
 export const AL_POLL_MS           = 10_000;        // airplanes.live polling
 export const AL_RETRY_MS          = 5_000;         // airplanes.live retry
-export const AL_MIN_GAP_MS        = 1_100;         // min gap between AL requests
+export const AL_MIN_GAP_MS        = 1_500;         // min gap between AL requests
 
 // ── Labels ──────────────────────────────────────────────────────────────────
 export const LABEL_NEAR           = 2_000_000;     // metros (100% visível abaixo)
 export const LABEL_FAR            = 4_000_000;     // metros (invisível acima)
-export const LABEL_VISIBLE        = () => new NearFarScalar(LABEL_NEAR, 1.0, LABEL_FAR, 0.0);
+export const LABEL_VISIBLE        = (near, far) => new NearFarScalar(near ?? LABEL_NEAR, 1.0, far ?? LABEL_FAR, 0.0);
 export const LABEL_ALWAYS         = new NearFarScalar(1, 1.0, 1e10, 1.0);
 
 // ── Colors ──────────────────────────────────────────────────────────────────
@@ -78,6 +78,8 @@ export const WEATHER_REFRESH_MS   = 60 * 60 * 1000;  // 60 min
 // ── Routes ────────────────────────────────────────────────────────────────────
 export const AIR_ROUTE_ALT        = 10_000;         // metros (altitude de cruzeiro)
 export const ROUTE_LINE_WIDTH     = 3;
+export const ROUTE_BBOX_PADDING   = 5;              // graus — expansão do bbox para culling
+export const ROUTE_BATCH_SIZE     = 100;            // polylines por frame
 
 // Sea route categories
 export const SEA_ROUTE_CATEGORIES = ['major', 'middle', 'minor'];

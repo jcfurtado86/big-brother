@@ -3,16 +3,13 @@ import { Cartesian3 } from 'cesium';
 import { getSatelliteIcon, getSatelliteCategory, SATELLITE_CATEGORY_COLOR } from '../providers/satelliteIcons';
 import { propagateSat } from '../providers/satelliteService';
 import { useBillboardLayer } from './useBillboardLayer';
-import {
-  SELECTED_SATELLITE_COLOR,
-  SATELLITE_BATCH_SIZE, SATELLITE_LABEL_BATCH,
-  TICK_INTERVAL_MS, SAT_ICON_SIZE,
-} from '../providers/constants';
+import { SELECTED_SATELLITE_COLOR } from '../providers/constants';
+import { getSetting } from '../providers/settingsStore';
 
 export function useSatelliteLayer(viewer, satellitesMap, visibleTypes) {
   const config = useMemo(() => ({
-    batchSize: SATELLITE_BATCH_SIZE,
-    labelBatchSize: SATELLITE_LABEL_BATCH,
+    batchSize: getSetting('SATELLITE_BATCH_SIZE'),
+    labelBatchSize: getSetting('SATELLITE_LABEL_BATCH'),
     categoryColors: SATELLITE_CATEGORY_COLOR,
     selectedColor: SELECTED_SATELLITE_COLOR,
 
@@ -29,8 +26,8 @@ export function useSatelliteLayer(viewer, satellitesMap, visibleTypes) {
         id: `sat_${id}`,
         position: cart,
         image: getSatelliteIcon(),
-        width: SAT_ICON_SIZE,
-        height: SAT_ICON_SIZE,
+        width: getSetting('SAT_ICON_SIZE'),
+        height: getSetting('SAT_ICON_SIZE'),
         show,
         color: SATELLITE_CATEGORY_COLOR[category],
       });
@@ -43,7 +40,7 @@ export function useSatelliteLayer(viewer, satellitesMap, visibleTypes) {
           tle,
           lat, lon, alt,
           velocity: pos?.velocity ?? null,
-          _h: SAT_ICON_SIZE,
+          _h: getSetting('SAT_ICON_SIZE'),
           _name: tle.name,
           _category: category,
         },
@@ -90,7 +87,7 @@ export function useSatelliteLayer(viewer, satellitesMap, visibleTypes) {
       viewer.scene.requestRender();
     }
     tick();
-    propagateRef.current = setInterval(tick, TICK_INTERVAL_MS);
+    propagateRef.current = setInterval(tick, getSetting('TICK_INTERVAL_MS'));
     return () => { clearInterval(propagateRef.current); };
   }, [viewer]);
 

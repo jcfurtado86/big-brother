@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { getProvider } from '../providers/flightProviders';
 import { idbGet, idbSet, idbDelete, idbPurgeExpired } from '../utils/idbCache';
-import { FETCH_PADDING, FLIGHT_RETRY_MS, FLIGHT_CACHE_TTL_MS } from '../providers/constants';
+import { FLIGHT_RETRY_MS, FLIGHT_CACHE_TTL_MS } from '../providers/constants';
+import { getSetting } from '../providers/settingsStore';
 
 // Purge expired flight cache entries on startup
 idbPurgeExpired('flights', FLIGHT_CACHE_TTL_MS);
@@ -63,8 +64,9 @@ function bboxContains(outer, inner) {
 
 function expandBbox(bbox) {
   if (!bbox) return bbox;
-  const latPad = (bbox.north - bbox.south) * FETCH_PADDING;
-  const lonPad = (bbox.east  - bbox.west)  * FETCH_PADDING;
+  const pad = getSetting('FETCH_PADDING');
+  const latPad = (bbox.north - bbox.south) * pad;
+  const lonPad = (bbox.east  - bbox.west)  * pad;
   return {
     south: Math.max(bbox.south - latPad, -90),
     north: Math.min(bbox.north + latPad,  90),

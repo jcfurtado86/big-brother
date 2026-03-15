@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { BillboardCollection, Cartesian3, Cartesian2, Cartographic } from 'cesium';
 import { getAirportIcon, AIRPORT_TYPE_META, AIRPORT_TYPE_COLOR, SELECTED_AIRPORT_COLOR } from '../providers/airportIcons';
 import { LABEL_VISIBLE } from '../providers/constants';
+import { getSetting } from '../providers/settingsStore';
 import AirportWorker from '../workers/airportWorker.js?worker';
 
 function inBbox(lat, lon, bbox) {
@@ -156,8 +157,8 @@ export function useAirportLayer(viewer, activeTypes, bbox) {
         width:                  ap.labelW,
         height:                 ap.labelH,
         pixelOffset:            new Cartesian2(0, meta.size / 2 + ap.labelH / 2 + 4),
-        scaleByDistance:        LABEL_VISIBLE(),
-        translucencyByDistance: LABEL_VISIBLE(),
+        scaleByDistance:        LABEL_VISIBLE(getSetting('LABEL_NEAR'), getSetting('LABEL_FAR')),
+        translucencyByDistance: LABEL_VISIBLE(getSetting('LABEL_NEAR'), getSetting('LABEL_FAR')),
         show:                   visible,
       });
 

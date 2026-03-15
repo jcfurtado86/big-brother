@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { connectVesselStream } from '../providers/vesselService';
 import { computeBboxFromViewer } from '../utils/bboxUtils';
 import { idbGet, idbSet, idbPurgeExpired } from '../utils/idbCache';
-import { VESSEL_STALE_MS, VESSEL_CLEANUP_MS, VESSEL_FLUSH_MS, VESSEL_BBOX_DEBOUNCE } from '../providers/constants';
+import { VESSEL_CLEANUP_MS } from '../providers/constants';
+import { getSetting } from '../providers/settingsStore';
 
 // Purge expired vessel cache on startup
-idbPurgeExpired('vessels', VESSEL_STALE_MS);
+idbPurgeExpired('vessels', getSetting('VESSEL_STALE_MS'));
 
 const USE_MOCK = import.meta.env.VITE_MOCK_VESSELS === 'true';
 
@@ -88,7 +89,7 @@ export function useVessels(viewer, enabled = false) {
       const now = Date.now();
       let loaded = 0;
       for (const [mmsi, v] of cached.entries) {
-        if (now - v.fetchedAt < VESSEL_STALE_MS) {
+        if (now - v.fetchedAt < getSetting('VESSEL_STALE_MS')) {
           vesselsMap.set(mmsi, v);
           loaded++;
         }
@@ -118,14 +119,14 @@ export function useVessels(viewer, enabled = false) {
         setVessels(new Map(vesselsMap));
         idbSet('vessels', 'vessels_all', { ts: Date.now(), entries: [...vesselsMap] });
       }
-    }, VESSEL_FLUSH_MS);
+    }, getSetting('VESSEL_FLUSH_MS'));
 
     // Evict stale vessels
     const cleanupId = setInterval(() => {
       const now = Date.now();
       let removed = 0;
       for (const [mmsi, v] of vesselsMap) {
-        if (now - v.fetchedAt > VESSEL_STALE_MS) {
+        if (now - v.fetchedAt > getSetting('VESSEL_STALE_MS')) {
           vesselsMap.delete(mmsi);
           removed++;
         }
@@ -166,7 +167,7 @@ export function useVessels(viewer, enabled = false) {
 
         console.log('[vessels] updating bbox:', bbox);
         stream.updateBbox(bbox);
-      }, VESSEL_BBOX_DEBOUNCE);
+      }, getSetting('VESSEL_BBOX_DEBOUNCE'));
     };
 
     const removeListener = viewer.camera.changed.addEventListener(onCameraChanged);

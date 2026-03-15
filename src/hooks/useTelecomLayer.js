@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Cartesian3, PolylineCollection, Material } from 'cesium';
 import { getTelecomIcon, getTelecomCategory, TELECOM_CATEGORY_COLOR } from '../providers/telecomIcons';
 import { useBillboardLayer } from './useBillboardLayer';
-import { SELECTED_PLANE_COLOR, TELECOM_MAST_SIZE, TELECOM_DC_SIZE } from '../providers/constants';
+import { SELECTED_PLANE_COLOR } from '../providers/constants';
+import { getSetting } from '../providers/settingsStore';
 
 // ── Point layer (masts + data centers) via useBillboardLayer ─────────────────
 
@@ -15,7 +16,7 @@ export function useTelecomLayer(viewer, pointsMap, lines, visibleTypes) {
 
     createBillboard(billboards, id, point, typesRef) {
       const category = getTelecomCategory(point.layer);
-      const sz = point.layer === 'telecoms_data_center' ? TELECOM_DC_SIZE : TELECOM_MAST_SIZE;
+      const sz = point.layer === 'telecoms_data_center' ? getSetting('TELECOM_DC_SIZE') : getSetting('TELECOM_MAST_SIZE');
       const pos = Cartesian3.fromDegrees(point.lon, point.lat, 0);
       const show = typesRef.current?.has(category) ?? true;
 

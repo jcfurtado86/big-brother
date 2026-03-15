@@ -9,6 +9,7 @@ import FlightCard from './components/FlightCard';
 import AirportCard from './components/AirportCard';
 import VesselCard from './components/VesselCard';
 import SatelliteCard from './components/SatelliteCard';
+import SettingsPanel from './components/SettingsPanel';
 import { useGeoIP } from './hooks/useGeoIP';
 import { layers } from './providers/layers';
 import { DEFAULT_ALT, DEFAULT_PITCH } from './providers/constants';
@@ -145,6 +146,7 @@ export default function App() {
       <AirportCard airport={selectedAirport} onClose={() => setSelectedAirport(null)} />
       <VesselCard vessel={selectedVessel} onClose={() => setSelectedVessel(null)} showSeaRoutes={showSeaRoutes} onSeaRoutesToggle={() => setShowSeaRoutes(v => !v)} />
       <SatelliteCard satellite={selectedSatellite} onClose={() => setSelectedSatellite(null)} />
+      <SettingsPanel />
     </>
   );
 }

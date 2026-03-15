@@ -10,7 +10,8 @@ import {
 import { getProvider }     from '../providers/flightProviders';
 import { deadReckon }      from '../utils/geoMath';
 import { useCameraFollow } from './useCameraFollow';
-import { TRACK_COLOR, TICK_INTERVAL_MS, FLIGHT_ALT_SCALE } from '../providers/constants';
+import { TRACK_COLOR } from '../providers/constants';
+import { getSetting } from '../providers/settingsStore';
 import { parseTLEOrbitalElements } from '../providers/satelliteService';
 
 export function useFlightSelection(viewer, flightStateRef, setSelected, airportDataRef, onAirportSelect, setSelectedAirport, vesselStateRef, onVesselSelect, setSelectedVessel, satelliteStateRef, onSatelliteSelect, setSelectedSatellite, providerName = 'opensky') {
@@ -131,7 +132,7 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
             const pos = Cartesian3.fromDegrees(entry.lon, entry.lat, 0);
             updateFollow(pos);
             onVesselSelectRef.current?.(entry.vessel ?? null);
-          }, TICK_INTERVAL_MS);
+          }, getSetting('TICK_INTERVAL_MS'));
         }
         return;
       }
@@ -167,7 +168,7 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
               alt: entry.alt, velocity: entry.velocity,
               ...orbital,
             });
-          }, TICK_INTERVAL_MS);
+          }, getSetting('TICK_INTERVAL_MS'));
         }
         return;
       }
@@ -215,7 +216,7 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
           const { lat: lat0, lon: lon0 } = deadReckon(
             entry0.lat, entry0.lon, entry0.heading, entry0.velocity, dt0
           );
-          startFollow(Cartesian3.fromDegrees(lon0, lat0, (entry0._alt ?? 0) * FLIGHT_ALT_SCALE));
+          startFollow(Cartesian3.fromDegrees(lon0, lat0, (entry0._alt ?? 0) * getSetting('FLIGHT_ALT_SCALE')));
         }
 
         liveIntervalRef.current = setInterval(() => {
@@ -225,10 +226,10 @@ export function useFlightSelection(viewer, flightStateRef, setSelected, airportD
           const { lat, lon } = deadReckon(
             entry.lat, entry.lon, entry.heading, entry.velocity, dt
           );
-          const pos = Cartesian3.fromDegrees(lon, lat, (entry._alt ?? 0) * FLIGHT_ALT_SCALE);
+          const pos = Cartesian3.fromDegrees(lon, lat, (entry._alt ?? 0) * getSetting('FLIGHT_ALT_SCALE'));
           liveEndRef.current = pos;
           updateFollow(pos);
-        }, TICK_INTERVAL_MS);
+        }, getSetting('TICK_INTERVAL_MS'));
 
       } catch (e) {
         console.error('[selection] track error:', e);

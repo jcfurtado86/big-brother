@@ -1,13 +1,13 @@
 .btn {
   position: fixed;
-  bottom: 48px;
+  bottom: 114px;
   left: 16px;
-  width: 80px;
-  height: 80px;
+  width: 60px;
+  height: 60px;
   border: none;
   border-radius: 50%;
   background: rgba(20, 20, 30, 0.75);
-  font-size: 36px;
+  font-size: 27px;
   filter: grayscale(1) brightness(1);
   line-height: 1;
   cursor: pointer;

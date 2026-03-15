@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Cartesian3, PolylineCollection, Material, Color } from 'cesium';
-import { SEA_ROUTE_CATEGORY_META, ROUTE_LINE_WIDTH } from '../providers/constants';
+import { SEA_ROUTE_CATEGORY_META } from '../providers/constants';
+import { getSetting } from '../providers/settingsStore';
 
 let cachedGeoJSON = null;
 
@@ -76,7 +77,7 @@ export function useSeaRouteLayer(viewer, active, visibleTypes) {
           }
 
           const positions = sampled.map(c => Cartesian3.fromDegrees(c[0], c[1], 0));
-          const polyline = collection.add({ positions, width: ROUTE_LINE_WIDTH, material: makeMaterial(cat), show });
+          const polyline = collection.add({ positions, width: getSetting('ROUTE_LINE_WIDTH'), material: makeMaterial(cat), show });
           byCategory[cat].push(polyline);
         }
       }

@@ -136,7 +136,7 @@ export default function ControlPanel({
             </button>
           ))}
         </div>
-        <Toggle icon="🌙" label="Ciclo diurno" active={lighting} onToggle={onLightingToggle} />
+        <Toggle icon="🌙" label="Ciclo dia/noite" active={lighting} onToggle={onLightingToggle} />
         <div className={styles.row} style={{ cursor: 'default' }}>
           <span className={styles.rowIcon}>☁️</span>
           <span className={styles.rowLabel}>Nuvens</span>

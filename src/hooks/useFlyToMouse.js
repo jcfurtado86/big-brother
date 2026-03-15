@@ -9,11 +9,7 @@ import {
   Cartesian3,
 } from 'cesium';
 
-import { FLY_MIN_ALT, FLY_ZOOM_FACTOR, FLY_DURATION } from '../providers/constants';
-
-const MIN_ALT     = FLY_MIN_ALT;
-const ZOOM_FACTOR = FLY_ZOOM_FACTOR;
-const DURATION    = FLY_DURATION;
+import { getSetting } from '../providers/settingsStore';
 
 export function useFlyToMouse(viewer) {
   useEffect(() => {
@@ -37,7 +33,7 @@ export function useFlyToMouse(viewer) {
 
       const carto     = Cartographic.fromCartesian(cartesian);
       const currentAlt = viewer.camera.positionCartographic.height;
-      const targetAlt  = Math.max(currentAlt / ZOOM_FACTOR, MIN_ALT);
+      const targetAlt  = Math.max(currentAlt / getSetting('FLY_ZOOM_FACTOR'), getSetting('FLY_MIN_ALT'));
 
       viewer.camera.flyTo({
         destination: Cartesian3.fromRadians(carto.longitude, carto.latitude, targetAlt),
@@ -46,7 +42,7 @@ export function useFlyToMouse(viewer) {
           pitch:   viewer.camera.pitch,
           roll:    0,
         },
-        duration: DURATION,
+        duration: getSetting('FLY_DURATION'),
       });
     }, ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
 
