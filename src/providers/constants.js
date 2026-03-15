@@ -172,6 +172,14 @@ export const MILITARY_TTL_MS      = 7 * 24 * 60 * 60 * 1000;
 // ── Nuclear ──────────────────────────────────────────────────────────────────
 export const NUCLEAR_ICON_SIZE     = 28;
 
+// ── Webcams ───────────────────────────────────────────────────────────────────
+export const WEBCAM_ICON_SIZE     = 18;
+export const WEBCAM_DEBOUNCE_MS   = 1_000;
+export const WEBCAM_MAX_ALT       = 50_000;  // 50km
+// Full size/opacity up to 35km, fade out from 35km to 50km
+export const WEBCAM_SCALE        = new NearFarScalar(3.5e4, 1.0, 5e4, 0.3);
+export const WEBCAM_TRANSLUCENCY = new NearFarScalar(3.5e4, 1.0, 5e4, 0.0);
+
 // ── ACLED (Armed Conflict) ─────────────────────────────────────────────────────
 export const ACLED_ICON_SIZE     = 22;
 export const ACLED_DEBOUNCE_MS   = 1_000;

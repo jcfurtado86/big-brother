@@ -1,6 +1,6 @@
 const DB_NAME = 'bb_cache';
-const DB_VERSION = 11;
-const STORES = ['tle', 'flights', 'vessels', 'telecom', 'receivers', 'atc', 'military', 'airspace', 'acled'];
+const DB_VERSION = 13;
+const STORES = ['tle', 'flights', 'vessels', 'telecom', 'receivers', 'atc', 'military', 'airspace', 'acled', 'webcams'];
 
 // Clean up legacy databases from older versions
 indexedDB.deleteDatabase('bb_satellite_cache');
@@ -11,7 +11,7 @@ function openDb() {
   if (!dbPromise) {
     dbPromise = new Promise((resolve, reject) => {
       const req = indexedDB.open(DB_NAME, DB_VERSION);
-      req.onupgradeneeded = () => {
+      req.onupgradeneeded = (e) => {
         const db = req.result;
         // Create required stores
         for (const name of STORES) {
@@ -20,6 +20,11 @@ function openDb() {
         // Remove legacy stores
         for (const name of db.objectStoreNames) {
           if (!STORES.includes(name)) db.deleteObjectStore(name);
+        }
+        // v13: clear webcams cache (category schema changed)
+        if (e.oldVersion < 13 && db.objectStoreNames.contains('webcams')) {
+          const tx = req.transaction;
+          tx.objectStore('webcams').clear();
         }
       };
       req.onsuccess = () => resolve(req.result);

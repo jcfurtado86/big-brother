@@ -185,7 +185,7 @@ server/
 ## Mudanças no Frontend
 
 1. **Remover proxies do Vite** — não precisa mais
-2. **Apontar para o servidor** — `VITE_API_URL=https://api.bigbrother.app`
+2. **Apontar para o servidor** — `VITE_API_URL=https://api.sentinela.app`
 3. **Remover API keys do .env.local** — ficam só no servidor
 4. **Providers apontam para o servidor** em vez de APIs externas:
    - `openskyService.js`: `fetch('/api/flights/opensky')` → sem mudança de rota, só o destino muda
@@ -242,7 +242,7 @@ server/
 - **Frequência:** Toda segunda-feira às 7h
 - **O que faz:** Login no ACLED → scrape 6 páginas regionais → baixa XLSX → converte para CSV → salva em `public/data/acled/`
 - **Env vars:** `ACLED_USER`, `ACLED_PASS`
-- **Cron:** `0 7 * * 1 cd /path/to/big-brother && node scripts/update-acled.mjs`
+- **Cron:** `0 7 * * 1 cd /path/to/sentinela && node scripts/update-acled.mjs`
 - **Regiões:** Africa, Middle East, Asia-Pacific, Europe+Central Asia, Latin America+Caribbean, US+Canada
 
 ## O que NÃO muda

@@ -33,6 +33,8 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
     selectedColor,
     batchSize = 20,
     labelBatchSize = 30,
+    labelScaleByDistance,
+    labelTranslucencyByDistance,
   } = config;
 
   const billboardsRef    = useRef(null);
@@ -148,6 +150,8 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
             billboards, info.pos, info.height, info.label, info.country ?? null
           );
           entry.label.show = entry.billboard.show;
+          if (labelScaleByDistance)        entry.label.scaleByDistance        = labelScaleByDistance;
+          if (labelTranslucencyByDistance) entry.label.translucencyByDistance = labelTranslucencyByDistance;
           if (selectedIdRef.current === id) {
             entry.label.scaleByDistance        = LABEL_ALWAYS;
             entry.label.translucencyByDistance = LABEL_ALWAYS;
@@ -196,8 +200,8 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
       if (entry) {
         entry.billboard.color = categoryColors[entry._category] ?? categoryColors.unknown ?? categoryColors.leo;
         if (entry.label) {
-          entry.label.scaleByDistance        = LABEL_VISIBLE(getSetting('LABEL_NEAR'), getSetting('LABEL_FAR'));
-          entry.label.translucencyByDistance = LABEL_VISIBLE(getSetting('LABEL_NEAR'), getSetting('LABEL_FAR'));
+          entry.label.scaleByDistance        = labelScaleByDistance ?? LABEL_VISIBLE(getSetting('LABEL_NEAR'), getSetting('LABEL_FAR'));
+          entry.label.translucencyByDistance = labelTranslucencyByDistance ?? LABEL_VISIBLE(getSetting('LABEL_NEAR'), getSetting('LABEL_FAR'));
         }
       }
     }

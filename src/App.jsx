@@ -16,6 +16,7 @@ import MilitaryCard from './components/MilitaryCard';
 import NuclearCard from './components/NuclearCard';
 import AirspaceCard from './components/AirspaceCard';
 import AcledCard from './components/AcledCard';
+import WebcamCard from './components/WebcamCard';
 import SettingsPanel from './components/SettingsPanel';
 import LoadingSpinner from './components/LoadingSpinner';
 import { LayerProvider } from './contexts/LayerContext';
@@ -40,6 +41,7 @@ export default function App() {
   const [selectedNuclear, setSelectedNuclear] = useState(null);
   const [selectedAirspace, setSelectedAirspace] = useState(null);
   const [selectedAcled, setSelectedAcled] = useState(null);
+  const [selectedWebcam, setSelectedWebcam] = useState(null);
   const geoIP = useGeoIP();
 
   useEffect(() => {
@@ -79,6 +81,7 @@ export default function App() {
         onNuclearSelect={setSelectedNuclear}
         onAirspaceSelect={setSelectedAirspace}
         onAcledSelect={setSelectedAcled}
+        onWebcamSelect={setSelectedWebcam}
       />
       <SearchBox onSelect={handleLocationSelect} />
       <InfoBar coords={coords} mouseCoords={mouseCoords} />
@@ -96,6 +99,7 @@ export default function App() {
       <NuclearCard nuclear={selectedNuclear} onClose={() => setSelectedNuclear(null)} />
       <AirspaceCard airspace={selectedAirspace} onClose={() => setSelectedAirspace(null)} />
       <AcledCard acled={selectedAcled} onClose={() => setSelectedAcled(null)} />
+      <WebcamCard webcam={selectedWebcam} onClose={() => setSelectedWebcam(null)} />
       <SettingsPanel />
       <LoadingSpinner />
     </LayerProvider>

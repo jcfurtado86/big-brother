@@ -10,6 +10,7 @@ import { MILITARY_CATEGORIES, MILITARY_CATEGORY_META } from '../providers/milita
 import { ACLED_CATEGORIES, ACLED_CATEGORY_META } from '../providers/acledIcons';
 import { NUCLEAR_CATEGORIES, NUCLEAR_CATEGORY_META } from '../providers/nuclearIcons';
 import { AIRSPACE_CATEGORIES, AIRSPACE_CATEGORY_META } from '../providers/airspaceIcons';
+import { WEBCAM_CATEGORIES, WEBCAM_CATEGORY_META } from '../providers/webcamIcons';
 import { PROVIDER_LIST } from '../providers/flightProviders';
 import { SEA_ROUTE_CATEGORIES, SEA_ROUTE_CATEGORY_META, AIR_ROUTE_CATEGORIES, AIR_ROUTE_CATEGORY_META } from '../providers/constants';
 import { layers } from '../providers/layers';
@@ -110,6 +111,7 @@ export default function ControlPanel() {
   const airRoutes  = useLayerState('airRoutes');
   const seaRoutes  = useLayerState('seaRoutes');
   const receivers  = useLayerState('receivers');
+  const webcams    = useLayerState('webcams');
   const env        = useLayerState('environment');
 
   const toggle     = (layer)        => dispatch({ type: 'TOGGLE_SHOW', layer });
@@ -141,6 +143,12 @@ export default function ControlPanel() {
         <Separator />
         <Toggle label="Conflitos (ACLED)" active={acled.show} onToggle={() => toggle('acled')} />
         <TypeFilter types={ACLED_CATEGORIES} activeSet={acled.types} onChange={t => setTypes('acled', t)} items={ACLED_CATEGORY_META} />
+      </Card>
+
+      {/* Cameras */}
+      <Card icon="📷" label="Cameras">
+        <Toggle label="Cameras ao vivo" active={webcams.show} onToggle={() => toggle('webcams')} />
+        <TypeFilter types={WEBCAM_CATEGORIES} activeSet={webcams.types} onChange={t => setTypes('webcams', t)} items={WEBCAM_CATEGORY_META} />
       </Card>
 
       {/* Nuclear */}

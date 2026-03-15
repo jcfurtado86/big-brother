@@ -85,6 +85,11 @@ export const SETTINGS_SCHEMA = [
     { key: 'ACLED_DEBOUNCE_MS',   label: 'Debounce camera (ms)',   desc: 'Tempo de espera antes de filtrar eventos ao mover o mapa', default: C.ACLED_DEBOUNCE_MS, min: 500, max: 10_000, step: 500 },
     { key: 'ACLED_MAX_ALT',       label: 'Alt max visivel (m)',    desc: 'Altitude maxima da camera para exibir eventos ACLED', default: C.ACLED_MAX_ALT,     min: 100_000, max: 200_000_000, step: 10_000_000 },
   ]},
+  { section: 'Webcams', items: [
+    { key: 'WEBCAM_ICON_SIZE',     label: 'Icone (px)',             desc: 'Tamanho do icone de webcam em pixels', default: C.WEBCAM_ICON_SIZE,     min: 10, max: 64, step: 2 },
+    { key: 'WEBCAM_DEBOUNCE_MS',   label: 'Debounce camera (ms)',   desc: 'Tempo de espera antes de buscar webcams ao mover o mapa', default: C.WEBCAM_DEBOUNCE_MS, min: 500, max: 10_000, step: 500 },
+    { key: 'WEBCAM_MAX_ALT',       label: 'Alt max visivel (m)',    desc: 'Altitude maxima da camera para exibir webcams', default: C.WEBCAM_MAX_ALT,     min: 10_000, max: 200_000, step: 10_000 },
+  ]},
   { section: 'Nuclear', items: [
     { key: 'NUCLEAR_ICON_SIZE',    label: 'Ícone (px)',             desc: 'Tamanho do ícone de usina nuclear em pixels', default: C.NUCLEAR_ICON_SIZE,    min: 10, max: 64, step: 2 },
   ]},
