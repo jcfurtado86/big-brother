@@ -3,7 +3,7 @@ import { BillboardCollection, NearFarScalar } from 'cesium';
 import { buildCallsignBillboard } from '../utils/callsignCanvas';
 import { LABEL_VISIBLE, LABEL_ALWAYS } from '../providers/constants';
 import { getSetting } from '../providers/settingsStore';
-import { scheduleIdle } from '../utils/scheduleIdle';
+import { scheduleIdle, cancelIdle } from '../utils/scheduleIdle';
 import { useLoading } from '../contexts/LoadingContext';
 
 const SCALE_BY_DIST        = new NearFarScalar(5e5, 1.5, 1.5e7, 0.4);
@@ -65,11 +65,17 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
     if (!billboards) return;
     const state = stateRef.current;
 
+    // Cancel any in-progress rendering and balance the loading counter
     if (entityRafRef.current) {
       cancelAnimationFrame(entityRafRef.current);
       entityRafRef.current = null;
     }
+    if (labelIdleRef.current != null) {
+      cancelIdle(labelIdleRef.current);
+      labelIdleRef.current = null;
+    }
     labelQueueRef.current = [];
+    loadDone();
 
     // Remove stale
     for (const [id, entry] of state) {
@@ -95,7 +101,7 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
 
     // Pass 1 — entity billboards (RAF)
     function processEntityBatch() {
-      if (billboards.isDestroyed()) return;
+      if (billboards.isDestroyed()) { loadDone(); return; }
       const batch = entityQueueRef.current.splice(0, batchSize);
       for (const [id, data] of batch) {
         const { billboard, entry } = createBillboard(billboards, id, data, typesRef);
@@ -124,7 +130,7 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
 
     // Pass 2 — labels (idle, expensive canvas ops)
     function processLabelBatch(deadline) {
-      if (billboards.isDestroyed()) return;
+      if (billboards.isDestroyed()) { loadDone(); return; }
       const queue = labelQueueRef.current;
 
       let processed = 0;
