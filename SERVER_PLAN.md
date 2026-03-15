@@ -194,6 +194,7 @@ server/
    - `satelliteService.js`: `fetch('/api/tle')` → idem
 5. **Remover vite-plugin-aisProxy.js** — servidor cuida do WebSocket
 6. **O FRONT DEVE CONTINUAR COM AS LOGICAS DE CACHE JÁ IMPLEMENTADAS PRA NAO PESAR NO MEU BACKEND**
+7. **PENSAR NA LOGICA DE ATUALIZACAO PARA ARQUIVOS ESTATICOS, DE QUANTO EM QUANTO TEMPO BUSCAR**
 
 ## Sequência de Implementação
 

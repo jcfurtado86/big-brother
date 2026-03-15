@@ -10,7 +10,7 @@ const INITIAL_STATE = {
   military:    { show: false, types: new Set(['airfield', 'barracks', 'base', 'checkpoint', 'danger_area', 'naval_base', 'nuclear_explosion_site', 'office', 'range', 'training_area']) },
   nuclear:     { show: false, types: new Set(['operational', 'under_construction', 'planned', 'shutdown', 'suspended_operation']) },
   acled:       { show: false, types: new Set(['battles', 'explosions_remote_violence', 'violence_against_civilians', 'protests', 'riots', 'strategic_developments']) },
-  webcams:     { show: false, types: new Set(['live', 'timelapse', 'inactive']), provider: 'windy' },
+  webcams:     { show: false, types: new Set(['live', 'timelapse', 'inactive']), provider: 'all' },
   airspace:    { show: false, types: new Set(['danger', 'restricted', 'prohibited']), opacity: 0.12 },
   weather:     { show: true,  opacity: 0 },
   airRoutes:   { show: false, types: new Set(['short', 'medium', 'long']) },

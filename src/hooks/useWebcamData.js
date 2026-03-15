@@ -6,9 +6,46 @@ import { getSetting } from '../providers/settingsStore';
 import { useLoading } from '../contexts/LoadingContext';
 
 /**
+ * Fetch cameras from the selected provider(s).
+ * 'all' merges every provider in parallel.
+ */
+async function fetchByProvider(provider, viewer, signal) {
+  const fetchers = {
+    windy: () => fetchWebcamsForViewer(viewer, signal),
+    otcm:  () => fetchOtcmCameras(),
+  };
+
+  if (provider === 'all') {
+    const results = await Promise.all(
+      Object.values(fetchers).map(fn => fn().catch(() => []))
+    );
+    return results.flat();
+  }
+
+  return fetchers[provider]?.() ?? [];
+}
+
+/**
+ * Hydrate caches for the selected provider(s).
+ */
+function hydrateByProvider(provider) {
+  const hydrators = {
+    windy: () => loadWebcamCache(),
+    otcm:  () => fetchOtcmCameras(),
+  };
+
+  if (provider === 'all') {
+    return Promise.all(
+      Object.values(hydrators).map(fn => fn().catch(() => {}))
+    );
+  }
+
+  return hydrators[provider]?.() ?? Promise.resolve();
+}
+
+/**
  * Webcam data hook — fetches from selected provider based on current viewport.
- * Windy: viewport-based API fetch with IDB cache.
- * OTCM: static dataset, fetched once and filtered client-side.
+ * Provider can be 'windy', 'otcm', or 'all'.
  */
 export function useWebcamData(viewer, enabled = false, provider = 'windy') {
   const [pointsMap, setPointsMap] = useState(new Map());
@@ -33,12 +70,7 @@ export function useWebcamData(viewer, enabled = false, provider = 'windy') {
 
     loadStart();
     try {
-      let all;
-      if (provider === 'otcm') {
-        all = await fetchOtcmCameras();
-      } else {
-        all = await fetchWebcamsForViewer(viewer, controller.signal);
-      }
+      const all = await fetchByProvider(provider, viewer, controller.signal);
       if (controller.signal.aborted) return;
 
       // Filter to visible bbox
@@ -73,13 +105,12 @@ export function useWebcamData(viewer, enabled = false, provider = 'windy') {
       return;
     }
 
+    // Clear old provider data immediately on switch
+    setPointsMap(prev => prev.size === 0 ? prev : new Map());
+
     // Hydrate from cache on mount
     loadStart();
-    const hydrate = provider === 'otcm'
-      ? fetchOtcmCameras().then(() => {})
-      : loadWebcamCache().then(() => {});
-
-    hydrate.then(() => {
+    hydrateByProvider(provider).then(() => {
       fetchVisible();
     }).finally(() => loadDone());
 

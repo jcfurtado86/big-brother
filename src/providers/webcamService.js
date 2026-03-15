@@ -22,7 +22,7 @@ function bboxKey(bbox) {
   const w = Math.floor(bbox.west);
   const n = Math.ceil(bbox.north);
   const e = Math.ceil(bbox.east);
-  return `${s}_${w}_${n}_${e}`;
+  return `windy:${s}_${w}_${n}_${e}`;
 }
 
 /**
@@ -177,6 +177,7 @@ export async function loadWebcamCache() {
     let count = 0;
 
     for (const [key, entry] of entries) {
+      if (!key.startsWith('windy:')) continue;
       if (!entry?.data || (now - entry.ts) > CACHE_TTL_MS) continue;
       for (const wc of entry.data) {
         memoryCache.set(wc.id, wc);

@@ -1,7 +1,7 @@
 import { idbGet, idbSet } from '../utils/idbCache';
 
 const IDB_STORE = 'webcams';
-const IDB_KEY = 'otcm_all';
+const IDB_KEY = 'otcm:all';
 const DATA_URL = 'https://raw.githubusercontent.com/AidanWelch/OpenTrafficCamMap/master/cameras/USA.json';
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days (static dataset)
 
