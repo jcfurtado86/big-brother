@@ -8,6 +8,7 @@ import { TELECOM_CATEGORIES, TELECOM_CATEGORY_META } from '../providers/telecomI
 import { ATC_CATEGORIES, ATC_CATEGORY_META } from '../providers/atcIcons';
 import { MILITARY_CATEGORIES, MILITARY_CATEGORY_META } from '../providers/militaryIcons';
 import { NUCLEAR_CATEGORIES, NUCLEAR_CATEGORY_META } from '../providers/nuclearIcons';
+import { AIRSPACE_CATEGORIES, AIRSPACE_CATEGORY_META } from '../providers/airspaceIcons';
 import { PROVIDER_LIST } from '../providers/flightProviders';
 import { SEA_ROUTE_CATEGORIES, SEA_ROUTE_CATEGORY_META, AIR_ROUTE_CATEGORIES, AIR_ROUTE_CATEGORY_META } from '../providers/constants';
 import { layers } from '../providers/layers';
@@ -102,6 +103,7 @@ export default function ControlPanel() {
   const atc        = useLayerState('atc');
   const military   = useLayerState('military');
   const nuclear    = useLayerState('nuclear');
+  const airspace   = useLayerState('airspace');
   const weather    = useLayerState('weather');
   const airRoutes  = useLayerState('airRoutes');
   const seaRoutes  = useLayerState('seaRoutes');
@@ -176,6 +178,10 @@ export default function ControlPanel() {
         <Separator />
         <Toggle label="Aeroportos" active={airports.show} onToggle={() => toggle('airports')} />
         <TypeFilter types={AIRPORT_TYPES} activeSet={airports.types} onChange={t => setTypes('airports', t)} items={AIRPORT_TYPE_META} />
+        <Separator />
+        <Toggle label="Zonas de exclusao" active={airspace.show} onToggle={() => toggle('airspace')} />
+        <TypeFilter types={AIRSPACE_CATEGORIES} activeSet={airspace.types} onChange={t => setTypes('airspace', t)} items={AIRSPACE_CATEGORY_META} />
+        <OpacitySlider label="Opacidade zonas" value={airspace.opacity} onChange={v => setField('airspace', 'opacity', v)} />
         <Separator />
         <Toggle label="Antenas ADS-B" active={receivers.adsbShow} onToggle={() => toggleF('receivers', 'adsbShow')} />
         <OpacitySlider label="Opacidade antenas" value={receivers.adsbOpacity} onChange={v => setField('receivers', 'adsbOpacity', v)} />

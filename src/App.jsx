@@ -14,6 +14,7 @@ import ReceiverCard from './components/ReceiverCard';
 import AtcCard from './components/AtcCard';
 import MilitaryCard from './components/MilitaryCard';
 import NuclearCard from './components/NuclearCard';
+import AirspaceCard from './components/AirspaceCard';
 import SettingsPanel from './components/SettingsPanel';
 import { LayerProvider } from './contexts/LayerContext';
 import { useGeoIP } from './hooks/useGeoIP';
@@ -34,6 +35,7 @@ export default function App() {
   const [selectedAtc, setSelectedAtc] = useState(null);
   const [selectedMilitary, setSelectedMilitary] = useState(null);
   const [selectedNuclear, setSelectedNuclear] = useState(null);
+  const [selectedAirspace, setSelectedAirspace] = useState(null);
   const geoIP = useGeoIP();
 
   useEffect(() => {
@@ -70,6 +72,7 @@ export default function App() {
         onAtcSelect={setSelectedAtc}
         onMilitarySelect={setSelectedMilitary}
         onNuclearSelect={setSelectedNuclear}
+        onAirspaceSelect={setSelectedAirspace}
       />
       <SearchBox onSelect={handleLocationSelect} />
       <InfoBar coords={coords} mouseCoords={mouseCoords} />
@@ -85,6 +88,7 @@ export default function App() {
       <AtcCard atc={selectedAtc} onClose={() => setSelectedAtc(null)} />
       <MilitaryCard military={selectedMilitary} onClose={() => setSelectedMilitary(null)} />
       <NuclearCard nuclear={selectedNuclear} onClose={() => setSelectedNuclear(null)} />
+      <AirspaceCard airspace={selectedAirspace} onClose={() => setSelectedAirspace(null)} />
       <SettingsPanel />
     </LayerProvider>
   );
