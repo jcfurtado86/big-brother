@@ -184,7 +184,29 @@ export function useAirspaceLayer(viewer, zonesMap, visibleTypes, opacity = 0.12)
   }, [visibleTypes, opacity, viewer]);
 
   function setSelected(id) {
+    const prevId = selectedRef.current;
     selectedRef.current = id;
+    // Imperative in-place color update for the two affected zones
+    const prim = primitiveRef.current;
+    if (!prim || !prim.ready || !viewer || viewer.isDestroyed()) return;
+    for (const zoneId of [prevId, id]) {
+      if (!zoneId) continue;
+      const entry = stateRef.current.get(zoneId);
+      if (!entry) continue;
+      try {
+        const attrs = prim.getGeometryInstanceAttributes(zoneId);
+        if (!attrs) continue;
+        const visible = typesRef.current?.has(entry.zone.category);
+        if (!visible) {
+          attrs.color = HIDDEN;
+        } else {
+          const base = BASE_COLOR[entry.zone.category] ?? BASE_COLOR.restricted;
+          const color = id === zoneId ? SELECTED_COLOR : base.withAlpha(opacityRef.current);
+          attrs.color = ColorGeometryInstanceAttribute.toValue(color);
+        }
+      } catch (e) { /* not ready */ }
+    }
+    viewer.scene.requestRender();
   }
 
   return { stateRef, setSelected };
