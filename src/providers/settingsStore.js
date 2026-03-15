@@ -80,6 +80,11 @@ export const SETTINGS_SCHEMA = [
     { key: 'MILITARY_DEBOUNCE_MS', label: 'Debounce câmera (ms)',   desc: 'Tempo de espera antes de filtrar dados militares ao mover o mapa', default: C.MILITARY_DEBOUNCE_MS, min: 500, max: 10_000, step: 500 },
     { key: 'MILITARY_MAX_ALT',     label: 'Alt máx visível (m)',    desc: 'Altitude máxima da câmera para exibir instalações militares', default: C.MILITARY_MAX_ALT,     min: 100_000, max: 200_000_000, step: 10_000_000 },
   ]},
+  { section: 'Conflitos (ACLED)', items: [
+    { key: 'ACLED_ICON_SIZE',     label: 'Icone (px)',             desc: 'Tamanho do icone de evento ACLED em pixels', default: C.ACLED_ICON_SIZE,     min: 10, max: 64, step: 2 },
+    { key: 'ACLED_DEBOUNCE_MS',   label: 'Debounce camera (ms)',   desc: 'Tempo de espera antes de filtrar eventos ao mover o mapa', default: C.ACLED_DEBOUNCE_MS, min: 500, max: 10_000, step: 500 },
+    { key: 'ACLED_MAX_ALT',       label: 'Alt max visivel (m)',    desc: 'Altitude maxima da camera para exibir eventos ACLED', default: C.ACLED_MAX_ALT,     min: 100_000, max: 200_000_000, step: 10_000_000 },
+  ]},
   { section: 'Nuclear', items: [
     { key: 'NUCLEAR_ICON_SIZE',    label: 'Ícone (px)',             desc: 'Tamanho do ícone de usina nuclear em pixels', default: C.NUCLEAR_ICON_SIZE,    min: 10, max: 64, step: 2 },
   ]},

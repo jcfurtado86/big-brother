@@ -40,8 +40,11 @@ export function useGlobalPointsData(viewer, enabled, { fetchFn, maxAltKey, debou
       }
     }
     setPointsMap(prev => {
-      if (prev.size === visible.size && [...prev.keys()].every(k => visible.has(k))) return prev;
-      return visible;
+      if (prev.size !== visible.size) return visible;
+      for (const k of prev.keys()) {
+        if (!visible.has(k)) return visible;
+      }
+      return prev;
     });
   }, [viewer, maxAltKey]);
 

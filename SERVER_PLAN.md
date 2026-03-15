@@ -100,6 +100,32 @@ Um servidor Node.js centralizado que:
 - **Servidor:** Proxy com cache de tiles (Redis, TTL 10min)
 - **Ganho:** Tiles populares servidos do cache, reduz chamadas à OWM
 
+### Dados Estáticos com Refresh Periódico
+
+Vários datasets hoje são carregados como arquivos estáticos pelo frontend. No servidor, esses dados devem ser consumidos por serviços background que rodam periodicamente, processam e servem via REST:
+
+| Dataset | Fonte | Frequência | Endpoint |
+|---------|-------|------------|----------|
+| ACLED (conflitos) | XLSX do site ACLED (login + scrape) | Semanal (seg 7h) | `GET /api/acled` |
+| Militar (bases) | OSM Overpass | Semanal | `GET /api/military` |
+| ATC (radares/torres) | OSM Overpass | Semanal | `GET /api/atc` |
+| Telecom (antenas) | OSM Overpass + OpenCelliD | Semanal | `GET /api/telecom` |
+| Nuclear (usinas) | IAEA PRIS | Mensal | `GET /api/nuclear` |
+| Airspace (zonas) | OpenAIP | Mensal | `GET /api/airspace` |
+| Aeroportos | OurAirports CSV | Mensal | `GET /api/airports` |
+
+**Vantagens:**
+- Frontend não precisa parsear XLSX/CSV/JSON gigantes — servidor entrega dados já processados
+- Um único processo baixa e processa, N clientes consomem o resultado
+- Possibilidade de agregar/indexar por região para queries espaciais rápidas
+- API keys e credenciais ficam no servidor
+
+**Implementação:**
+- Cada dataset tem um poller/worker com intervalo configurável
+- Worker baixa → processa → salva em Redis (com timestamp)
+- Endpoint REST lê do Redis e retorna JSON
+- Se Redis vazio (cold start), worker roda imediatamente
+
 ## Modelo de Cache (Redis)
 
 ```
@@ -193,6 +219,16 @@ server/
 | Servidor Node.js | ~100-200MB | Baixo (I/O bound) |
 | Redis | ~50-100MB (depende de dados cacheados) | Mínimo |
 | Total | ~200-300MB | 1 vCPU suficiente para ~100 clientes |
+
+## Cron Jobs
+
+### ACLED (Conflitos Armados)
+- **Script:** `node scripts/update-acled.mjs`
+- **Frequência:** Toda segunda-feira às 7h
+- **O que faz:** Login no ACLED → scrape 6 páginas regionais → baixa XLSX → converte para CSV → salva em `public/data/acled/`
+- **Env vars:** `ACLED_USER`, `ACLED_PASS`
+- **Cron:** `0 7 * * 1 cd /path/to/big-brother && node scripts/update-acled.mjs`
+- **Regiões:** Africa, Middle East, Asia-Pacific, Europe+Central Asia, Latin America+Caribbean, US+Canada
 
 ## O que NÃO muda
 

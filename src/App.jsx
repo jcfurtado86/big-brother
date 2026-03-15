@@ -15,6 +15,7 @@ import AtcCard from './components/AtcCard';
 import MilitaryCard from './components/MilitaryCard';
 import NuclearCard from './components/NuclearCard';
 import AirspaceCard from './components/AirspaceCard';
+import AcledCard from './components/AcledCard';
 import SettingsPanel from './components/SettingsPanel';
 import { LayerProvider } from './contexts/LayerContext';
 import { useGeoIP } from './hooks/useGeoIP';
@@ -36,6 +37,7 @@ export default function App() {
   const [selectedMilitary, setSelectedMilitary] = useState(null);
   const [selectedNuclear, setSelectedNuclear] = useState(null);
   const [selectedAirspace, setSelectedAirspace] = useState(null);
+  const [selectedAcled, setSelectedAcled] = useState(null);
   const geoIP = useGeoIP();
 
   useEffect(() => {
@@ -73,6 +75,7 @@ export default function App() {
         onMilitarySelect={setSelectedMilitary}
         onNuclearSelect={setSelectedNuclear}
         onAirspaceSelect={setSelectedAirspace}
+        onAcledSelect={setSelectedAcled}
       />
       <SearchBox onSelect={handleLocationSelect} />
       <InfoBar coords={coords} mouseCoords={mouseCoords} />
@@ -89,6 +92,7 @@ export default function App() {
       <MilitaryCard military={selectedMilitary} onClose={() => setSelectedMilitary(null)} />
       <NuclearCard nuclear={selectedNuclear} onClose={() => setSelectedNuclear(null)} />
       <AirspaceCard airspace={selectedAirspace} onClose={() => setSelectedAirspace(null)} />
+      <AcledCard acled={selectedAcled} onClose={() => setSelectedAcled(null)} />
       <SettingsPanel />
     </LayerProvider>
   );

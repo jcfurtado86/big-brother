@@ -172,6 +172,12 @@ export const MILITARY_TTL_MS      = 7 * 24 * 60 * 60 * 1000;
 // ── Nuclear ──────────────────────────────────────────────────────────────────
 export const NUCLEAR_ICON_SIZE     = 28;
 
+// ── ACLED (Armed Conflict) ─────────────────────────────────────────────────────
+export const ACLED_ICON_SIZE     = 22;
+export const ACLED_DEBOUNCE_MS   = 1_000;
+export const ACLED_MAX_ALT       = 100_000_000;
+export const ACLED_TTL_MS        = 24 * 60 * 60 * 1000;  // 24h — dados mudam diariamente
+
 // ── Airspace ─────────────────────────────────────────────────────────────────
 export const AIRSPACE_DEBOUNCE_MS  = 1_000;
 export const AIRSPACE_MAX_ALT     = 100_000_000;
