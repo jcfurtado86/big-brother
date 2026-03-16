@@ -34,8 +34,8 @@ const OTHER_LAYERS = [
   },
   {
     layer: 'comm_line',
-    timeout: 120,
-    query: `[out:json][timeout:120];(way["man_made"="submarine_cable"];way["communication"="line"];);out center body;`,
+    timeout: 180,
+    query: `[out:json][timeout:180];(way["man_made"="submarine_cable"];way["communication"="line"];);out geom body;`,
   },
 ];
 
@@ -50,6 +50,18 @@ async function upsertElements(elements, layer) {
     const lon = el.lon ?? el.center?.lon;
     if (lat == null || lon == null) continue;
 
+    const metaObj = {
+      height: tags.height || '',
+      frequency: tags.frequency || '',
+      ref: tags.ref || '',
+      description: tags.description || '',
+    };
+
+    // For ways with geometry (comm_line), store the coordinates
+    if (el.geometry && Array.isArray(el.geometry) && el.geometry.length >= 2) {
+      metaObj.coords = el.geometry.map(g => ({ lat: g.lat, lon: g.lon }));
+    }
+
     batch.push({
       id: `osm_${layer}_${el.id}`,
       lat,
@@ -58,12 +70,7 @@ async function upsertElements(elements, layer) {
       layer,
       name: (tags.name || tags['name:en'] || '').substring(0, 200),
       operator: (tags.operator || '').substring(0, 200),
-      meta: JSON.stringify({
-        height: tags.height || '',
-        frequency: tags.frequency || '',
-        ref: tags.ref || '',
-        description: tags.description || '',
-      }),
+      meta: JSON.stringify(metaObj),
       updated_at: new Date(),
     });
 
@@ -83,7 +90,7 @@ async function upsertElements(elements, layer) {
 }
 
 async function fetchMastRegion(region) {
-  const query = `[out:json][timeout:180][bbox:${region.bbox}];(node["man_made"="mast"]["tower:type"~"communication|telecommunication"];node["man_made"="communications_tower"];);out body;`;
+  const query = `[out:json][timeout:180][bbox:${region.bbox}];(node["man_made"="mast"]["tower:type"~"communication|telecommunication"];node["man_made"="communications_tower"];node["man_made"="tower"]["tower:type"~"communication|telecommunication"];node["man_made"="antenna"];node["telecom"="antenna"];);out body;`;
 
   const res = await fetchIpv4(OVERPASS_URL, {
     method: 'POST',

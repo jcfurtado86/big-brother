@@ -16,7 +16,7 @@ export function useTelecomLayer(viewer, pointsMap, lines, visibleTypes) {
 
     createBillboard(billboards, id, point, typesRef) {
       const category = getTelecomCategory(point.layer);
-      const sz = point.layer === 'telecoms_data_center' ? getSetting('TELECOM_DC_SIZE') : getSetting('TELECOM_MAST_SIZE');
+      const sz = category === 'data_center' ? getSetting('TELECOM_DC_SIZE') : getSetting('TELECOM_MAST_SIZE');
       const pos = Cartesian3.fromDegrees(point.lon, point.lat, 0);
       const show = typesRef.current?.has(category) ?? true;
 
@@ -59,7 +59,6 @@ export function useTelecomLayer(viewer, pointsMap, lines, visibleTypes) {
 
   // ── Line layer (communication lines) via PolylineCollection ──────────────
   const polylinesRef = useRef(null);
-  const lineIdsRef = useRef(new Set());
 
   useEffect(() => {
     if (!viewer) return;
@@ -69,7 +68,6 @@ export function useTelecomLayer(viewer, pointsMap, lines, visibleTypes) {
     return () => {
       if (!collection.isDestroyed()) viewer.scene.primitives.remove(collection);
       polylinesRef.current = null;
-      lineIdsRef.current.clear();
     };
   }, [viewer]);
 
@@ -79,27 +77,22 @@ export function useTelecomLayer(viewer, pointsMap, lines, visibleTypes) {
 
     const showLines = visibleTypes?.has('comm_line') ?? true;
 
-    // Update visibility of all existing polylines
-    for (let i = 0; i < collection.length; i++) {
-      collection.get(i).show = showLines;
-    }
+    // Rebuild: remove all, re-add current lines
+    collection.removeAll();
 
-    // Add new lines that haven't been rendered yet
-    for (const line of lines) {
-      if (lineIdsRef.current.has(line.id)) continue;
-      lineIdsRef.current.add(line.id);
+    if (showLines) {
+      for (const line of lines) {
+        const positions = line.coords.map(c => Cartesian3.fromDegrees(c.lon, c.lat, 0));
+        if (positions.length < 2) continue;
 
-      const positions = line.coords.map(c => Cartesian3.fromDegrees(c.lon, c.lat, 0));
-      if (positions.length < 2) continue;
-
-      collection.add({
-        positions,
-        width: 2,
-        material: Material.fromType('Color', {
-          color: TELECOM_CATEGORY_COLOR.comm_line.withAlpha(0.7),
-        }),
-        show: showLines,
-      });
+        collection.add({
+          positions,
+          width: 2,
+          material: Material.fromType('Color', {
+            color: TELECOM_CATEGORY_COLOR.comm_line.withAlpha(0.7),
+          }),
+        });
+      }
     }
     if (viewer) viewer.scene.requestRender();
   }, [lines, visibleTypes, viewer]);

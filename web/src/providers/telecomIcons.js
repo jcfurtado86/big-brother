@@ -12,11 +12,11 @@ export function getTelecomIcon(category) {
   return TELECOM_ICONS[category] ?? TELECOM_ICONS.mast;
 }
 
-// Mapeia layer name do OpenInfraMap → categoria interna
+// Mapeia layer name → categoria interna
 export function getTelecomCategory(layerName) {
-  if (layerName === 'telecoms_mast') return 'mast';
-  if (layerName === 'telecoms_data_center') return 'data_center';
-  if (layerName === 'telecoms_communication_line') return 'comm_line';
+  if (layerName === 'mast' || layerName === 'telecoms_mast') return 'mast';
+  if (layerName === 'data_center' || layerName === 'telecoms_data_center') return 'data_center';
+  if (layerName === 'comm_line' || layerName === 'telecoms_communication_line') return 'comm_line';
   return 'mast';
 }
 

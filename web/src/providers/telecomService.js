@@ -64,18 +64,29 @@ export async function fetchTelecomTile(z, x, y, signal) {
   if (!res.ok) return null;
 
   const rows = await res.json();
-  const points = rows.map(r => ({
-    ...(r.meta || {}),
-    id: r.id,
-    lat: r.lat,
-    lon: r.lon,
-    layer: r.layer,
-    name: r.name || r.operator || '',
-    operator: r.operator || '',
-  }));
+  const points = [];
+  const lines = [];
 
-  const features = { points, lines: [] };
-  console.log(`[telecom] Tile ${z}/${x}/${y}: ${points.length} points`);
+  for (const r of rows) {
+    const meta = r.meta || {};
+    const base = {
+      id: r.id,
+      lat: r.lat,
+      lon: r.lon,
+      layer: r.layer,
+      name: r.name || r.operator || '',
+      operator: r.operator || '',
+    };
+
+    if (r.layer === 'comm_line' && meta.coords && meta.coords.length >= 2) {
+      lines.push({ ...base, coords: meta.coords });
+    } else {
+      points.push({ ...base, ...meta });
+    }
+  }
+
+  const features = { points, lines };
+  console.log(`[telecom] Tile ${z}/${x}/${y}: ${points.length} points, ${lines.length} lines`);
 
   memCachePut(key, features);
   idbSet(IDB_STORE, key, { ts: Date.now(), data: features });
