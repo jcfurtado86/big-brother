@@ -1,8 +1,9 @@
+import db from '../db.js';
 import { getVessels, getVesselCount } from '../cache/vesselCache.js';
 import { parseBbox } from '../utils/spatial.js';
 
 export default async function (app) {
-  // REST endpoint for snapshot of current vessels (alternative to WS)
+  // REST endpoint: current vessel positions (from in-memory cache)
   app.get('/vessels', async (req, reply) => {
     const bbox = parseBbox(req.query);
 
@@ -17,5 +18,24 @@ export default async function (app) {
       count: getVesselCount(),
       vessels: getVessels(bboxFilter),
     };
+  });
+
+  // GET /vessels/history/:mmsi?from=ISO&to=ISO
+  app.get('/vessels/history/:mmsi', async (req, reply) => {
+    const { mmsi } = req.params;
+    const from = req.query.from;
+    const to = req.query.to || new Date().toISOString();
+
+    let query = db('vessel_history')
+      .select('lat', 'lon', 'cog', 'sog', 'heading',
+              'nav_status as navStatus', 'ship_type as shipType',
+              'name', 'recorded_at as recordedAt')
+      .where('mmsi', mmsi)
+      .orderBy('recorded_at', 'asc');
+
+    if (from) query = query.where('recorded_at', '>=', from);
+    query = query.where('recorded_at', '<=', to);
+
+    return query.limit(5000);
   });
 }

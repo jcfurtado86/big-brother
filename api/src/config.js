@@ -51,4 +51,7 @@ export default {
   TELECOM_POLL_MS: 7 * 24 * 60 * 60 * 1000,   // 7 days
   AIRSPACE_POLL_MS: 24 * 60 * 60 * 1000,      // 24h
   RECEIVERS_POLL_MS: 60 * 60 * 1000,          // 1h
+
+  // External APIs
+  OVERPASS_URL: 'https://lz4.overpass-api.de/api/interpreter',
 };

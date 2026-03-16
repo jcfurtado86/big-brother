@@ -8,36 +8,45 @@ export function getMilitaryIcon() {
   return MILITARY_ICON;
 }
 
-export const MILITARY_CATEGORY_COLOR = {
-  airfield:                Color.fromCssColorString('#F44336'),
-  barracks:                Color.fromCssColorString('#FF9800'),
-  base:                    Color.fromCssColorString('#E91E63'),
-  checkpoint:              Color.fromCssColorString('#FFEB3B'),
-  danger_area:             Color.fromCssColorString('#FF5722'),
-  naval_base:              Color.fromCssColorString('#2196F3'),
-  nuclear_explosion_site:  Color.fromCssColorString('#FF1744'),
-  office:                  Color.fromCssColorString('#9E9E9E'),
-  range:                   Color.fromCssColorString('#FF6D00'),
-  training_area:           Color.fromCssColorString('#4CAF50'),
+const CATEGORY_COLORS = {
+  airfield:                '#F44336',
+  barracks:                '#FF9800',
+  base:                    '#E91E63',
+  checkpoint:              '#FFEB3B',
+  danger_area:             '#FF5722',
+  naval_base:              '#2196F3',
+  nuclear_explosion_site:  '#FF1744',
+  office:                  '#9E9E9E',
+  range:                   '#FF6D00',
+  training_area:           '#4CAF50',
+  bunker:                  '#795548',
+  trench:                  '#607D8B',
 };
+
+export const MILITARY_CATEGORY_COLOR = Object.fromEntries(
+  Object.entries(CATEGORY_COLORS).map(([k, v]) => [k, Color.fromCssColorString(v)])
+);
 
 export const MILITARY_CATEGORIES = [
   'airfield', 'barracks', 'base', 'checkpoint',
   'danger_area', 'naval_base', 'nuclear_explosion_site',
   'office', 'range', 'training_area',
+  'bunker', 'trench',
 ];
 
 export const MILITARY_CATEGORY_META = {
-  airfield:                { label: 'Aerodromos',         color: '#F44336' },
-  barracks:                { label: 'Quarteis',           color: '#FF9800' },
-  base:                    { label: 'Bases',              color: '#E91E63' },
-  checkpoint:              { label: 'Checkpoints',        color: '#FFEB3B' },
-  danger_area:             { label: 'Areas de perigo',    color: '#FF5722' },
-  naval_base:              { label: 'Bases navais',       color: '#2196F3' },
-  nuclear_explosion_site:  { label: 'Testes nucleares',   color: '#FF1744' },
-  office:                  { label: 'Escritorios',        color: '#9E9E9E' },
-  range:                   { label: 'Campos de tiro',     color: '#FF6D00' },
-  training_area:           { label: 'Areas de treino',    color: '#4CAF50' },
+  airfield:                { label: 'Aerodromos',         color: CATEGORY_COLORS.airfield },
+  barracks:                { label: 'Quarteis',           color: CATEGORY_COLORS.barracks },
+  base:                    { label: 'Bases',              color: CATEGORY_COLORS.base },
+  checkpoint:              { label: 'Checkpoints',        color: CATEGORY_COLORS.checkpoint },
+  danger_area:             { label: 'Areas de perigo',    color: CATEGORY_COLORS.danger_area },
+  naval_base:              { label: 'Bases navais',       color: CATEGORY_COLORS.naval_base },
+  nuclear_explosion_site:  { label: 'Testes nucleares',   color: CATEGORY_COLORS.nuclear_explosion_site },
+  office:                  { label: 'Escritorios',        color: CATEGORY_COLORS.office },
+  range:                   { label: 'Campos de tiro',     color: CATEGORY_COLORS.range },
+  training_area:           { label: 'Areas de treino',    color: CATEGORY_COLORS.training_area },
+  bunker:                  { label: 'Bunkers',            color: CATEGORY_COLORS.bunker },
+  trench:                  { label: 'Trincheiras',        color: CATEGORY_COLORS.trench },
 };
 
 export const MILITARY_SERVICE_LABELS = {

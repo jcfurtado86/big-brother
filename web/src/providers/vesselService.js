@@ -1,134 +1,57 @@
-// Abstrai a conexão WebSocket com o servidor API para dados de embarcações.
-// A conexão vai diretamente ao servidor API via WS_URL.
+// Fetches vessel data from the Sentinela API server via REST.
+// Server maintains persistent AIS WebSocket connection (full globe)
+// and serves current positions via GET /api/vessels.
 
-import { WS_URL } from '../utils/api';
+import { API_URL } from '../utils/api';
 
 /**
- * Abre conexão WebSocket com o servidor API.
- * @param {object} bbox - { south, west, north, east }
- * @param {function} onMessage - chamada com objeto vessel normalizado
- * @param {function} onError - chamada em caso de erro
- * @returns {{ close: function, updateBbox: function }}
+ * Fetch current vessels from the API server.
+ * @param {object|null} bbox - { south, west, north, east } or null for all
+ * @param {AbortSignal} signal - optional abort signal
+ * @returns {Map<string, object>} mmsi → vessel
  */
-export function connectVesselStream(bbox, onMessage, onError) {
-  let ws = null;
-  let closed = false;
-
-  function connect() {
-    if (closed) return;
-
-    ws = new WebSocket(`${WS_URL}/ws/vessels`);
-
-    ws.onopen = () => {
-      console.log('[vesselService] connected');
-      const subscribe = {
-        BoundingBoxes: [
-          [[bbox.south, bbox.west], [bbox.north, bbox.east]],
-        ],
-        FilterMessageTypes: ['PositionReport', 'ShipStaticData'],
-      };
-      ws.send(JSON.stringify(subscribe));
-    };
-
-    let msgCount = 0;
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.error) {
-          console.error('[vesselService] AIS error:', data.error);
-          onError?.(data.error);
-          return;
-        }
-        msgCount++;
-        if (msgCount <= 3 || msgCount % 100 === 0) {
-          console.log(`[vesselService] msg #${msgCount}:`, data.MessageType, data.MetaData?.ShipName);
-        }
-        const vessel = parseAISMessage(data);
-        if (vessel) onMessage(vessel);
-      } catch {
-        // Mensagem mal-formada — ignora
-      }
-    };
-
-    ws.onerror = () => {
-      onError?.('WebSocket error');
-    };
-
-    ws.onclose = () => {
-      if (!closed) {
-        setTimeout(connect, 5000);
-      }
-    };
+export async function fetchVessels(bbox = null, signal = undefined) {
+  let url = `${API_URL}/api/vessels`;
+  if (bbox) {
+    url += `?bbox=${bbox.south},${bbox.west},${bbox.north},${bbox.east}`;
   }
 
-  connect();
+  const res = await fetch(url, { signal });
+  if (!res.ok) {
+    console.warn('[vesselService] API error:', res.status);
+    return null;
+  }
 
-  return {
-    close() {
-      closed = true;
-      if (ws) {
-        ws.onclose = null;
-        ws.close();
-      }
-    },
-    updateBbox(newBbox) {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({
-          BoundingBoxes: [
-            [[newBbox.south, newBbox.west], [newBbox.north, newBbox.east]],
-          ],
-          FilterMessageTypes: ['PositionReport', 'ShipStaticData'],
-        }));
-      }
-    },
-  };
-}
+  const data = await res.json();
+  const map = new Map();
 
-// ── Parse AIS messages ────────────────────────────────────────────────────────
+  for (const v of data.vessels) {
+    if (v.lat == null || v.lon == null) continue;
+    map.set(v.mmsi, {
+      mmsi: v.mmsi,
+      name: v.name || v.mmsi,
+      lat: v.lat,
+      lon: v.lon,
+      cog: v.cog ?? 0,
+      sog: v.sog ?? 0,
+      heading: v.heading ?? v.cog ?? 0,
+      navStatus: v.navStatus ?? -1,
+      rateOfTurn: v.rateOfTurn ?? null,
+      shipType: v.shipType ?? 0,
+      destination: v.destination || '',
+      callsign: v.callsign || '',
+      imo: v.imo || 0,
+      draught: v.draught ?? null,
+      length: v.length ?? null,
+      beam: v.beam ?? null,
+      eta: v.eta || null,
+      country: v.country || '',
+      timeUtc: v.timeUtc || null,
+      fetchedAt: v.fetchedAt ? new Date(v.fetchedAt).getTime() : Date.now(),
+    });
+  }
 
-function parseAISMessage(data) {
-  const meta = data.MetaData;
-  if (!meta) return null;
-
-  const mmsi = String(meta.MMSI);
-  const name = (meta.ShipName || '').trim();
-  const lat  = meta.latitude;
-  const lon  = meta.longitude;
-
-  if (lat == null || lon == null) return null;
-
-  // Position Report
-  const pos = data.Message?.PositionReport;
-  // Static Data
-  const stat = data.Message?.ShipStaticData;
-
-  const dim = stat?.Dimension;
-  const eta = stat?.Eta;
-
-  const vessel = {
-    mmsi,
-    name:        name || mmsi,
-    lat,
-    lon,
-    cog:         pos?.Cog             ?? 0,
-    sog:         pos?.Sog             ?? 0,
-    heading:     pos?.TrueHeading     ?? pos?.Cog ?? 0,
-    navStatus:   pos?.NavigationalStatus ?? -1,
-    rateOfTurn:  pos?.RateOfTurn      ?? null,
-    shipType:    stat?.Type           ?? meta.ShipType ?? 0,
-    destination: stat?.Destination    ?? '',
-    callsign:    stat?.CallSign       ?? '',
-    imo:         stat?.ImoNumber      ?? 0,
-    draught:     stat?.MaximumStaticDraught ?? null,
-    length:      dim ? (dim.A + dim.B) : null,
-    beam:        dim ? (dim.C + dim.D) : null,
-    eta:         eta ? { month: eta.Month, day: eta.Day, hour: eta.Hour, minute: eta.Minute } : null,
-    country:     mmsiToCountry(mmsi),
-    timeUtc:     meta.time_utc ?? null,
-    fetchedAt:   Date.now(),
-  };
-
-  return vessel;
+  return map;
 }
 
 // First 3 digits of MMSI → country (simplified — most common MIDs)
@@ -238,7 +161,7 @@ const MID_COUNTRY = {
   '770': 'Uruguay', '775': 'Venezuela',
 };
 
-function mmsiToCountry(mmsi) {
+export function mmsiToCountry(mmsi) {
   if (!mmsi || mmsi.length < 3) return '';
   return MID_COUNTRY[mmsi.substring(0, 3)] || '';
 }

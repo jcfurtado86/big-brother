@@ -5,7 +5,7 @@
 
 import { idbGet, idbSet, idbPurgeExpired } from '../utils/idbCache';
 import { RECEIVER_TTL_MS } from './constants';
-import { API_URL, WS_URL } from '../utils/api';
+import { API_URL } from '../utils/api';
 
 const IDB_STORE   = 'receivers';
 const IDB_KEY     = 'adsb_all';
@@ -59,83 +59,32 @@ export async function fetchAdsbReceivers(signal) {
   return all;
 }
 
-// ── AIS Base Stations (WebSocket) ───────────────────────────────────────────
+// ── AIS Base Stations (REST) ────────────────────────────────────────────────
 
 /**
- * Abre WebSocket para coletar AIS Base Station Reports (Message Type 4).
- * Conecta ao servidor API que faz fan-out do AISStream.
- *
- * @param {function} onStation - chamada com { mmsi, lat, lon, name }
- * @param {function} onError
- * @returns {{ close: function }}
+ * Busca AIS Base Stations do endpoint REST /api/ais-stations.
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<Map<string, {mmsi, lat, lon, name, country}>>}
  */
-export function connectAisStationStream(onStation, onError) {
-  let ws = null;
-  let closed = false;
-
-  function connect() {
-    if (closed) return;
-
-    ws = new WebSocket(`${WS_URL}/ws/vessels`);
-
-    ws.onopen = () => {
-      console.log('[ais-stations] connected');
-      // Subscribe to global bbox, server filters
-      ws.send(JSON.stringify({
-        BoundingBoxes: [[[-90, -180], [90, 180]]],
-        FilterMessageTypes: ['BaseStationReport'],
-      }));
-    };
-
-    let msgCount = 0;
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.error) {
-          console.error('[ais-stations] error:', data.error);
-          onError?.(data.error);
-          return;
-        }
-
-        const meta = data.MetaData;
-        if (!meta) return;
-
-        const mmsi = String(meta.MMSI);
-        const lat  = meta.latitude;
-        const lon  = meta.longitude;
-        if (lat == null || lon == null) return;
-        if (lat === 0 && lon === 0) return;
-
-        msgCount++;
-        if (msgCount <= 5 || msgCount % 50 === 0) {
-          console.log(`[ais-stations] station #${msgCount}: MMSI=${mmsi} (${lat.toFixed(2)}, ${lon.toFixed(2)})`);
-        }
-
-        onStation({
-          mmsi,
-          lat,
-          lon,
-          name: (meta.ShipName || '').trim() || `AIS ${mmsi}`,
-          fetchedAt: Date.now(),
-        });
-      } catch {
-        // Mensagem mal-formada
-      }
-    };
-
-    ws.onerror = () => onError?.('AIS station WebSocket error');
-
-    ws.onclose = () => {
-      if (!closed) setTimeout(connect, 10000);
-    };
+export async function fetchAisStations(signal) {
+  const res = await fetch(`${API_URL}/api/ais-stations`, { signal });
+  if (!res.ok) {
+    console.warn('[ais-stations] API error:', res.status);
+    return new Map();
   }
 
-  connect();
-
-  return {
-    close() {
-      closed = true;
-      if (ws) { ws.onclose = null; ws.close(); }
-    },
-  };
+  const rows = await res.json();
+  const map = new Map();
+  for (const r of rows) {
+    map.set(r.mmsi, {
+      mmsi: r.mmsi,
+      lat: r.lat,
+      lon: r.lon,
+      name: r.name || `AIS ${r.mmsi}`,
+      country: r.country || '',
+      fetchedAt: Date.now(),
+    });
+  }
+  console.log(`[ais-stations] fetched ${map.size} stations`);
+  return map;
 }

@@ -1,14 +1,15 @@
 import db from '../db.js';
 import { updateMeta, isTableEmpty, getLastUpdate, safeInterval } from '../utils/scheduler.js';
+import { fetchIpv4 } from '../utils/fetchIpv4.js';
 import config from '../config.js';
 
-const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+const { OVERPASS_URL } = config;
 
 async function fetchAtc() {
   console.log('[atc] Fetching from Overpass API...');
   try {
     const query = `[out:json][timeout:90];(node["aeroway"="control_tower"];node["man_made"="tower"]["tower:type"="radar"];);out body;`;
-    const res = await fetch(`${OVERPASS_URL}?data=${encodeURIComponent(query)}`);
+    const res = await fetchIpv4(`${OVERPASS_URL}?data=${encodeURIComponent(query)}`);
     if (!res.ok) {
       console.warn('[atc] fetch error:', res.status);
       return;

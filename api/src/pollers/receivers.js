@@ -1,14 +1,16 @@
 import db from '../db.js';
 import { updateMeta, isTableEmpty, getLastUpdate, safeInterval } from '../utils/scheduler.js';
+import { fetchIpv4 } from '../utils/fetchIpv4.js';
 import config from '../config.js';
 
 const REGIONS_URL = 'https://map.adsb.lol/syncmap/mirror_regions.json';
 const SYNC_URL = (region) => `https://map.adsb.lol/api/0/mlat-server/${region}/sync.json`;
 const DEFAULT_REGIONS = ['0A', '0B', '0C', '0D', '1A', '2A', '2B', '2C'];
+const TLS_OPTS = { rejectUnauthorized: false }; // adsb.lol uses self-signed cert
 
 async function fetchRegions() {
   try {
-    const res = await fetch(REGIONS_URL);
+    const res = await fetchIpv4(REGIONS_URL, TLS_OPTS);
     if (!res.ok) return DEFAULT_REGIONS;
     const data = await res.json();
     if (typeof data === 'object' && !Array.isArray(data)) {
@@ -31,7 +33,7 @@ async function fetchReceivers() {
     for (const region of regions) {
       let data;
       try {
-        const res = await fetch(SYNC_URL(region));
+        const res = await fetchIpv4(SYNC_URL(region), TLS_OPTS);
         if (!res.ok) continue;
         data = await res.json();
       } catch {

@@ -21,7 +21,8 @@ import routesRoutes from './routes/routes.js';
 import healthRoutes from './routes/health.js';
 import flightsRoutes from './routes/flights.js';
 import vesselsRoutes from './routes/vessels.js';
-import { registerVesselWS } from './streams/aisstream.js';
+import aisStationsRoutes from './routes/aisStations.js';
+import { startAisStream } from './streams/aisstream.js';
 import webcamsRoutes from './routes/webcams.js';
 import weatherRoutes from './routes/weather.js';
 import geoipRoutes from './routes/geoip.js';
@@ -63,7 +64,7 @@ await app.register(routesRoutes, { prefix: '/api' });
 await app.register(healthRoutes, { prefix: '/api' });
 await app.register(flightsRoutes, { prefix: '/api' });
 await app.register(vesselsRoutes, { prefix: '/api' });
-registerVesselWS(app);
+await app.register(aisStationsRoutes, { prefix: '/api' });
 await app.register(webcamsRoutes, { prefix: '/api' });
 await app.register(weatherRoutes, { prefix: '/api' });
 await app.register(geoipRoutes, { prefix: '/api' });
@@ -90,6 +91,7 @@ startReceiversPoller();
 startOpenSkyPoller();
 startAirplanesLivePoller();
 startFlightHistoryPoller();
+startAisStream();
 startWebcamsPollers();
 
 // Start server

@@ -1,8 +1,9 @@
 import db from '../db.js';
 import { updateMeta, isTableEmpty, getLastUpdate, safeInterval } from '../utils/scheduler.js';
+import { fetchIpv4 } from '../utils/fetchIpv4.js';
 import config from '../config.js';
 
-const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+const { OVERPASS_URL } = config;
 
 // Query telecom infrastructure from OSM via Overpass
 // Covers: masts, communication lines, data centers
@@ -29,7 +30,7 @@ async function fetchTelecom() {
     for (const { layer, query } of QUERIES) {
       let data;
       try {
-        const res = await fetch(OVERPASS_URL, {
+        const res = await fetchIpv4(OVERPASS_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: `data=${encodeURIComponent(query)}`,

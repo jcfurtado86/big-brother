@@ -1,19 +1,22 @@
 import WebSocket from 'ws';
 import config from '../config.js';
-import { upsertVessel } from '../cache/vesselCache.js';
+import db from '../db.js';
+import { upsertVessel, getVessels } from '../cache/vesselCache.js';
 
 const UPSTREAM_URL = 'wss://stream.aisstream.io/v0/stream';
+const FULL_GLOBE = [[-90, -180], [90, 180]];
+const HISTORY_SNAPSHOT_MS = 5 * 60_000; // snapshot to history every 5min
+const HISTORY_RETENTION_DAYS = 30;
+const STATION_FLUSH_MS = 30_000; // flush base stations to DB every 30s
+const BATCH = 200;
 
 let upstream = null;
 let reconnectTimer = null;
-
-// Track all connected clients and their bboxes
-const clients = new Map(); // ws → { bbox }
+const stationBuffer = new Map(); // mmsi → station data
 
 // MID (Maritime Identification Digits) → country
 function mmsiCountry(mmsi) {
   const mid = String(mmsi).substring(0, 3);
-  // Common MIDs (subset)
   const MAP = {
     '201': 'AL', '202': 'AD', '203': 'AT', '204': 'PT', '205': 'BE',
     '209': 'BG', '210': 'CY', '211': 'DE', '212': 'CY', '213': 'GE',
@@ -125,38 +128,109 @@ function parseAISMessage(msg) {
   return null;
 }
 
-function computeUnionBbox() {
-  let south = 90, west = 180, north = -90, east = -180;
-  let hasBbox = false;
+function parseBaseStation(msg) {
+  const { MessageType, MetaData } = msg;
+  if (MessageType !== 'BaseStationReport') return null;
+  if (!MetaData) return null;
 
-  for (const { bbox } of clients.values()) {
-    if (!bbox) continue;
-    hasBbox = true;
-    if (bbox.south < south) south = bbox.south;
-    if (bbox.west < west) west = bbox.west;
-    if (bbox.north > north) north = bbox.north;
-    if (bbox.east > east) east = bbox.east;
-  }
+  const mmsi = String(MetaData.MMSI);
+  const lat = MetaData.latitude;
+  const lon = MetaData.longitude;
+  if (lat == null || lon == null) return null;
+  if (lat === 0 && lon === 0) return null;
 
-  if (!hasBbox) return null;
-  return [[south, west], [north, east]];
-}
-
-function sendUpstreamSubscription() {
-  if (!upstream || upstream.readyState !== WebSocket.OPEN) return;
-
-  const unionBbox = computeUnionBbox();
-  if (!unionBbox) return;
-
-  const sub = {
-    APIKey: config.AISSTREAM_API_KEY,
-    BoundingBoxes: [unionBbox],
-    FilterMessageTypes: ['PositionReport', 'ShipStaticData'],
+  return {
+    mmsi,
+    lat,
+    lon,
+    name: (MetaData.ShipName || '').trim() || `AIS ${mmsi}`,
+    country: mmsiCountry(mmsi),
   };
-
-  upstream.send(JSON.stringify(sub));
-  console.log(`[aisstream] Subscribed with bbox: ${JSON.stringify(unionBbox)}`);
 }
+
+// Flush base station buffer to DB
+async function flushStations() {
+  if (stationBuffer.size === 0) return;
+
+  const rows = [];
+  for (const s of stationBuffer.values()) {
+    rows.push({
+      mmsi: s.mmsi,
+      lat: s.lat,
+      lon: s.lon,
+      geom: db.raw('ST_SetSRID(ST_MakePoint(?, ?), 4326)', [s.lon, s.lat]),
+      name: (s.name || '').substring(0, 100),
+      country: (s.country || '').substring(0, 50),
+      updated_at: new Date(),
+    });
+  }
+  stationBuffer.clear();
+
+  try {
+    for (let i = 0; i < rows.length; i += BATCH) {
+      const batch = rows.slice(i, i + BATCH);
+      await db('ais_stations').insert(batch).onConflict('mmsi').merge();
+    }
+    console.log(`[aisstream] Flushed ${rows.length} AIS base stations to DB`);
+  } catch (e) {
+    console.error('[aisstream] Station flush error:', e.message);
+  }
+}
+
+// ── DB persistence ─────────────────────────────────────────────────────────
+
+// Snapshot in-memory cache to vessel_history (for timeline replay)
+async function takeHistorySnapshot() {
+  const vessels = getVessels(null);
+  if (vessels.length === 0) return;
+
+  const now = new Date();
+  let inserted = 0;
+
+  try {
+    for (let i = 0; i < vessels.length; i += BATCH) {
+      const batch = vessels.slice(i, i + BATCH)
+        .filter(v => v.lat != null && v.lon != null)
+        .map(v => ({
+          mmsi: v.mmsi,
+          name: (v.name || '').substring(0, 100) || null,
+          lat: v.lat,
+          lon: v.lon,
+          cog: v.cog ?? null,
+          sog: v.sog ?? null,
+          heading: v.heading ?? null,
+          nav_status: v.navStatus ?? -1,
+          ship_type: v.shipType ?? 0,
+          recorded_at: now,
+        }));
+
+      await db('vessel_history').insert(batch);
+      inserted += batch.length;
+    }
+
+    console.log(`[aisstream] History snapshot: ${inserted} vessels recorded`);
+  } catch (e) {
+    console.error('[aisstream] History snapshot error:', e.message);
+  }
+}
+
+// Clean old history records
+async function cleanupHistory() {
+  try {
+    const cutoff = new Date(Date.now() - HISTORY_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+    const result = await db('vessel_history')
+      .where('recorded_at', '<', cutoff)
+      .del();
+
+    if (result > 0) {
+      console.log(`[aisstream] History cleanup: removed ${result} old records`);
+    }
+  } catch (e) {
+    console.error('[aisstream] History cleanup error:', e.message);
+  }
+}
+
+// ── WebSocket connection ───────────────────────────────────────────────────
 
 function connectUpstream() {
   if (!config.AISSTREAM_API_KEY) {
@@ -168,12 +242,17 @@ function connectUpstream() {
     return;
   }
 
-  console.log('[aisstream] Connecting to upstream...');
+  console.log('[aisstream] Connecting to upstream (full globe)...');
   upstream = new WebSocket(UPSTREAM_URL);
 
   upstream.on('open', () => {
     console.log('[aisstream] Upstream connected');
-    sendUpstreamSubscription();
+    const sub = {
+      APIKey: config.AISSTREAM_API_KEY,
+      BoundingBoxes: [FULL_GLOBE],
+      FilterMessageTypes: ['PositionReport', 'ShipStaticData', 'BaseStationReport'],
+    };
+    upstream.send(JSON.stringify(sub));
   });
 
   upstream.on('message', (raw) => {
@@ -182,17 +261,12 @@ function connectUpstream() {
       const vessel = parseAISMessage(msg);
       if (vessel) {
         upsertVessel(vessel);
+      }
 
-        // Fan-out: relay to clients whose bbox contains this vessel
-        const data = JSON.stringify(msg);
-        for (const [ws, { bbox }] of clients) {
-          if (ws.readyState !== WebSocket.OPEN) continue;
-          if (bbox && vessel.lat != null && vessel.lon != null) {
-            if (vessel.lat < bbox.south || vessel.lat > bbox.north) continue;
-            if (vessel.lon < bbox.west || vessel.lon > bbox.east) continue;
-          }
-          ws.send(data);
-        }
+      // Capture AIS base stations (Message Type 4)
+      const station = parseBaseStation(msg);
+      if (station) {
+        stationBuffer.set(station.mmsi, station);
       }
     } catch {
       // ignore malformed messages
@@ -212,42 +286,22 @@ function connectUpstream() {
   });
 }
 
-// Fastify WebSocket route handler
-export function registerVesselWS(app) {
-  app.get('/ws/vessels', { websocket: true }, (socket, req) => {
-    console.log('[aisstream] Client connected');
-    clients.set(socket, { bbox: null });
+// Start AIS stream: always connected, full globe, persist to DB
+export function startAisStream() {
+  connectUpstream();
 
-    // Connect upstream if first client
-    if (clients.size === 1) {
-      connectUpstream();
-    }
+  // Flush AIS base stations to DB every 30s
+  setInterval(flushStations, STATION_FLUSH_MS);
 
-    socket.on('message', (raw) => {
-      try {
-        const msg = JSON.parse(raw);
-        if (msg.BoundingBoxes && msg.BoundingBoxes[0]) {
-          const [[south, west], [north, east]] = msg.BoundingBoxes[0];
-          clients.set(socket, { bbox: { south, west, north, east } });
-          // Re-subscribe upstream with union of all client bboxes
-          sendUpstreamSubscription();
-        }
-      } catch {
-        // ignore
-      }
-    });
+  // Snapshot to history every 5min (after 2min warm-up)
+  setTimeout(() => {
+    takeHistorySnapshot();
+    setInterval(takeHistorySnapshot, HISTORY_SNAPSHOT_MS);
+  }, 2 * 60_000);
 
-    socket.on('close', () => {
-      console.log('[aisstream] Client disconnected');
-      clients.delete(socket);
+  // Daily cleanup
+  cleanupHistory();
+  setInterval(cleanupHistory, 24 * 60 * 60 * 1000);
 
-      // Disconnect upstream if no clients
-      if (clients.size === 0 && upstream) {
-        console.log('[aisstream] No clients, closing upstream');
-        upstream.close();
-        upstream = null;
-        clearTimeout(reconnectTimer);
-      }
-    });
-  });
+  console.log('[aisstream] Stream started (full globe, DB persistence)');
 }
