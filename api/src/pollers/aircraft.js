@@ -42,13 +42,13 @@ async function fetchAircraftDb() {
       const icao24 = (f[F.icao24] || '').trim().toLowerCase();
       if (!icao24 || icao24.length !== 6) continue;
 
-      const reg = (f[F.registration] || '').trim();
-      const model = (f[F.model] || '').trim();
-      const mfr = (f[F.manufacturer] || '').trim();
-      const op = (f[F.operator] || '').trim();
+      const reg = (f[F.registration] || '').trim().substring(0, 20);
+      const model = (f[F.model] || '').trim().substring(0, 100);
+      const mfr = (f[F.manufacturer] || '').trim().substring(0, 100);
+      const op = (f[F.operator] || '').trim().substring(0, 100);
       const built = (f[F.built] || '').trim().substring(0, 4);
-      const typeCode = (f[F.typeCode] || '').trim().toUpperCase();
-      const airlineIata = (f[F.airlineIata] || '').trim().toUpperCase();
+      const typeCode = (f[F.typeCode] || '').trim().toUpperCase().substring(0, 10);
+      const airlineIata = (f[F.airlineIata] || '').trim().toUpperCase().substring(0, 3);
 
       if (!reg && !model && !mfr && !op && !typeCode && !airlineIata) continue;
 
