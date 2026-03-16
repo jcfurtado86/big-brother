@@ -5,11 +5,13 @@ import config from '../config.js';
 
 const { OVERPASS_URL } = config;
 const BETWEEN_DELAY = 5_000;
+const MAX_DEPTH = 3; // max subdivision depth (4^3 = 64 sub-quadrants max)
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-// Masts are too heavy for a single global query — split by region
+const MAST_QUERY_BODY = `(node["man_made"="mast"]["tower:type"~"communication|telecommunication"];node["man_made"="communications_tower"];node["man_made"="tower"]["tower:type"~"communication|telecommunication"];node["man_made"="antenna"];node["telecom"="antenna"];);out body;`;
+
+// Base regions — auto-subdivided if Overpass times out
 const MAST_REGIONS = [
-  // Europe subdivided — full bbox times out on Overpass
   { name: 'Western Europe',     bbox: '36,-12,52,10' },
   { name: 'Central Europe',     bbox: '45,10,55,25' },
   { name: 'Eastern Europe',     bbox: '44,25,56,40' },
@@ -89,19 +91,59 @@ async function upsertElements(elements, layer) {
   return count;
 }
 
-async function fetchMastRegion(region) {
-  const query = `[out:json][timeout:180][bbox:${region.bbox}];(node["man_made"="mast"]["tower:type"~"communication|telecommunication"];node["man_made"="communications_tower"];node["man_made"="tower"]["tower:type"~"communication|telecommunication"];node["man_made"="antenna"];node["telecom"="antenna"];);out body;`;
+// Split a bbox string "south,west,north,east" into 4 quadrants
+function splitBbox(bboxStr) {
+  const [s, w, n, e] = bboxStr.split(',').map(Number);
+  const midLat = (s + n) / 2;
+  const midLon = (w + e) / 2;
+  return [
+    { suffix: 'SW', bbox: `${s},${w},${midLat},${midLon}` },
+    { suffix: 'SE', bbox: `${s},${midLon},${midLat},${e}` },
+    { suffix: 'NW', bbox: `${midLat},${w},${n},${midLon}` },
+    { suffix: 'NE', bbox: `${midLat},${midLon},${n},${e}` },
+  ];
+}
 
-  const res = await fetchIpv4(OVERPASS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `data=${encodeURIComponent(query)}`,
-    timeout: 240_000,
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+// Try to fetch a bbox; if it fails after retries, auto-subdivide into 4 quadrants
+async function fetchMastBbox(name, bboxStr, depth = 0) {
+  const query = `[out:json][timeout:180][bbox:${bboxStr}];${MAST_QUERY_BODY}`;
 
-  const data = await res.json();
-  return upsertElements(data.elements, 'mast');
+  try {
+    const count = await withRetry(async () => {
+      const res = await fetchIpv4(OVERPASS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `data=${encodeURIComponent(query)}`,
+        timeout: 240_000,
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      return upsertElements(data.elements, 'mast');
+    }, { label: `telecom:mast:${name}`, maxRetries: 3, delayMs: 10_000 });
+
+    if (count != null) {
+      console.log(`[telecom] mast ${name}: ${count} points`);
+      return count;
+    }
+  } catch {
+    // withRetry returned undefined (all retries failed) — fall through to subdivide
+  }
+
+  // Failed — subdivide if we haven't hit max depth
+  if (depth >= MAX_DEPTH) {
+    console.warn(`[telecom] mast ${name}: gave up after max subdivision depth`);
+    return 0;
+  }
+
+  console.log(`[telecom] mast ${name}: subdividing into 4 quadrants (depth ${depth + 1})`);
+  const quads = splitBbox(bboxStr);
+  let total = 0;
+  for (const q of quads) {
+    const subName = `${name}/${q.suffix}`;
+    await sleep(BETWEEN_DELAY);
+    total += await fetchMastBbox(subName, q.bbox, depth + 1);
+  }
+  return total;
 }
 
 async function fetchLayer({ layer, query, timeout }) {
@@ -118,16 +160,13 @@ async function fetchLayer({ layer, query, timeout }) {
 }
 
 async function fetchTelecom() {
-  console.log('[telecom] Fetching from Overpass API (sequential with retry)...');
+  console.log('[telecom] Fetching from Overpass API (auto-subdividing regions)...');
   let total = 0;
 
-  // Masts: fetch by region to avoid Overpass timeout
+  // Masts: fetch by region with auto-subdivision on failure
   for (const region of MAST_REGIONS) {
-    const count = await withRetry(() => fetchMastRegion(region), { label: `telecom:mast:${region.name}` });
-    if (count != null) {
-      console.log(`[telecom] mast ${region.name}: ${count} points`);
-      total += count;
-    }
+    const count = await fetchMastBbox(region.name, region.bbox);
+    total += count;
     await sleep(BETWEEN_DELAY);
   }
 

@@ -32,7 +32,7 @@ async function fetchAircraftDb() {
 
     let n = 0;
     const BATCH = 1000;
-    let batch = [];
+    let batch = new Map();
 
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
@@ -52,7 +52,7 @@ async function fetchAircraftDb() {
 
       if (!reg && !model && !mfr && !op && !typeCode && !airlineIata) continue;
 
-      batch.push({
+      batch.set(icao24, {
         icao24,
         registration: reg,
         model,
@@ -64,24 +64,24 @@ async function fetchAircraftDb() {
         updated_at: new Date(),
       });
 
-      if (batch.length >= BATCH) {
+      if (batch.size >= BATCH) {
         await db('aircraft')
-          .insert(batch)
+          .insert([...batch.values()])
           .onConflict('icao24')
           .merge(['registration', 'model', 'manufacturer', 'operator',
                   'built', 'type_code', 'airline_iata', 'updated_at']);
-        n += batch.length;
-        batch = [];
+        n += batch.size;
+        batch = new Map();
       }
     }
 
-    if (batch.length > 0) {
+    if (batch.size > 0) {
       await db('aircraft')
-        .insert(batch)
+        .insert([...batch.values()])
         .onConflict('icao24')
         .merge(['registration', 'model', 'manufacturer', 'operator',
                 'built', 'type_code', 'airline_iata', 'updated_at']);
-      n += batch.length;
+      n += batch.size;
     }
 
     return n;
