@@ -18,11 +18,22 @@ export function inBbox(lat, lon, bbox) {
 }
 
 export function computeBboxFromViewer(viewer) {
+  const camCart = viewer.camera.positionCartographic;
+  const alt = camCart.height;
+  const camLat = CesiumMath.toDegrees(camCart.latitude);
+  const camLon = CesiumMath.toDegrees(camCart.longitude);
+
+  // At very high altitude the whole globe is visible — skip expensive picks
+  const R = 6_371_000;
+  if (alt > R * 0.5) {
+    console.log(`[bbox] FULL GLOBE | alt:${Math.round(alt)}m`);
+    return { south: -90, north: 90, west: -180, east: 180 };
+  }
+
   const { clientWidth: w, clientHeight: h } = viewer.scene.canvas;
 
-  // Sample a 5×5 grid + extra midpoints along the edges.
-  // Total ≈ 25 picks — cheap enough for every camera-changed event.
-  const STEPS = 4;
+  // Sample a 7×7 grid for better coverage of tilted views
+  const STEPS = 6;
   const samples = [];
   for (let ix = 0; ix <= STEPS; ix++) {
     for (let iy = 0; iy <= STEPS; iy++) {
@@ -37,29 +48,42 @@ export function computeBboxFromViewer(viewer) {
     .map(c => viewer.camera.pickEllipsoid(c, Ellipsoid.WGS84))
     .filter(Boolean);
 
-  if (hits.length >= 2) {
+  // Need a good ratio of hits to trust the pick-based bbox.
+  // With tilted views, many rays miss — use horizon fallback instead.
+  const hitRatio = hits.length / samples.length;
+
+  if (hits.length >= 4 && hitRatio > 0.3) {
     const carts = hits.map(p => Cartographic.fromCartesian(p, Ellipsoid.WGS84));
     const lats = carts.map(c => CesiumMath.toDegrees(c.latitude));
     const lons = carts.map(c => CesiumMath.toDegrees(c.longitude));
-    const result = {
+
+    let pickBbox = {
       south: Math.min(...lats), north: Math.max(...lats),
       west:  Math.min(...lons), east:  Math.max(...lons),
     };
-    console.log(`[bbox] picks: ${hits.length}/${samples.length} | S:${result.south.toFixed(1)} N:${result.north.toFixed(1)} W:${result.west.toFixed(1)} E:${result.east.toFixed(1)}`);
-    return result;
+
+    // If not all rays hit, the pick bbox underestimates — expand with horizon angle
+    if (hitRatio < 0.9) {
+      const visAngleDeg = Math.acos(R / (R + alt)) * (180 / Math.PI);
+      const expand = visAngleDeg * (1 - hitRatio); // more expansion when fewer hits
+      pickBbox = {
+        south: Math.max(pickBbox.south - expand, -90),
+        north: Math.min(pickBbox.north + expand,  90),
+        west:  Math.max(pickBbox.west  - expand, -180),
+        east:  Math.min(pickBbox.east  + expand,  180),
+      };
+    }
+
+    console.log(`[bbox] picks: ${hits.length}/${samples.length} (${(hitRatio*100).toFixed(0)}%) | S:${pickBbox.south.toFixed(1)} N:${pickBbox.north.toFixed(1)} W:${pickBbox.west.toFixed(1)} E:${pickBbox.east.toFixed(1)}`);
+    return pickBbox;
   }
 
-  // Fallback: horizon circle based on altitude.
-  const camCart = viewer.camera.positionCartographic;
-  const alt = camCart.height;
-  const R = 6_371_000;
+  // Fallback: horizon circle based on altitude
   const visAngleDeg = Math.acos(R / (R + alt)) * (180 / Math.PI);
   const pad = Math.min(visAngleDeg * 1.5, 90);
-  const lat = CesiumMath.toDegrees(camCart.latitude);
-  const lon = CesiumMath.toDegrees(camCart.longitude);
   const result = {
-    south: Math.max(lat - pad, -90), north: Math.min(lat + pad,  90),
-    west:  Math.max(lon - pad, -180), east: Math.min(lon + pad, 180),
+    south: Math.max(camLat - pad, -90), north: Math.min(camLat + pad,  90),
+    west:  Math.max(camLon - pad, -180), east: Math.min(camLon + pad, 180),
   };
   console.log(`[bbox] FALLBACK (${hits.length} hits) | alt:${Math.round(alt)}m angle:${visAngleDeg.toFixed(1)}° | S:${result.south.toFixed(1)} N:${result.north.toFixed(1)} W:${result.west.toFixed(1)} E:${result.east.toFixed(1)}`);
   return result;
