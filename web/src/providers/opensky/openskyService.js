@@ -4,7 +4,7 @@
 import { API_URL } from '../../utils/api';
 import { fetchAircraftMeta, fetchTrack } from '../flightUtils';
 
-const POLL_INTERVAL = Number(import.meta.env.VITE_POLL_INTERVAL_AUTH_MS ?? 60_000);
+const POLL_INTERVAL = 60_000;
 
 // ── Parse ────────────────────────────────────────────────────────────────────
 

@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
-import { fetchTLEs, buildMockTLEs } from '../providers/satelliteService';
+import { fetchTLEs } from '../providers/satelliteService';
 import { SATELLITE_POLL_MS } from '../providers/constants';
 import { useLoading } from '../contexts/LoadingContext';
-
-const USE_MOCK = import.meta.env.VITE_MOCK_SATELLITES === 'true';
 
 export function useSatellites(enabled = false) {
   const [satellites, setSatellites] = useState(new Map());
@@ -12,12 +10,6 @@ export function useSatellites(enabled = false) {
   useEffect(() => {
     if (!enabled) {
       setSatellites(new Map());
-      return;
-    }
-
-    if (USE_MOCK) {
-      console.log('[satellites] using mock TLEs');
-      setSatellites(buildMockTLEs());
       return;
     }
 

@@ -30,8 +30,8 @@ export const PLANE_BATCH_SIZE     = 20;
 export const CALLSIGN_BATCH_SIZE  = 30;
 // Expansão proporcional da área de busca além do viewport visível
 export const FETCH_PADDING        = 0.5;
-export const FLIGHT_RETRY_MS      = Number(import.meta.env.VITE_RETRY_INTERVAL_MS ?? 1_200_000);
-export const FLIGHT_CACHE_TTL_MS  = Number(import.meta.env.VITE_FLIGHT_CACHE_TTL_MS ?? 5 * 60_000);
+export const FLIGHT_RETRY_MS      = 1_200_000;
+export const FLIGHT_CACHE_TTL_MS  = 5 * 60_000;
 
 // ── Flight providers ────────────────────────────────────────────────────────
 // Intervalo de polling do airplanes.live em milissegundos

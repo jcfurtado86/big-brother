@@ -7,26 +7,6 @@ import { getSetting } from '../providers/settingsStore';
 // Purge expired flight cache entries on startup
 idbPurgeExpired('flights', FLIGHT_CACHE_TTL_MS);
 
-const USE_DEV_CACHE = import.meta.env.VITE_FLIGHT_CACHE === 'true';
-const USE_MOCK      = import.meta.env.VITE_MOCK_FLIGHTS === 'true';
-let devCache = null;
-
-// ── Mock flights for offline testing ─────────────────────────────────────────
-
-function buildMockFlights() {
-  const now = Date.now();
-  const mock = [
-    { icao24: 'MOCK01', callsign: 'GLO1234',  country: 'Brazil', lat: -23.55, lon: -46.63, heading: 45,  velocity: 220, altitude: 10000, category: 1 },
-    { icao24: 'MOCK02', callsign: 'TAM5678',  country: 'Brazil', lat: -22.91, lon: -43.17, heading: 180, velocity: 250, altitude: 11500, category: 1 },
-    { icao24: 'MOCK03', callsign: 'AZU9012',  country: 'Brazil', lat: -19.85, lon: -43.95, heading: 270, velocity: 200, altitude: 8500,  category: 1 },
-    { icao24: 'MOCK04', callsign: 'UAL345',   country: 'United States', lat: -15.87, lon: -47.93, heading: 10,  velocity: 260, altitude: 12000, category: 3 },
-    { icao24: 'MOCK05', callsign: 'DLH678',   country: 'Germany', lat: -25.43, lon: -49.27, heading: 120, velocity: 230, altitude: 9800,  category: 1 },
-  ];
-  const map = new Map();
-  for (const f of mock) map.set(f.icao24, { ...f, fetchedAt: now });
-  return map;
-}
-
 // ── IndexedDB cache ──────────────────────────────────────────────────────────
 
 function makeCacheKey(provider, bbox) {
@@ -114,8 +94,6 @@ export function useFlights(enabled = true, bbox = undefined, providerName = 'ope
     let nextFireAt   = null;
 
     async function poll() {
-      if (USE_MOCK) { if (!cancelled) setFlights(buildMockFlights()); return; }
-      if (USE_DEV_CACHE && devCache) { if (!cancelled) setFlights(devCache); return; }
       if (document.visibilityState === 'hidden') { schedule(pollInterval); return; }
 
       const age = Date.now() - fetchedAtRef.current;
@@ -174,7 +152,6 @@ export function useFlights(enabled = true, bbox = undefined, providerName = 'ope
           return;
         }
 
-        if (USE_DEV_CACHE) devCache = parsed;
         saveFlightCache(provider, fetchBbox, parsed);
 
         fetchedBboxRef.current = isGlobal ? null : fetchBbox;
