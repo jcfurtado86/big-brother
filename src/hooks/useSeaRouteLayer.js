@@ -16,7 +16,7 @@ async function loadSeaRoutes() {
   return cachedRoutes;
 }
 
-const TYPE_TO_CATEGORY = { Major: 'major', Middle: 'middle', Minor: 'minor' };
+const TYPE_TO_CATEGORY = { Major: 'major', Middle: 'middle', Minor: 'minor', major: 'major', middle: 'middle', minor: 'minor' };
 
 const CATS = ['major', 'middle', 'minor'];
 const CAT_COLORS = {};
