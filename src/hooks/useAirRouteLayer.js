@@ -68,36 +68,23 @@ let cachedRoutes = null;
 async function loadAirRoutes() {
   if (cachedRoutes) return cachedRoutes;
 
-  console.log('[air-routes] Fetching airports + routes from API...');
-  const [airportsRes, routesRes] = await Promise.all([
-    fetch(`${API_URL}/api/airports?bbox=-90,-180,90,180`),
-    fetch(`${API_URL}/api/routes/air`),
-  ]);
-  if (!airportsRes.ok || !routesRes.ok) {
-    console.warn('[air-routes] API error:', airportsRes.status, routesRes.status);
+  console.log('[air-routes] Fetching routes from API...');
+  const res = await fetch(`${API_URL}/api/routes/air`);
+  if (!res.ok) {
+    console.warn('[air-routes] API error:', res.status);
     return null;
   }
 
-  const airports = await airportsRes.json();
-  const routePairs = await routesRes.json();
-  console.log('[air-routes] Loaded', airports.length, 'airports,', routePairs.length, 'route pairs');
-
-  const byIata = new Map();
-  for (const a of airports) {
-    const iata = a.iata_code || a.iata;
-    if (iata && a.lat && a.lon) byIata.set(iata, a);
-  }
+  const routePairs = await res.json();
+  console.log('[air-routes] Loaded', routePairs.length, 'route pairs');
 
   // 5 values per route: srcLat, srcLon, dstLat, dstLon, categoryIndex
-  // categoryIndex: 0=short, 1=medium, 2=long
   const CAT_MAP = { short: 0, medium: 1, long: 2 };
   const routes = [];
   for (const r of routePairs) {
-    const src = byIata.get(r.src_iata);
-    const dst = byIata.get(r.dst_iata);
-    if (!src || !dst) continue;
-    const km = haversineKm(src.lat, src.lon, dst.lat, dst.lon);
-    routes.push(src.lat, src.lon, dst.lat, dst.lon, CAT_MAP[distanceCategory(km)]);
+    if (r.src_lat == null || r.dst_lat == null) continue;
+    const km = haversineKm(r.src_lat, r.src_lon, r.dst_lat, r.dst_lon);
+    routes.push(r.src_lat, r.src_lon, r.dst_lat, r.dst_lon, CAT_MAP[distanceCategory(km)]);
   }
 
   cachedRoutes = routes;
@@ -159,6 +146,7 @@ export function useAirRouteLayer(viewer, active, bbox, visibleTypes) {
 
   // Sync visible routes on bbox change
   useEffect(() => {
+    console.log(`[air-routes] sync effect: viewer=${!!viewer} active=${active} dataReady=${dataReady} routesLen=${routesRef.current?.length ?? 0} bbox=${bbox ? `S:${bbox.south.toFixed(1)} N:${bbox.north.toFixed(1)}` : 'null'}`);
     if (!viewer || !active) {
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       if (collectionRef.current && !collectionRef.current.isDestroyed()) {
@@ -195,6 +183,8 @@ export function useAirRouteLayer(viewer, active, bbox, visibleTypes) {
         shouldBeVisible.add(i);
       }
     }
+
+    console.log(`[air-routes] totalRoutes=${totalRoutes} shouldBeVisible=${shouldBeVisible.size} rendered=${rendered.size}`);
 
     // Remove routes that left viewport or whose category was toggled off
     if (!collection.isDestroyed()) {

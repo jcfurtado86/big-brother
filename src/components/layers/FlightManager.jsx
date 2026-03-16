@@ -18,7 +18,7 @@ export default function FlightManager({ bbox, onFlightSelect, flightStateRef: ex
   const openskyFlights = useFlights(flightsCfg.show && (flightsCfg.provider === 'opensky' || isAll), bbox, 'opensky');
   const alFlights      = useFlights(flightsCfg.show && (flightsCfg.provider === 'airplaneslive' || isAll), bbox, 'airplaneslive');
 
-  const flights = useMemo(() => {
+  const allFlights = useMemo(() => {
     if (isAll) {
       const merged = new Map();
       for (const [icao, os] of openskyFlights) {
@@ -45,8 +45,23 @@ export default function FlightManager({ bbox, onFlightSelect, flightStateRef: ex
     return alFlights;
   }, [isAll, flightsCfg.provider, openskyFlights, alFlights]);
 
-  const { stateRef: flightStateRef, setSelected } = useFlightLayer(viewer, flights, flightsCfg.types);
+  // Filter flights to viewport bbox (with padding) — only create billboards for visible area
   const selectedIcaoRef = useRef(null);
+  const flights = useMemo(() => {
+    if (!bbox) return allFlights;
+    const pad = 5; // graus de margem
+    const s = bbox.south - pad, n = bbox.north + pad;
+    const w = bbox.west - pad, e = bbox.east + pad;
+    const filtered = new Map();
+    for (const [icao, f] of allFlights) {
+      if ((f.lat >= s && f.lat <= n && f.lon >= w && f.lon <= e) || icao === selectedIcaoRef.current) {
+        filtered.set(icao, f);
+      }
+    }
+    return filtered;
+  }, [allFlights, bbox]);
+
+  const { stateRef: flightStateRef, setSelected } = useFlightLayer(viewer, flights, flightsCfg.types);
 
   // Keep FlightCard in sync when flights Map refreshes (every 60s)
   useEffect(() => {

@@ -19,9 +19,8 @@ export default async function (app) {
       query = query.whereIn('type', types.split(','));
     }
 
-    query = query.limit(5000);
-
     const rows = await query;
+    console.log(`[airports] bbox query returned ${rows.length} airports`);
     return rows;
   });
 }

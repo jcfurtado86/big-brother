@@ -41,10 +41,12 @@ export function computeBboxFromViewer(viewer) {
     const carts = hits.map(p => Cartographic.fromCartesian(p, Ellipsoid.WGS84));
     const lats = carts.map(c => CesiumMath.toDegrees(c.latitude));
     const lons = carts.map(c => CesiumMath.toDegrees(c.longitude));
-    return {
+    const result = {
       south: Math.min(...lats), north: Math.max(...lats),
       west:  Math.min(...lons), east:  Math.max(...lons),
     };
+    console.log(`[bbox] picks: ${hits.length}/${samples.length} | S:${result.south.toFixed(1)} N:${result.north.toFixed(1)} W:${result.west.toFixed(1)} E:${result.east.toFixed(1)}`);
+    return result;
   }
 
   // Fallback: horizon circle based on altitude.
@@ -55,8 +57,10 @@ export function computeBboxFromViewer(viewer) {
   const pad = Math.min(visAngleDeg * 1.5, 90);
   const lat = CesiumMath.toDegrees(camCart.latitude);
   const lon = CesiumMath.toDegrees(camCart.longitude);
-  return {
+  const result = {
     south: Math.max(lat - pad, -90), north: Math.min(lat + pad,  90),
     west:  Math.max(lon - pad, -180), east: Math.min(lon + pad, 180),
   };
+  console.log(`[bbox] FALLBACK (${hits.length} hits) | alt:${Math.round(alt)}m angle:${visAngleDeg.toFixed(1)}° | S:${result.south.toFixed(1)} N:${result.north.toFixed(1)} W:${result.west.toFixed(1)} E:${result.east.toFixed(1)}`);
+  return result;
 }

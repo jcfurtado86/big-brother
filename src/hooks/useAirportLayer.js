@@ -79,10 +79,31 @@ export function useAirportLayer(viewer, activeTypes, bbox) {
 
     const active = activeTypesRef.current;
     const b      = bboxRef.current;
+    const bbs    = billboardsRef.current;
 
     const alt = getCameraAlt(viewerRef.current);
 
-    // Atualiza show/hide dos billboards já renderizados
+    // Remove aeroportos fora do viewport expandido (libera memória do Cesium)
+    const pad = getSetting('AIRPORT_CULL_PAD') ?? 5; // graus de margem
+    let culled = 0;
+    if (b && bbs && !bbs.isDestroyed()) {
+      const cullBbox = {
+        south: b.south - pad, north: b.north + pad,
+        west: b.west - pad, east: b.east + pad,
+      };
+      for (const [icao, entry] of renderedRef.current) {
+        if (!inBbox(entry.lat, entry.lon, cullBbox)) {
+          bbs.remove(entry.icon);
+          if (entry.label) bbs.remove(entry.label);
+          renderedRef.current.delete(icao);
+          airportDataRef.current.delete(icao);
+          culled++;
+        }
+      }
+    }
+
+    // Atualiza show/hide dos billboards restantes
+    let visible_count = 0;
     for (const [, entry] of renderedRef.current) {
       const meta = AIRPORT_TYPE_META[entry._type];
       const visible = active.has(entry._type)
@@ -90,7 +111,11 @@ export function useAirportLayer(viewer, activeTypes, bbox) {
         && alt <= (meta?.maxAlt ?? Infinity);
       entry.icon.show = visible;
       if (entry.label) entry.label.show = visible;
+      if (visible) visible_count++;
     }
+
+    console.log(`[airports] sendUpdate | culled: ${culled} | rendered: ${renderedRef.current.size} | visible: ${visible_count} | alt: ${Math.round(alt)}m`);
+
     if (viewerRef.current) viewerRef.current.scene.requestRender();
 
     genRef.current++;
@@ -115,6 +140,12 @@ export function useAirportLayer(viewer, activeTypes, bbox) {
     const active   = activeTypesRef.current;
     const b        = bboxRef.current;
     const alt      = getCameraAlt(viewerRef.current);
+    const before = rendered.size;
+
+    if (results.length > 0) {
+      const s = results[0];
+      console.log(`[airports] processBatch: ${results.length} items, first: icao=${s.icao} lat=${s.lat} lon=${s.lon} type=${s.type}`);
+    }
 
     for (const ap of results) {
       // Aeroporto já existe: descarta bitmap (não pode reusar ImageBitmap transferido)

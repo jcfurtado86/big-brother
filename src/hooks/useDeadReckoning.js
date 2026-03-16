@@ -17,7 +17,7 @@ export function useDeadReckoning(viewer, billboardsRef, stateRef) {
         const alt = (entry._alt ?? 0) * getSetting('FLIGHT_ALT_SCALE');
         const pos = Cartesian3.fromDegrees(lon, lat, alt);
         entry.billboard.position = pos;
-        if (entry.callsign) entry.callsign.position = pos;
+        if (entry.label) entry.label.position = pos;
       }
       viewer.scene.requestRender();
     }, getSetting('DEAD_RECKONING_MS'));

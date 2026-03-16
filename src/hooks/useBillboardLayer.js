@@ -80,11 +80,13 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
     loadDone();
 
     // Remove stale
+    let removed = 0;
     for (const [id, entry] of state) {
       if (!entitiesMap.has(id)) {
         billboards.remove(entry.billboard);
         if (entry.label) billboards.remove(entry.label);
         state.delete(id);
+        removed++;
       }
     }
 
@@ -93,12 +95,18 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
 
     // Update existing + enqueue new
     entityQueueRef.current = [];
+    let updated = 0;
     for (const [id, data] of entitiesMap) {
       if (state.has(id)) {
         updateEntry(state.get(id), data, billboards, typesRef);
+        updated++;
       } else {
         entityQueueRef.current.push([id, data]);
       }
+    }
+
+    if (removed > 0 || entityQueueRef.current.length > 0) {
+      console.log(`[billboard-layer] sync: removed=${removed} updated=${updated} new=${entityQueueRef.current.length} total=${state.size}`);
     }
 
     // Pass 1 — entity billboards (RAF)
