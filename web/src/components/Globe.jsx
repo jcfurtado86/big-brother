@@ -24,6 +24,7 @@ import AirspaceManager from './layers/AirspaceManager';
 import AcledManager from './layers/AcledManager';
 import WebcamManager from './layers/WebcamManager';
 import VisibilityManager from './layers/VisibilityManager';
+import { useTimelineData } from '../hooks/useTimelineData';
 
 export default function Globe({ initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, onSatelliteSelect, onTelecomSelect, onReceiverSelect, onAtcSelect, onMilitarySelect, onNuclearSelect, onAirspaceSelect, onAcledSelect, onWebcamSelect }) {
   const envCfg = useLayerState('environment');
@@ -128,6 +129,8 @@ export default function Globe({ initialView, flyTarget, resetKey, onCameraChange
   const satelliteStateRef = useRef(null);
   const telecomExtRef   = useRef(null);
 
+  const timeline = useTimelineData();
+
   // ── Camera navigation ─────────────────────────────────────────────────────
   useEffect(() => {
     if (!viewer || !initialView) return;
@@ -218,8 +221,8 @@ export default function Globe({ initialView, flyTarget, resetKey, onCameraChange
         <WebcamManager onWebcamSelect={onWebcamSelect} />
         <TelecomManager cameraAltitude={cameraAltitude} telecomStateRef={telecomExtRef} onTelecomSelect={onTelecomSelect} />
         <SatelliteManager satelliteStateRef={satelliteStateRef} onSatelliteSelect={onSatelliteSelect} />
-        <VesselManager vesselStateRef={vesselStateRef} onVesselSelect={onVesselSelect} />
-        <FlightManager bbox={bbox} onFlightSelect={onFlightSelect} flightStateRef={flightStateRef} />
+        <VesselManager vesselStateRef={vesselStateRef} onVesselSelect={onVesselSelect} timeline={timeline} />
+        <FlightManager bbox={bbox} onFlightSelect={onFlightSelect} flightStateRef={flightStateRef} timeline={timeline} />
         {/* VisibilityManager MUST render after entity managers so refs are populated */}
         <VisibilityManager
           flightStateRef={flightStateRef}

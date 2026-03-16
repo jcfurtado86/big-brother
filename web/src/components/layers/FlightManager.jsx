@@ -9,16 +9,19 @@ import { getProvider } from '../../providers/flightProviders';
 import { deadReckon } from '../../utils/geoMath';
 import { getSetting } from '../../providers/settingsStore';
 
-export default function FlightManager({ bbox, onFlightSelect, flightStateRef: externalRef }) {
+export default function FlightManager({ bbox, onFlightSelect, flightStateRef: externalRef, timeline }) {
   const viewer = useViewer();
   const flightsCfg = useLayerState('flights');
   const { startFollow, updateFollow, addTrack, setLiveInterval, nextPending, isPendingStale } = useSelection();
 
   const isAll = flightsCfg.provider === 'all';
-  const openskyFlights = useFlights(flightsCfg.show && (flightsCfg.provider === 'opensky' || isAll), bbox, 'opensky');
-  const alFlights      = useFlights(flightsCfg.show && (flightsCfg.provider === 'airplaneslive' || isAll), bbox, 'airplaneslive');
+  const liveEnabled = flightsCfg.show && !timeline?.active;
+  const openskyFlights = useFlights(liveEnabled && (flightsCfg.provider === 'opensky' || isAll), bbox, 'opensky');
+  const alFlights      = useFlights(liveEnabled && (flightsCfg.provider === 'airplaneslive' || isAll), bbox, 'airplaneslive');
 
   const allFlights = useMemo(() => {
+    // When timeline is active, use timeline data instead of live
+    if (timeline?.active) return timeline.flights;
     if (isAll) {
       const merged = new Map();
       for (const [icao, os] of openskyFlights) {
@@ -43,7 +46,7 @@ export default function FlightManager({ bbox, onFlightSelect, flightStateRef: ex
     }
     if (flightsCfg.provider === 'opensky') return openskyFlights;
     return alFlights;
-  }, [isAll, flightsCfg.provider, openskyFlights, alFlights]);
+  }, [isAll, flightsCfg.provider, openskyFlights, alFlights, timeline?.active, timeline?.flights]);
 
   // Filter flights to viewport bbox (with padding) — only create billboards for visible area
   const selectedIcaoRef = useRef(null);

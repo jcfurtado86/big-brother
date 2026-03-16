@@ -50,4 +50,21 @@ export default async function (app) {
 
     return query.limit(5000);
   });
+
+  // GET /flights/history/all?from=ISO&to=ISO
+  // Returns all flight positions in a time range (for timeline replay)
+  app.get('/flights/history/all', async (req, reply) => {
+    const from = req.query.from;
+    const to = req.query.to;
+    if (!from || !to) return reply.code(400).send({ error: 'from and to required' });
+
+    return db('flight_history')
+      .select('icao24', 'callsign', 'lat', 'lon', 'altitude', 'heading',
+              'velocity', 'vertical_rate', 'on_ground', 'squawk', 'category',
+              'recorded_at')
+      .where('recorded_at', '>=', from)
+      .where('recorded_at', '<=', to)
+      .orderBy('recorded_at', 'asc')
+      .limit(100000);
+  });
 }

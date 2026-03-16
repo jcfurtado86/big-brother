@@ -2,7 +2,7 @@ export async function up(knex) {
   await knex.raw(`
     CREATE TABLE flight_history (
       id          BIGSERIAL PRIMARY KEY,
-      icao24      VARCHAR(6) NOT NULL,
+      icao24      VARCHAR(12) NOT NULL,
       callsign    VARCHAR(10),
       lat         DOUBLE PRECISION NOT NULL,
       lon         DOUBLE PRECISION NOT NULL,

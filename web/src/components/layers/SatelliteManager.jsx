@@ -6,14 +6,17 @@ import { useSatelliteLayer } from '../../hooks/useSatelliteLayer';
 import { useSelectionHandler, useSelection } from '../../contexts/SelectionContext';
 import { getSetting } from '../../providers/settingsStore';
 import { parseTLEOrbitalElements } from '../../providers/satelliteService';
+import { useTimeline } from '../../contexts/TimelineContext';
 
 export default function SatelliteManager({ satelliteStateRef: externalRef, onSatelliteSelect }) {
   const viewer = useViewer();
   const satellites = useLayerState('satellites');
   const { startFollow, updateFollow, setLiveInterval } = useSelection();
 
+  const tl = useTimeline();
   const satellitesMap = useSatellites(satellites.show);
-  const { stateRef, setSelected } = useSatelliteLayer(viewer, satellitesMap, satellites.types);
+  const timeOverride = tl.active ? tl.currentTime : null;
+  const { stateRef, setSelected } = useSatelliteLayer(viewer, satellitesMap, satellites.types, timeOverride);
 
   externalRef.current = stateRef;
 

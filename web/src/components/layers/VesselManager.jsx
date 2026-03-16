@@ -6,12 +6,14 @@ import { useVesselLayer } from '../../hooks/useVesselLayer';
 import { useSelectionHandler, useSelection } from '../../contexts/SelectionContext';
 import { getSetting } from '../../providers/settingsStore';
 
-export default function VesselManager({ vesselStateRef: externalRef, onVesselSelect }) {
+export default function VesselManager({ vesselStateRef: externalRef, onVesselSelect, timeline }) {
   const viewer = useViewer();
   const vessels = useLayerState('vessels');
   const { startFollow, updateFollow, setLiveInterval } = useSelection();
 
-  const vesselsData = useVessels(viewer, vessels.show);
+  const liveEnabled = vessels.show && !timeline?.active;
+  const liveData = useVessels(viewer, liveEnabled);
+  const vesselsData = timeline?.active ? timeline.vessels : liveData;
   const { stateRef, setSelected } = useVesselLayer(viewer, vesselsData, vessels.types);
 
   externalRef.current = stateRef;

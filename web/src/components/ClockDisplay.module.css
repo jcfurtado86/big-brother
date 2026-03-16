@@ -16,3 +16,13 @@
   font-family: monospace;
   z-index: 10;
 }
+.history {
+  color: #fc0;
+  border: 1px solid rgba(255, 204, 0, 0.3);
+}
+.badge {
+  color: #fc0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}

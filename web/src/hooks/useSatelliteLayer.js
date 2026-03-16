@@ -8,7 +8,7 @@ import { getSetting } from '../providers/settingsStore';
 
 const toDeg = (r) => r * 180 / Math.PI;
 
-export function useSatelliteLayer(viewer, satellitesMap, visibleTypes) {
+export function useSatelliteLayer(viewer, satellitesMap, visibleTypes, timeOverride) {
   const config = useMemo(() => ({
     batchSize: getSetting('SATELLITE_BATCH_SIZE'),
     labelBatchSize: getSetting('SATELLITE_LABEL_BATCH'),
@@ -62,13 +62,17 @@ export function useSatelliteLayer(viewer, satellitesMap, visibleTypes) {
     viewer, satellitesMap, visibleTypes, config
   );
 
+  // Track timeline override time via ref (avoids re-running effect on every frame)
+  const timeOverrideRef = useRef(timeOverride);
+  timeOverrideRef.current = timeOverride;
+
   // Real-time position propagation — only for satellites visible in viewport
   const propagateRef = useRef(null);
   useEffect(() => {
     if (!viewer) return;
     function tick() {
       if (stateRef.current.size === 0) return;
-      const now = new Date();
+      const now = timeOverrideRef.current ? new Date(timeOverrideRef.current) : new Date();
 
       // Viewport bounds — skip propagation for off-screen sats
       const cam = viewer.camera.positionCartographic;

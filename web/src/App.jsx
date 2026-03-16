@@ -18,9 +18,12 @@ import AirspaceCard from './components/AirspaceCard';
 import AcledCard from './components/AcledCard';
 import WebcamCard from './components/WebcamCard';
 import SettingsPanel from './components/SettingsPanel';
+import TimelineBar from './components/TimelineBar';
+import TimelineActivator from './components/TimelineActivator';
 import LoadingSpinner from './components/LoadingSpinner';
 import { LayerProvider } from './contexts/LayerContext';
 import { LoadingProvider } from './contexts/LoadingContext';
+import { TimelineProvider } from './contexts/TimelineContext';
 import { useGeoIP } from './hooks/useGeoIP';
 import { DEFAULT_ALT, DEFAULT_PITCH } from './providers/constants';
 
@@ -63,6 +66,7 @@ export default function App() {
 
   return (
     <LoadingProvider>
+    <TimelineProvider>
     <LayerProvider>
       <Globe
         initialView={initialView}
@@ -101,8 +105,11 @@ export default function App() {
       <AcledCard acled={selectedAcled} onClose={() => setSelectedAcled(null)} />
       <WebcamCard key={selectedWebcam?.id} webcam={selectedWebcam} onClose={() => setSelectedWebcam(null)} />
       <SettingsPanel />
+      <TimelineActivator />
+      <TimelineBar />
       <LoadingSpinner />
     </LayerProvider>
+    </TimelineProvider>
     </LoadingProvider>
   );
 }
