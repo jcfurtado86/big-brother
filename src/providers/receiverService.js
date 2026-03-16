@@ -31,6 +31,7 @@ export async function loadCachedReceivers() {
  * @returns {Promise<Map<string, {id, lat, lon, user, region}>>}
  */
 export async function fetchAdsbReceivers(signal) {
+  console.log('[receivers] Fetching ADS-B feeders from API...');
   const res = await fetch(`${API_URL}/api/receivers?bbox=-90,-180,90,180`, { signal });
   if (!res.ok) {
     console.warn('[receivers] API error:', res.status);

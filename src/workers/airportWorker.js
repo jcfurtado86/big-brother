@@ -46,6 +46,7 @@ self.onmessage = async ({ data }) => {
   if (data.type === 'init') {
     _apiUrl = data.apiUrl || '';
     try {
+      console.log('[airport-worker] Fetching airports from API...');
       const res = await fetch(`${_apiUrl}/api/airports?bbox=-90,-180,90,180`);
       const rows = await res.json();
       // Normalize field names from API (snake_case → camelCase)

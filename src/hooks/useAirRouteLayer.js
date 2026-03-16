@@ -68,14 +68,19 @@ let cachedRoutes = null;
 async function loadAirRoutes() {
   if (cachedRoutes) return cachedRoutes;
 
+  console.log('[air-routes] Fetching airports + routes from API...');
   const [airportsRes, routesRes] = await Promise.all([
     fetch(`${API_URL}/api/airports?bbox=-90,-180,90,180`),
     fetch(`${API_URL}/api/routes/air`),
   ]);
-  if (!airportsRes.ok || !routesRes.ok) return null;
+  if (!airportsRes.ok || !routesRes.ok) {
+    console.warn('[air-routes] API error:', airportsRes.status, routesRes.status);
+    return null;
+  }
 
   const airports = await airportsRes.json();
   const routePairs = await routesRes.json();
+  console.log('[air-routes] Loaded', airports.length, 'airports,', routePairs.length, 'route pairs');
 
   const byIata = new Map();
   for (const a of airports) {

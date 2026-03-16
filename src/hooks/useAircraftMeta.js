@@ -11,6 +11,7 @@ export function useAircraftMeta(icao24, providerName = 'opensky', flight = null)
 
     // Inline metadata from flight data (e.g. Airplanes.live includes it in poll response)
     if (flight?._meta) {
+      console.log(`[aircraft-meta] inline meta for ${icao24}`, flight._meta);
       cacheAircraft(icao24, flight._meta);
       setMeta(flight._meta);
       return;
@@ -19,11 +20,13 @@ export function useAircraftMeta(icao24, providerName = 'opensky', flight = null)
     // Check cache first
     const local = lookupAircraft(icao24);
     if (local) {
+      console.log(`[aircraft-meta] cache hit for ${icao24}`);
       setMeta(local);
       return;
     }
 
     // Fetch from API
+    console.log(`[aircraft-meta] fetching from API for ${icao24}`);
     let cancelled = false;
     getProvider(providerName).fetchAircraftMeta(icao24).then(data => {
       if (cancelled) return;

@@ -59,21 +59,23 @@ export async function fetchTelecomTile(z, x, y, signal) {
   // Compute bbox for this tile and fetch from API
   const b = tileBounds(z, x, y);
   const url = `${API_URL}/api/telecom?bbox=${b.south},${b.west},${b.north},${b.east}`;
+  console.log(`[telecom] Fetching tile ${z}/${x}/${y} from API`);
   const res = await fetch(url, { signal });
   if (!res.ok) return null;
 
   const rows = await res.json();
   const points = rows.map(r => ({
+    ...(r.meta || {}),
     id: r.id,
     lat: r.lat,
     lon: r.lon,
     layer: r.layer,
     name: r.name || r.operator || '',
     operator: r.operator || '',
-    ...(r.meta || {}),
   }));
 
   const features = { points, lines: [] };
+  console.log(`[telecom] Tile ${z}/${x}/${y}: ${points.length} points`);
 
   memCachePut(key, features);
   idbSet(IDB_STORE, key, { ts: Date.now(), data: features });

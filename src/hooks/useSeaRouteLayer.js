@@ -8,9 +8,11 @@ let cachedRoutes = null;
 
 async function loadSeaRoutes() {
   if (cachedRoutes) return cachedRoutes;
+  console.log('[sea-routes] Fetching from API...');
   const res = await fetch(`${API_URL}/api/routes/sea`);
-  if (!res.ok) return null;
+  if (!res.ok) { console.warn('[sea-routes] API error:', res.status); return null; }
   cachedRoutes = await res.json();
+  console.log('[sea-routes] Loaded', cachedRoutes.length, 'routes');
   return cachedRoutes;
 }
 

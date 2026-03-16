@@ -10,7 +10,9 @@ const _cache = new Map();
  */
 export function lookupAircraft(icao24) {
   if (!icao24) return null;
-  return _cache.get(icao24.toLowerCase()) ?? null;
+  const result = _cache.get(icao24.toLowerCase()) ?? null;
+  if (result) console.log(`[aircraft-db] lookupAircraft cache hit for ${icao24}`);
+  return result;
 }
 
 /**
@@ -19,6 +21,7 @@ export function lookupAircraft(icao24) {
  */
 export function cacheAircraft(icao24, meta) {
   if (!icao24 || !meta) return;
+  console.log(`[aircraft-db] cacheAircraft storing ${icao24}`);
   _cache.set(icao24.toLowerCase(), meta);
 }
 
