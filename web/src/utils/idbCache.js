@@ -87,6 +87,40 @@ export async function idbDelete(store, key) {
  * Delete all entries in a store where `entry.ts` is older than `ttlMs`.
  * Runs in a single readwrite transaction. Returns count of deleted keys.
  */
+export async function idbClearAll() {
+  try {
+    const db = await openDb();
+    for (const name of STORES) {
+      const tx = db.transaction(name, 'readwrite');
+      tx.objectStore(name).clear();
+    }
+  } catch (e) {
+    console.warn('[idb] clearAll failed:', e.message);
+  }
+}
+
+export async function idbEstimateSize() {
+  if (navigator.storage?.estimate) {
+    const { usage, quota } = await navigator.storage.estimate();
+    return { usage, quota };
+  }
+  return null;
+}
+
+export async function idbStoreCounts() {
+  try {
+    const db = await openDb();
+    const counts = {};
+    for (const name of STORES) {
+      const tx = db.transaction(name, 'readonly');
+      const count = tx.objectStore(name).count();
+      await new Promise(r => { tx.oncomplete = r; });
+      counts[name] = count.result;
+    }
+    return counts;
+  } catch { return {}; }
+}
+
 export async function idbPurgeExpired(store, ttlMs) {
   try {
     const db = await openDb();

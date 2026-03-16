@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import styles from './SettingsPanel.module.css';
 import {
   SETTINGS_SCHEMA, useSettings,
   setSetting, resetSetting, resetAll, isOverridden,
 } from '../providers/settingsStore';
+import { idbClearAll, idbEstimateSize, idbStoreCounts } from '../utils/idbCache';
 
 function GearIcon() {
   return (
@@ -65,6 +66,106 @@ function Section({ section, open, onToggle }) {
   );
 }
 
+function fmt(bytes) {
+  if (bytes == null) return '—';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
+function CacheSection({ open, onToggle }) {
+  const [idbInfo, setIdbInfo] = useState(null);
+  const [clearing, setClearing] = useState(false);
+
+  const refresh = useCallback(async () => {
+    const [estimate, counts] = await Promise.all([idbEstimateSize(), idbStoreCounts()]);
+    setIdbInfo({ estimate, counts });
+  }, []);
+
+  useEffect(() => { if (open) refresh(); }, [open, refresh]);
+
+  async function handleClear() {
+    setClearing(true);
+    await idbClearAll();
+    await refresh();
+    setClearing(false);
+  }
+
+  return (
+    <div className={styles.section}>
+      <div className={styles.sectionHeader} onClick={onToggle}>
+        <span className={styles.sectionLabel}>Cache Local (IDB)</span>
+        <span className={`${styles.chevron} ${open ? styles.chevronOpen : ''}`}>▼</span>
+      </div>
+      {open && (
+        <div className={styles.sectionBody}>
+          {idbInfo?.estimate && (
+            <div className={styles.row}>
+              <span className={styles.label}>Uso</span>
+              <span className={styles.infoValue}>{fmt(idbInfo.estimate.usage)}</span>
+            </div>
+          )}
+          {idbInfo?.counts && Object.entries(idbInfo.counts).map(([store, count]) => (
+            <div className={styles.row} key={store}>
+              <span className={styles.label}>{store}</span>
+              <span className={styles.infoValue}>{count} {count === 1 ? 'entrada' : 'entradas'}</span>
+            </div>
+          ))}
+          <button className={styles.dangerBtn} onClick={handleClear} disabled={clearing}>
+            {clearing ? 'Limpando...' : 'Limpar todo cache IDB'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DbSizeSection({ open, onToggle }) {
+  const [dbInfo, setDbInfo] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open || dbInfo) return;
+    setLoading(true);
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    fetch(`${apiUrl}/api/health/db-size`)
+      .then(r => r.json())
+      .then(setDbInfo)
+      .catch(() => setDbInfo(null))
+      .finally(() => setLoading(false));
+  }, [open]);
+
+  return (
+    <div className={styles.section}>
+      <div className={styles.sectionHeader} onClick={onToggle}>
+        <span className={styles.sectionLabel}>Banco de Dados</span>
+        <span className={`${styles.chevron} ${open ? styles.chevronOpen : ''}`}>▼</span>
+      </div>
+      {open && (
+        <div className={styles.sectionBody}>
+          {loading && <span className={styles.label}>Carregando...</span>}
+          {dbInfo && (
+            <>
+              <div className={styles.row}>
+                <span className={styles.label}>Total</span>
+                <span className={styles.infoValue}>{fmt(dbInfo.total)}</span>
+              </div>
+              {dbInfo.tables?.map(t => (
+                <div className={styles.row} key={t.name}>
+                  <span className={styles.label}>{t.name}</span>
+                  <span className={styles.infoValue}>{fmt(t.size)}</span>
+                </div>
+              ))}
+            </>
+          )}
+          {!loading && !dbInfo && <span className={styles.label}>Erro ao conectar</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SettingsPanel() {
   const [open, setOpen] = useState(false);
   const [openSection, setOpenSection] = useState(null);
@@ -100,6 +201,16 @@ export default function SettingsPanel() {
                 />
               </React.Fragment>
             ))}
+            <div className={styles.divider} />
+            <CacheSection
+              open={openSection === '__cache__'}
+              onToggle={() => setOpenSection(v => v === '__cache__' ? null : '__cache__')}
+            />
+            <div className={styles.divider} />
+            <DbSizeSection
+              open={openSection === '__dbsize__'}
+              onToggle={() => setOpenSection(v => v === '__dbsize__' ? null : '__dbsize__')}
+            />
           </div>
         </>
       )}
