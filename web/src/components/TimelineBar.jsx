@@ -4,12 +4,18 @@ import styles from './TimelineBar.module.css';
 
 function formatTime(epochMs) {
   const d = new Date(epochMs);
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
   const hh = String(d.getHours()).padStart(2, '0');
   const min = String(d.getMinutes()).padStart(2, '0');
   const ss = String(d.getSeconds()).padStart(2, '0');
-  return `${dd}/${mm} ${hh}:${min}:${ss}`;
+  return `${hh}:${min}:${ss}`;
+}
+
+function toDateValue(epochMs) {
+  const d = new Date(epochMs);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 export default function TimelineBar() {
@@ -27,6 +33,21 @@ export default function TimelineBar() {
 
   const onSliderChange = useCallback((e) => {
     tl.seek(Number(e.target.value));
+  }, [tl]);
+
+  const onDateChange = useCallback((e) => {
+    const dateStr = e.target.value;
+    if (!dateStr) return;
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const start = new Date(y, m - 1, d, 0, 0, 0, 0);
+    const startMs = start.getTime();
+    // If selected day is today, end = now. Otherwise end = 23:59:59
+    const today = new Date();
+    const isToday = start.getFullYear() === today.getFullYear()
+      && start.getMonth() === today.getMonth()
+      && start.getDate() === today.getDate();
+    const endMs = isToday ? Date.now() : startMs + 24 * 60 * 60_000 - 1;
+    tl.activate(startMs, endMs, { followLive: isToday });
   }, [tl]);
 
   const onKeyDown = useCallback((e) => {
@@ -62,6 +83,14 @@ export default function TimelineBar() {
       />
 
       <span className={styles.time}>{formatTime(tl.currentTime)}</span>
+
+      <input
+        type="date"
+        className={styles.datePicker}
+        value={toDateValue(tl.timeRange.start)}
+        max={toDateValue(Date.now())}
+        onChange={onDateChange}
+      />
 
       <button className={styles.closeBtn} onClick={tl.deactivate} title="Voltar ao live">
         ×

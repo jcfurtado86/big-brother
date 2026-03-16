@@ -49,15 +49,30 @@ export function TimelineProvider({ children }) {
     };
   }, [active, playing]);
 
-  const activate = useCallback((startMs, endMs) => {
+  const liveFollowRef = useRef(null);
+
+  const activate = useCallback((startMs, endMs, { followLive = false } = {}) => {
     setTimeRange({ start: startMs, end: endMs });
-    setCurrentTime(startMs);
+    setCurrentTime(followLive ? endMs : startMs);
     setPlaying(false);
     setSpeedState(1);
     setActive(true);
+
+    // Clear any previous live-follow interval
+    if (liveFollowRef.current) clearInterval(liveFollowRef.current);
+    liveFollowRef.current = null;
+
+    if (followLive) {
+      // Only grow the slider end to reflect real time — cursor stays put
+      liveFollowRef.current = setInterval(() => {
+        setTimeRange(prev => prev ? { ...prev, end: Date.now() } : prev);
+      }, 1000);
+    }
   }, []);
 
   const deactivate = useCallback(() => {
+    if (liveFollowRef.current) clearInterval(liveFollowRef.current);
+    liveFollowRef.current = null;
     setActive(false);
     setPlaying(false);
     setTimeRange(null);

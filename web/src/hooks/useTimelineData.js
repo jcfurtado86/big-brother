@@ -18,6 +18,7 @@ export function useTimelineData() {
   const flightHistRef = useRef(null); // Map<icao24, points[]>
   const vesselHistRef = useRef(null); // Map<mmsi, points[]>
   const fetchedRangeRef = useRef(null);
+  const [dataVersion, setDataVersion] = useState(0); // bumped after fetch to trigger interpolation
 
   // Fetch history when timeline activates or range changes
   useEffect(() => {
@@ -31,11 +32,10 @@ export function useTimelineData() {
     }
 
     const { start, end } = tl.timeRange;
-    // Don't re-fetch if same range
+    // Don't re-fetch if same day (start unchanged) — end grows in live-follow mode
     if (
       fetchedRangeRef.current &&
-      fetchedRangeRef.current.start === start &&
-      fetchedRangeRef.current.end === end
+      fetchedRangeRef.current.start === start
     ) return;
 
     const ac = new AbortController();
@@ -56,6 +56,9 @@ export function useTimelineData() {
         vesselHistRef.current = groupByEntity(vData, 'mmsi');
         fetchedRangeRef.current = { start, end };
 
+        // Trigger interpolation now that data is loaded
+        setDataVersion(v => v + 1);
+
         console.log(`[timeline] loaded ${fData.length} flight points, ${vData.length} vessel points`);
       } catch (e) {
         if (e.name !== 'AbortError') console.warn('[timeline] fetch error:', e.message);
@@ -64,7 +67,7 @@ export function useTimelineData() {
 
     fetchHistory();
     return () => ac.abort();
-  }, [tl.active, tl.timeRange]);
+  }, [tl.active, tl.timeRange?.start]);
 
   // Interpolate at throttled rate (~10fps) to avoid re-rendering thousands of entities per rAF frame
   const lastInterpRef = useRef(0);
@@ -126,7 +129,7 @@ export function useTimelineData() {
       }
       setVessels(map);
     }
-  }, [tl.active, tl.currentTime]);
+  }, [tl.active, tl.currentTime, dataVersion]);
 
   return { flights, vessels, active: tl.active };
 }

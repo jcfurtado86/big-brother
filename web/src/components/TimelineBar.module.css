@@ -86,8 +86,20 @@
   color: #fc0;
   font-size: 11px;
   white-space: nowrap;
-  min-width: 110px;
+  min-width: 70px;
   text-align: center;
+}
+
+.datePicker {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: #ccc;
+  font-family: monospace;
+  font-size: 11px;
+  padding: 3px 6px;
+  cursor: pointer;
+  color-scheme: dark;
 }
 
 .closeBtn {

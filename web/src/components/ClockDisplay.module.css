@@ -1,17 +1,16 @@
 .wrapper {
   position: fixed;
-  bottom: 58px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 0;
+  right: 16px;
   display: flex;
   gap: 10px;
   align-items: baseline;
   padding: 6px 14px;
   background: rgba(20, 20, 30, 0.75);
-  border-radius: 20px;
+  border-radius: 10px 10px 0 0;
   backdrop-filter: blur(8px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-   color: #ccc;
+  color: #ccc;
   font-size: 12px;
   font-family: monospace;
   z-index: 10;
@@ -19,6 +18,7 @@
 .history {
   color: #fc0;
   border: 1px solid rgba(255, 204, 0, 0.3);
+  border-bottom: none;
 }
 .badge {
   color: #fc0;
