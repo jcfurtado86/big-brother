@@ -16,8 +16,14 @@ export default function ClockDisplay() {
   const date = displayDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   const time = displayDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
+  const cls = [
+    styles.wrapper,
+    tl.active ? styles.history : '',
+    tl.active ? styles.timelineActive : '',
+  ].filter(Boolean).join(' ');
+
   return (
-    <div className={`${styles.wrapper} ${tl.active ? styles.history : ''}`}>
+    <div className={cls}>
       {tl.active && <span className={styles.badge}>HISTORICO</span>}
       <span>{date}</span>
       <span>{time}</span>

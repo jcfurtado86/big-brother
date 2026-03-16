@@ -1,24 +1,28 @@
 .wrapper {
   position: fixed;
-  bottom: 0;
-  right: 16px;
+  bottom: 46px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   gap: 10px;
   align-items: baseline;
   padding: 6px 14px;
   background: rgba(20, 20, 30, 0.75);
-  border-radius: 10px 10px 0 0;
+  border-radius: 10px;
   backdrop-filter: blur(8px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
   color: #ccc;
   font-size: 12px;
   font-family: monospace;
   z-index: 10;
+  transition: bottom 0.3s ease;
+}
+.timelineActive {
+  bottom: 72px;
 }
 .history {
   color: #fc0;
   border: 1px solid rgba(255, 204, 0, 0.3);
-  border-bottom: none;
 }
 .badge {
   color: #fc0;
