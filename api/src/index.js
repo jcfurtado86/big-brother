@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import './utils/logger.js';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import websocket from '@fastify/websocket';
