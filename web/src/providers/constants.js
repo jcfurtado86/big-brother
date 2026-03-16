@@ -27,7 +27,7 @@ export const DEAD_RECKONING_MS    = 500;
 // Quantidade de ícones de avião renderizados por frame (maior = mais rápido, mais CPU)
 export const PLANE_BATCH_SIZE     = 20;
 // Quantidade de labels de callsign processados por idle slice
-export const CALLSIGN_BATCH_SIZE  = 30;
+export const CALLSIGN_BATCH_SIZE  = 200;
 // Expansão proporcional da área de busca além do viewport visível
 export const FETCH_PADDING        = 0.5;
 export const FLIGHT_RETRY_MS      = 1_200_000;
@@ -58,7 +58,7 @@ export const SELECTED_VESSEL_COLOR = Color.fromCssColorString('#FF0000');
 // Quantidade de ícones de embarcação renderizados por frame
 export const VESSEL_BATCH_SIZE     = 20;
 // Quantidade de labels de embarcação processados por idle slice
-export const VESSEL_LABEL_BATCH    = 30;
+export const VESSEL_LABEL_BATCH    = 200;
 // Tempo sem atualização após o qual a embarcação é removida do mapa
 export const VESSEL_STALE_MS       = 10 * 60 * 1000;
 export const VESSEL_CLEANUP_MS     = 60_000;           // intervalo de limpeza
@@ -78,7 +78,7 @@ export const SELECTED_SATELLITE_COLOR = Color.fromCssColorString('#FF0000');
 // Quantidade de satélites renderizados por frame
 export const SATELLITE_BATCH_SIZE     = 50;
 // Quantidade de labels de satélite processados por idle slice
-export const SATELLITE_LABEL_BATCH    = 30;
+export const SATELLITE_LABEL_BATCH    = 200;
 export const SATELLITE_POLL_MS        = 24 * 60 * 60 * 1000;  // 1 fetch por dia
 // Tamanho do ícone de satélite em pixels
 export const SAT_ICON_SIZE            = 24;

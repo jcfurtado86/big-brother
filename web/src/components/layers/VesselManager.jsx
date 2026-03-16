@@ -19,7 +19,7 @@ export default function VesselManager({ bbox, vesselStateRef: externalRef, onVes
 
   // Filter vessels to viewport bbox (with padding)
   const vesselsData = useMemo(() => {
-    if (!bbox || !timeline?.active) return allVessels;
+    if (!bbox) return allVessels;
     const pad = 5;
     const s = bbox.south - pad, n = bbox.north + pad;
     const w = bbox.west - pad, e = bbox.east + pad;
@@ -30,7 +30,7 @@ export default function VesselManager({ bbox, vesselStateRef: externalRef, onVes
       }
     }
     return filtered;
-  }, [allVessels, bbox, timeline?.active]);
+  }, [allVessels, bbox]);
 
   const { stateRef, setSelected } = useVesselLayer(viewer, vesselsData, vessels.types);
 

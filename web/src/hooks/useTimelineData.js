@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTimeline } from '../contexts/TimelineContext';
 import { groupByEntity, interpolateAt } from '../utils/interpolateHistory';
+import { mmsiToCountry } from '../providers/vesselService';
 import { API_URL } from '../utils/api';
 
 const WINDOW = 5 * 60_000; // ±5 minutes
@@ -111,6 +112,7 @@ export function useTimelineData() {
             heading: interp.heading,
             navStatus: interp.navStatus,
             shipType: interp.shipType,
+            country: mmsiToCountry(mmsi),
             fetchedAt: t,
           });
         }

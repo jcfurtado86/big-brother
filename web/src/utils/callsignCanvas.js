@@ -9,6 +9,10 @@ const GAP = 5, PAD_X = 5, PAD_Y = 4;
 
 const _measureCtx = document.createElement('canvas').getContext('2d');
 
+// Canvas image cache: key → { image, W, H }
+const _cache = new Map();
+const MAX_CACHE = 5000;
+
 function measure(callsign, hasFlag) {
   _measureCtx.font = `${FONT_SIZE}px monospace`;
   const textW = Math.ceil(_measureCtx.measureText(callsign).width);
@@ -40,7 +44,11 @@ function draw(ctx, W, H, callsign, hasFlag, flagImg) {
   ctx.fillText(callsign, x, H / 2);
 }
 
-export function buildCallsignBillboard(billboards, pos, h, callsign, country) {
+function getOrCreateImage(callsign, country) {
+  const key = `${callsign}|${country || ''}`;
+  const cached = _cache.get(key);
+  if (cached) return cached;
+
   const flagImg = getFlagImg(country);
   const hasFlag = !!flagImg;
   const { W, H } = measure(callsign, hasFlag);
@@ -49,10 +57,25 @@ export function buildCallsignBillboard(billboards, pos, h, callsign, country) {
   c.width = W; c.height = H;
   draw(c.getContext('2d'), W, H, callsign, hasFlag, flagImg);
 
+  const entry = { image: c, W, H };
+
+  // Evict oldest if cache is full
+  if (_cache.size >= MAX_CACHE) {
+    const first = _cache.keys().next().value;
+    _cache.delete(first);
+  }
+
+  _cache.set(key, entry);
+  return entry;
+}
+
+export function buildCallsignBillboard(billboards, pos, h, callsign, country) {
+  const { image, W, H } = getOrCreateImage(callsign, country);
+
   const labelY = h / 2 + H / 2 + 6;
   return billboards.add({
     position: pos,
-    image:  c,
+    image,
     width:  W,
     height: H,
     pixelOffset:            new Cartesian2(0, labelY),

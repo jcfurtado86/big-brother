@@ -100,6 +100,9 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
       if (state.has(id)) {
         updateEntry(state.get(id), data, billboards, typesRef);
         updated++;
+        // Re-queue label if it was cancelled before being created
+        const entry = state.get(id);
+        if (!entry.label) labelQueueRef.current.push(id);
       } else {
         entityQueueRef.current.push([id, data]);
       }
@@ -138,7 +141,7 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
       }
     }
 
-    // Pass 2 — labels (idle, expensive canvas ops)
+    // Pass 2 — labels (idle callback, respects browser breathing room)
     function processLabelBatch(deadline) {
       if (billboards.isDestroyed()) { loadDone(); return; }
       const queue = labelQueueRef.current;
@@ -180,7 +183,7 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
 
     if (entityQueueRef.current.length > 0) {
       loadStart();
-      // Bulk load (e.g. timeline): process all at once to avoid thrashing
+      // Bulk load (e.g. timeline): process all entity billboards at once, then idle labels
       if (entityQueueRef.current.length > batchSize * 5) {
         while (entityQueueRef.current.length > 0) {
           const batch = entityQueueRef.current.splice(0, 500);
@@ -189,13 +192,21 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
             billboard.scaleByDistance        = billboard.scaleByDistance ?? SCALE_BY_DIST;
             billboard.translucencyByDistance = billboard.translucencyByDistance ?? TRANSLUCENCY_BY_DIST;
             state.set(id, entry);
+            labelQueueRef.current.push(id);
           }
         }
         viewer.scene.requestRender();
-        loadDone();
+        if (labelQueueRef.current.length > 0) {
+          labelIdleRef.current = scheduleIdle(processLabelBatch);
+        } else {
+          loadDone();
+        }
       } else {
         entityRafRef.current = requestAnimationFrame(processEntityBatch);
       }
+    } else if (labelQueueRef.current.length > 0) {
+      // No new entities, but some existing ones are missing labels (re-queued after cancel)
+      labelIdleRef.current = scheduleIdle(processLabelBatch);
     }
   }, [entitiesMap, viewer]);
 
