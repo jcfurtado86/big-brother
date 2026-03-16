@@ -180,7 +180,22 @@ export function useBillboardLayer(viewer, entitiesMap, visibleTypes, config) {
 
     if (entityQueueRef.current.length > 0) {
       loadStart();
-      entityRafRef.current = requestAnimationFrame(processEntityBatch);
+      // Bulk load (e.g. timeline): process all at once to avoid thrashing
+      if (entityQueueRef.current.length > batchSize * 5) {
+        while (entityQueueRef.current.length > 0) {
+          const batch = entityQueueRef.current.splice(0, 500);
+          for (const [id, data] of batch) {
+            const { billboard, entry } = createBillboard(billboards, id, data, typesRef);
+            billboard.scaleByDistance        = billboard.scaleByDistance ?? SCALE_BY_DIST;
+            billboard.translucencyByDistance = billboard.translucencyByDistance ?? TRANSLUCENCY_BY_DIST;
+            state.set(id, entry);
+          }
+        }
+        viewer.scene.requestRender();
+        loadDone();
+      } else {
+        entityRafRef.current = requestAnimationFrame(processEntityBatch);
+      }
     }
   }, [entitiesMap, viewer]);
 

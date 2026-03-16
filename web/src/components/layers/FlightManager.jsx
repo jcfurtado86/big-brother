@@ -21,7 +21,7 @@ export default function FlightManager({ bbox, onFlightSelect, flightStateRef: ex
 
   const allFlights = useMemo(() => {
     // When timeline is active, use timeline data instead of live
-    if (timeline?.active) return timeline.flights;
+    if (timeline?.active) return flightsCfg.show ? timeline.flights : new Map();
     if (isAll) {
       const merged = new Map();
       for (const [icao, os] of openskyFlights) {
@@ -46,7 +46,7 @@ export default function FlightManager({ bbox, onFlightSelect, flightStateRef: ex
     }
     if (flightsCfg.provider === 'opensky') return openskyFlights;
     return alFlights;
-  }, [isAll, flightsCfg.provider, openskyFlights, alFlights, timeline?.active, timeline?.flights]);
+  }, [isAll, flightsCfg.show, flightsCfg.provider, openskyFlights, alFlights, timeline?.active, timeline?.flights]);
 
   // Filter flights to viewport bbox (with padding) — only create billboards for visible area
   const selectedIcaoRef = useRef(null);

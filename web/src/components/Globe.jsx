@@ -221,7 +221,7 @@ export default function Globe({ initialView, flyTarget, resetKey, onCameraChange
         <WebcamManager onWebcamSelect={onWebcamSelect} />
         <TelecomManager cameraAltitude={cameraAltitude} telecomStateRef={telecomExtRef} onTelecomSelect={onTelecomSelect} />
         <SatelliteManager satelliteStateRef={satelliteStateRef} onSatelliteSelect={onSatelliteSelect} />
-        <VesselManager vesselStateRef={vesselStateRef} onVesselSelect={onVesselSelect} timeline={timeline} />
+        <VesselManager bbox={bbox} vesselStateRef={vesselStateRef} onVesselSelect={onVesselSelect} timeline={timeline} />
         <FlightManager bbox={bbox} onFlightSelect={onFlightSelect} flightStateRef={flightStateRef} timeline={timeline} />
         {/* VisibilityManager MUST render after entity managers so refs are populated */}
         <VisibilityManager

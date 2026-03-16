@@ -5,6 +5,7 @@ import { API_URL } from '../utils/api';
 
 const WINDOW = 5 * 60_000; // ±5 minutes
 const PREFETCH_MARGIN = 2 * 60_000; // prefetch when within 2 min of buffer edge
+const FETCH_COOLDOWN = 3_000; // min ms between fetches
 
 /**
  * Sliding-window timeline data hook.
@@ -20,6 +21,7 @@ export function useTimelineData() {
   const vesselHistRef = useRef(null);
   const bufferRef = useRef(null); // { start, end } of fetched window
   const fetchingRef = useRef(false);
+  const lastFetchRef = useRef(0);
   const abortRef = useRef(null);
 
   // Merge new data into existing history refs (accumulate across windows)
@@ -118,9 +120,11 @@ export function useTimelineData() {
   }, []);
 
   // Fetch a window of data around a given time
-  const fetchWindow = useCallback(async (centerTime) => {
+  const fetchWindow = useCallback(async (centerTime, force = false) => {
     if (fetchingRef.current) return;
+    if (!force && Date.now() - lastFetchRef.current < FETCH_COOLDOWN) return;
     fetchingRef.current = true;
+    lastFetchRef.current = Date.now();
 
     if (abortRef.current) abortRef.current.abort();
     const ac = new AbortController();
@@ -200,12 +204,12 @@ export function useTimelineData() {
     const buf = bufferRef.current;
 
     // Need fetch if no buffer, or approaching edges
-    if (
-      !buf ||
+    const needsFetch = !buf ||
       ct < buf.start + PREFETCH_MARGIN ||
-      ct > buf.end - PREFETCH_MARGIN
-    ) {
-      fetchWindow(ct);
+      ct > buf.end - PREFETCH_MARGIN;
+
+    if (needsFetch) {
+      fetchWindow(ct, !buf); // force on initial load
     }
   }, [tl.active, tl.timeRange, tl.currentTime, fetchWindow]);
 

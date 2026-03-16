@@ -32,7 +32,7 @@ export function useVesselLayer(viewer, vesselsMap, visibleTypes) {
         width: sz,
         height: sz,
         show,
-        rotation: -CesiumMath.toRadians(vessel.heading),
+        rotation: -CesiumMath.toRadians(vessel.heading ?? 0),
         alignedAxis: Cartesian3.UNIT_Z,
         color: VESSEL_CATEGORY_COLOR[category],
       });
@@ -57,7 +57,7 @@ export function useVesselLayer(viewer, vesselsMap, visibleTypes) {
     updateEntry(entry, vessel) {
       const pos = Cartesian3.fromDegrees(vessel.lon, vessel.lat, 0);
       entry.billboard.position = pos;
-      entry.billboard.rotation = -CesiumMath.toRadians(vessel.heading);
+      entry.billboard.rotation = -CesiumMath.toRadians(vessel.heading ?? 0);
       if (entry.label) entry.label.position = pos;
       entry.vessel = vessel;
       entry.lat = vessel.lat;
