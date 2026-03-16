@@ -46,7 +46,7 @@ const app = Fastify({ logger: true });
 // Plugins
 await app.register(cors, { origin: config.CORS_ORIGIN });
 await app.register(websocket);
-await app.register(rateLimit, { max: 100, timeWindow: '1 minute' });
+await app.register(rateLimit, { max: 600, timeWindow: '1 minute' });
 
 // Register routes
 await app.register(tleRoutes, { prefix: '/api' });
