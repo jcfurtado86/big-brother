@@ -24,7 +24,7 @@ export default function AcledCard({ acled, onClose }) {
         <Row label="Tipo" value={acled.eventType} />
         <Row label="Subtipo" value={acled.subEventType} />
         <Row label="Desordem" value={acled.disorderType} />
-        <Row label="Semana" value={acled.date} />
+        <Row label="Data" value={acled.date ? acled.date.slice(0, 10).split('-').reverse().join('/') : null} />
         <Row label="Pais" value={acled.country} />
         <Row label="Regiao" value={acled.region} />
         <Row label="Admin 1" value={acled.admin1} />

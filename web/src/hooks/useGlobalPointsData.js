@@ -73,6 +73,7 @@ export function useGlobalPointsData(viewer, enabled, { fetchFn, maxAltKey, debou
       return;
     }
 
+    lastBboxRef.current = null; // force refetch on fetchFn/enabled change
     fetchVisible();
 
     function onCameraChange() {

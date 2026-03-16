@@ -1,7 +1,9 @@
 import { API_URL } from '../utils/api';
 
-export async function fetchAllAcled(bbox, signal) {
-  const res = await fetch(`${API_URL}/api/acled?bbox=${bbox}`, { signal });
+export async function fetchAllAcled(bbox, signal, { period = '7d', from } = {}) {
+  const params = from ? `from=${from}` : `period=${period}`;
+  const url = `${API_URL}/api/acled?bbox=${bbox}&${params}`;
+  const res = await fetch(url, { signal });
   if (!res.ok) {
     console.warn('[ACLED] Fetch falhou, status:', res.status);
     return [];

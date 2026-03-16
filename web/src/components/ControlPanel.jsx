@@ -141,8 +141,23 @@ export default function ControlPanel() {
       <Card icon="🎖️" label="Militar">
         <Toggle label="Bases militares" active={military.show} onToggle={() => toggle('military')} />
         <TypeFilter types={MILITARY_CATEGORIES} activeSet={military.types} onChange={t => setTypes('military', t)} items={MILITARY_CATEGORY_META} />
-        <Separator />
+      </Card>
+
+      {/* Eventos */}
+      <Card icon="⚠️" label="Eventos">
         <Toggle label="Conflitos (ACLED)" active={acled.show} onToggle={() => toggle('acled')} />
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Periodo</span>
+          <select
+            className={styles.select}
+            value={acled.period}
+            onChange={e => setField('acled', 'period', e.target.value)}
+          >
+            <option value="1d">Ultimo dia</option>
+            <option value="7d">Ultima semana</option>
+            <option value="30d">Ultimos 30 dias</option>
+          </select>
+        </div>
         <TypeFilter types={ACLED_CATEGORIES} activeSet={acled.types} onChange={t => setTypes('acled', t)} items={ACLED_CATEGORY_META} />
       </Card>
 

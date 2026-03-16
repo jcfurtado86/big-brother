@@ -76,7 +76,7 @@ export default function FlightManager({ bbox, onFlightSelect, flightStateRef: ex
   externalRef.current = flightStateRef;
 
   useSelectionHandler('flight', {
-    match: (id) => id != null && !id.includes(':') && !id.startsWith('vessel_') && !id.startsWith('sat_') && !id.startsWith('telecom_') && !id.startsWith('receiver_'),
+    match: (id) => id != null && !id.includes(':') && !id.startsWith('vessel_') && !id.startsWith('sat_') && !id.startsWith('telecom_') && !id.startsWith('receiver_') && !id.startsWith('acled_') && !id.startsWith('mil_') && !id.startsWith('nuc_') && !id.startsWith('atc_') && !id.startsWith('asp_') && !id.startsWith('webcam_'),
     onSelect: async (id) => {
       const icao24 = id;
       const isSame = selectedIcaoRef.current === icao24;

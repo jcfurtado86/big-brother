@@ -20,6 +20,21 @@ export default async function (app) {
       query = query.whereIn('category', categories.split(','));
     }
 
+    // Date filter: absolute 'from' date, or relative 'period' (1d, 7d, 30d)
+    const from = req.query.from; // YYYY-MM-DD
+    if (from && /^\d{4}-\d{2}-\d{2}$/.test(from)) {
+      query = query.where('event_date', '>=', from);
+    } else {
+      const period = req.query.period;
+      if (period) {
+        const days = parseInt(period, 10);
+        if (!isNaN(days) && days > 0) {
+          const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+          query = query.where('event_date', '>=', cutoff.toISOString().slice(0, 10));
+        }
+      }
+    }
+
     query = query.limit(10000);
     return query;
   });
