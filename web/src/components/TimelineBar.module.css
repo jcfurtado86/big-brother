@@ -54,15 +54,55 @@
   background: rgba(255, 255, 255, 0.15);
 }
 
-.slider {
+.sliderWrap {
   flex: 1;
+  position: relative;
+  height: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.coverageTrack {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.coverageSeg {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: rgba(100, 200, 255, 0.35);
+  border-radius: 2px;
+}
+
+.slider {
+  position: relative;
+  width: 100%;
   -webkit-appearance: none;
   appearance: none;
   height: 4px;
-  background: rgba(255, 255, 255, 0.15);
+  background: transparent;
   border-radius: 2px;
   outline: none;
   cursor: pointer;
+  z-index: 1;
+}
+
+.slider::-webkit-slider-runnable-track {
+  height: 4px;
+  background: transparent;
+}
+
+.slider::-moz-range-track {
+  height: 4px;
+  background: transparent;
+  border: none;
 }
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;

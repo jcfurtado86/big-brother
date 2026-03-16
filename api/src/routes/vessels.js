@@ -40,24 +40,20 @@ export default async function (app) {
   });
 
   // GET /vessels/history/all?from=ISO&to=ISO
-  // Returns all vessel positions in a time range (for timeline replay)
+  // Returns all vessel positions in a time range (for timeline sliding window)
   app.get('/vessels/history/all', async (req, reply) => {
     const from = req.query.from;
     const to = req.query.to;
     if (!from || !to) return reply.code(400).send({ error: 'from and to required' });
 
-    // Sample: one point per entity per 5-minute bucket to keep payload manageable
-    return db.raw(`
-      SELECT DISTINCT ON (mmsi, bucket)
-        mmsi, name, lat, lon, cog, sog, heading,
-        nav_status AS "navStatus", ship_type AS "shipType",
-        recorded_at,
-        date_trunc('hour', recorded_at)
-          + INTERVAL '5 min' * FLOOR(EXTRACT(EPOCH FROM (recorded_at - date_trunc('hour', recorded_at))) / 300)
-          AS bucket
-      FROM vessel_history
-      WHERE recorded_at >= ? AND recorded_at <= ?
-      ORDER BY mmsi, bucket, recorded_at DESC
-    `, [from, to]).then(r => r.rows.map(({ bucket, ...rest }) => rest));
+    return db('vessel_history')
+      .select('mmsi', 'name', 'lat', 'lon', 'cog', 'sog', 'heading',
+              db.raw('nav_status AS "navStatus"'),
+              db.raw('ship_type AS "shipType"'),
+              'recorded_at')
+      .where('recorded_at', '>=', from)
+      .andWhere('recorded_at', '<=', to)
+      .orderBy('recorded_at', 'asc')
+      .limit(50000);
   });
 }

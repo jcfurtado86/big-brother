@@ -51,25 +51,44 @@ export default async function (app) {
     return query.limit(5000);
   });
 
+  // GET /timeline/coverage?from=ISO&to=ISO
+  // Returns 5-min bucket timestamps that have historical data (lightweight, no positions)
+  app.get('/timeline/coverage', async (req, reply) => {
+    const from = req.query.from;
+    const to = req.query.to;
+    if (!from || !to) return reply.code(400).send({ error: 'from and to required' });
+
+    const { rows } = await db.raw(`
+      SELECT DISTINCT bucket FROM (
+        SELECT date_trunc('hour', recorded_at)
+          + INTERVAL '5 min' * FLOOR(EXTRACT(EPOCH FROM (recorded_at - date_trunc('hour', recorded_at))) / 300)
+          AS bucket
+        FROM flight_history WHERE recorded_at >= ? AND recorded_at <= ?
+        UNION
+        SELECT date_trunc('hour', recorded_at)
+          + INTERVAL '5 min' * FLOOR(EXTRACT(EPOCH FROM (recorded_at - date_trunc('hour', recorded_at))) / 300)
+          AS bucket
+        FROM vessel_history WHERE recorded_at >= ? AND recorded_at <= ?
+      ) sub ORDER BY bucket
+    `, [from, to, from, to]);
+
+    return rows.map(r => new Date(r.bucket).getTime());
+  });
+
   // GET /flights/history/all?from=ISO&to=ISO
-  // Returns all flight positions in a time range (for timeline replay)
-  // Sampled: one point per entity per 5-minute bucket to keep payload manageable
+  // Returns all flight positions in a time range (for timeline sliding window)
   app.get('/flights/history/all', async (req, reply) => {
     const from = req.query.from;
     const to = req.query.to;
     if (!from || !to) return reply.code(400).send({ error: 'from and to required' });
 
-    return db.raw(`
-      SELECT DISTINCT ON (icao24, bucket)
-        icao24, callsign, lat, lon, altitude, heading,
-        velocity, vertical_rate, on_ground, squawk, category,
-        recorded_at,
-        date_trunc('hour', recorded_at)
-          + INTERVAL '5 min' * FLOOR(EXTRACT(EPOCH FROM (recorded_at - date_trunc('hour', recorded_at))) / 300)
-          AS bucket
-      FROM flight_history
-      WHERE recorded_at >= ? AND recorded_at <= ?
-      ORDER BY icao24, bucket, recorded_at DESC
-    `, [from, to]).then(r => r.rows.map(({ bucket, ...rest }) => rest));
+    return db('flight_history')
+      .select('icao24', 'callsign', 'lat', 'lon', 'altitude', 'heading',
+              'velocity', 'vertical_rate', 'on_ground', 'squawk', 'category',
+              'recorded_at')
+      .where('recorded_at', '>=', from)
+      .andWhere('recorded_at', '<=', to)
+      .orderBy('recorded_at', 'asc')
+      .limit(50000);
   });
 }

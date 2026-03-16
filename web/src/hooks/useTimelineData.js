@@ -3,23 +3,68 @@ import { useTimeline } from '../contexts/TimelineContext';
 import { groupByEntity, interpolateAt } from '../utils/interpolateHistory';
 import { API_URL } from '../utils/api';
 
+const WINDOW = 5 * 60_000; // ±5 minutes
+const PREFETCH_MARGIN = 2 * 60_000; // prefetch when within 2 min of buffer edge
+
 /**
- * Fetches historical data when timeline is active and interpolates
- * all entities to the current playback time.
- *
- * Returns { flights: Map, vessels: Map } with same format as live hooks.
+ * Sliding-window timeline data hook.
+ * Fetches ±5 min around currentTime, re-fetches as playback advances.
+ * Coverage is fetched once (lightweight) when timeline activates.
  */
 export function useTimelineData() {
   const tl = useTimeline();
   const [flights, setFlights] = useState(new Map());
   const [vessels, setVessels] = useState(new Map());
 
-  // Raw history grouped by entity
-  const flightHistRef = useRef(null); // Map<icao24, points[]>
-  const vesselHistRef = useRef(null); // Map<mmsi, points[]>
-  const fetchedRangeRef = useRef(null);
+  const flightHistRef = useRef(null);
+  const vesselHistRef = useRef(null);
+  const bufferRef = useRef(null); // { start, end } of fetched window
+  const fetchingRef = useRef(false);
+  const abortRef = useRef(null);
 
-  // Interpolation function — called after fetch and during playback
+  // Merge new data into existing history refs (accumulate across windows)
+  const mergeData = useCallback((fData, vData) => {
+    const fNew = groupByEntity(fData, 'icao24');
+    const vNew = groupByEntity(vData, 'mmsi');
+
+    // Merge flights
+    if (!flightHistRef.current) {
+      flightHistRef.current = fNew;
+    } else {
+      for (const [id, newPoints] of fNew) {
+        const existing = flightHistRef.current.get(id);
+        if (!existing) {
+          flightHistRef.current.set(id, newPoints);
+        } else {
+          // Add only points we don't already have (by _t)
+          const existingTimes = new Set(existing.map(p => p._t));
+          for (const p of newPoints) {
+            if (!existingTimes.has(p._t)) existing.push(p);
+          }
+          existing.sort((a, b) => a._t - b._t);
+        }
+      }
+    }
+
+    // Merge vessels
+    if (!vesselHistRef.current) {
+      vesselHistRef.current = vNew;
+    } else {
+      for (const [id, newPoints] of vNew) {
+        const existing = vesselHistRef.current.get(id);
+        if (!existing) {
+          vesselHistRef.current.set(id, newPoints);
+        } else {
+          const existingTimes = new Set(existing.map(p => p._t));
+          for (const p of newPoints) {
+            if (!existingTimes.has(p._t)) existing.push(p);
+          }
+          existing.sort((a, b) => a._t - b._t);
+        }
+      }
+    }
+  }, []);
+
   const interpolate = useCallback((t) => {
     const fHist = flightHistRef.current;
     const vHist = vesselHistRef.current;
@@ -72,54 +117,97 @@ export function useTimelineData() {
     }
   }, []);
 
-  // Fetch history when timeline activates or range changes
+  // Fetch a window of data around a given time
+  const fetchWindow = useCallback(async (centerTime) => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
+
+    if (abortRef.current) abortRef.current.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+
+    const winStart = centerTime - WINDOW;
+    const winEnd = centerTime + WINDOW;
+    const from = new Date(winStart).toISOString();
+    const to = new Date(winEnd).toISOString();
+
+    try {
+      const [fRes, vRes] = await Promise.all([
+        fetch(`${API_URL}/api/flights/history/all?from=${from}&to=${to}`, { signal: ac.signal }),
+        fetch(`${API_URL}/api/vessels/history/all?from=${from}&to=${to}`, { signal: ac.signal }),
+      ]);
+
+      const [fData, vData] = await Promise.all([fRes.json(), vRes.json()]);
+
+      mergeData(fData, vData);
+
+      // Expand buffer range
+      const prev = bufferRef.current;
+      bufferRef.current = {
+        start: prev ? Math.min(prev.start, winStart) : winStart,
+        end: prev ? Math.max(prev.end, winEnd) : winEnd,
+      };
+
+      console.log(`[timeline] window ${new Date(winStart).toISOString().slice(11, 19)} – ${new Date(winEnd).toISOString().slice(11, 19)}: ${fData.length} flights, ${vData.length} vessels`);
+
+      // Interpolate immediately
+      interpolate(centerTime);
+    } catch (e) {
+      if (e.name !== 'AbortError') console.warn('[timeline] fetch error:', e.message);
+    } finally {
+      fetchingRef.current = false;
+    }
+  }, [mergeData, interpolate]);
+
+  // Fetch coverage once when timeline activates
+  useEffect(() => {
+    if (!tl.active || !tl.timeRange) {
+      tl.setCoverage(null);
+      return;
+    }
+
+    const ac = new AbortController();
+    const from = new Date(tl.timeRange.start).toISOString();
+    const to = new Date(tl.timeRange.end).toISOString();
+
+    fetch(`${API_URL}/api/timeline/coverage?from=${from}&to=${to}`, { signal: ac.signal })
+      .then(r => r.json())
+      .then(buckets => {
+        if (!ac.signal.aborted) {
+          tl.setCoverage(buckets);
+          console.log(`[timeline] coverage: ${buckets.length} buckets`);
+        }
+      })
+      .catch(e => {
+        if (e.name !== 'AbortError') console.warn('[timeline] coverage error:', e.message);
+      });
+
+    return () => ac.abort();
+  }, [tl.active, tl.timeRange?.start]);
+
+  // Initial fetch + re-fetch when approaching buffer edges
   useEffect(() => {
     if (!tl.active || !tl.timeRange) {
       flightHistRef.current = null;
       vesselHistRef.current = null;
-      fetchedRangeRef.current = null;
+      bufferRef.current = null;
       setFlights(new Map());
       setVessels(new Map());
       return;
     }
 
-    const { start, end } = tl.timeRange;
-    // Don't re-fetch if same day (start unchanged) — end grows in live-follow mode
+    const ct = tl.currentTime;
+    const buf = bufferRef.current;
+
+    // Need fetch if no buffer, or approaching edges
     if (
-      fetchedRangeRef.current &&
-      fetchedRangeRef.current.start === start
-    ) return;
-
-    const ac = new AbortController();
-
-    async function fetchHistory() {
-      const from = new Date(start).toISOString();
-      const to = new Date(end).toISOString();
-
-      try {
-        const [fRes, vRes] = await Promise.all([
-          fetch(`${API_URL}/api/flights/history/all?from=${from}&to=${to}`, { signal: ac.signal }),
-          fetch(`${API_URL}/api/vessels/history/all?from=${from}&to=${to}`, { signal: ac.signal }),
-        ]);
-
-        const [fData, vData] = await Promise.all([fRes.json(), vRes.json()]);
-
-        flightHistRef.current = groupByEntity(fData, 'icao24');
-        vesselHistRef.current = groupByEntity(vData, 'mmsi');
-        fetchedRangeRef.current = { start, end };
-
-        console.log(`[timeline] loaded ${fData.length} flight points, ${vData.length} vessel points`);
-
-        // Interpolate immediately so entities appear even when paused
-        interpolate(tl.currentTime);
-      } catch (e) {
-        if (e.name !== 'AbortError') console.warn('[timeline] fetch error:', e.message);
-      }
+      !buf ||
+      ct < buf.start + PREFETCH_MARGIN ||
+      ct > buf.end - PREFETCH_MARGIN
+    ) {
+      fetchWindow(ct);
     }
-
-    fetchHistory();
-    return () => ac.abort();
-  }, [tl.active, tl.timeRange?.start, interpolate]);
+  }, [tl.active, tl.timeRange, tl.currentTime, fetchWindow]);
 
   // Interpolate during playback (~10fps throttle)
   const lastInterpRef = useRef(0);
@@ -128,7 +216,7 @@ export function useTimelineData() {
     if (!flightHistRef.current && !vesselHistRef.current) return;
 
     const now = performance.now();
-    if (now - lastInterpRef.current < 100) return; // throttle to ~10fps
+    if (now - lastInterpRef.current < 100) return;
     lastInterpRef.current = now;
 
     interpolate(tl.currentTime);

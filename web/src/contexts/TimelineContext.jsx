@@ -10,6 +10,7 @@ export function TimelineProvider({ children }) {
   const [speed, setSpeedState] = useState(1);
   const [currentTime, setCurrentTime] = useState(0);
   const [timeRange, setTimeRange] = useState(null); // { start, end }
+  const [coverage, setCoverage] = useState(null); // sorted epoch ms[] of data buckets
 
   const rafRef = useRef(null);
   const lastFrameRef = useRef(null);
@@ -77,6 +78,7 @@ export function TimelineProvider({ children }) {
     setPlaying(false);
     setTimeRange(null);
     setCurrentTime(0);
+    setCoverage(null);
   }, []);
 
   const play = useCallback(() => setPlaying(true), []);
@@ -104,9 +106,9 @@ export function TimelineProvider({ children }) {
   }, [active]);
 
   const value = {
-    active, playing, speed, currentTime, timeRange,
+    active, playing, speed, currentTime, timeRange, coverage,
     activate, deactivate, play, pause, togglePlay,
-    setSpeed, cycleSpeed, seek, getTime,
+    setSpeed, cycleSpeed, seek, getTime, setCoverage,
     SPEEDS,
   };
 
