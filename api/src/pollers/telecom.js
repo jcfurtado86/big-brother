@@ -170,12 +170,21 @@ async function fetchTelecom() {
     await sleep(BETWEEN_DELAY);
   }
 
-  // Other layers: single global query each
+  // Other layers: single global query each (longer cooldown after mast blitz)
+  console.log('[telecom] Waiting 30s before other layers (Overpass cooldown)...');
+  await sleep(30_000);
+
   for (const q of OTHER_LAYERS) {
-    const count = await withRetry(() => fetchLayer(q), { label: `telecom:${q.layer}` });
+    const count = await withRetry(() => fetchLayer(q), {
+      label: `telecom:${q.layer}`,
+      maxRetries: 5,
+      delayMs: 30_000,
+    });
     if (count != null) {
       console.log(`[telecom] ${q.layer}: ${count} points`);
       total += count;
+    } else {
+      console.warn(`[telecom] ${q.layer}: FAILED — all retries exhausted`);
     }
     await sleep(BETWEEN_DELAY);
   }
