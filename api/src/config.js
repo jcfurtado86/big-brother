@@ -37,7 +37,7 @@ export default {
 
   // Poller intervals (ms)
   OPENSKY_POLL_MS: 120_000,
-  AL_POLL_MS: 120_000,
+  AL_POLL_MS: 10_000,
   TLE_POLL_MS: 24 * 60 * 60 * 1000,       // 24h
   AIRPORTS_POLL_MS: 30 * 24 * 60 * 60 * 1000, // 30 days
   AIRCRAFT_POLL_MS: 30 * 24 * 60 * 60 * 1000, // 30 days
