@@ -7,12 +7,20 @@ const { OVERPASS_URL } = config;
 const BETWEEN_DELAY = 5_000;
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-const QUERIES = [
-  {
-    layer: 'mast',
-    timeout: 300,
-    query: `[out:json][timeout:300];(node["man_made"="mast"]["tower:type"~"communication|telecommunication"];node["man_made"="communications_tower"];);out body;`,
-  },
+// Masts are too heavy for a single global query — split by region
+const MAST_REGIONS = [
+  { name: 'Europe',        bbox: '35,-25,72,45' },
+  { name: 'Russia/CIS',    bbox: '40,45,75,180' },
+  { name: 'East Asia',     bbox: '10,100,55,150' },
+  { name: 'South Asia',    bbox: '5,60,40,100' },
+  { name: 'Middle East',   bbox: '12,25,42,60' },
+  { name: 'Africa',        bbox: '-35,-20,38,52' },
+  { name: 'North America', bbox: '15,-170,72,-50' },
+  { name: 'Central/South America', bbox: '-56,-120,15,-30' },
+  { name: 'Oceania',       bbox: '-50,110,0,180' },
+];
+
+const OTHER_LAYERS = [
   {
     layer: 'data_center',
     timeout: 120,
@@ -25,21 +33,12 @@ const QUERIES = [
   },
 ];
 
-async function fetchLayer({ layer, query, timeout }) {
-  const res = await fetchIpv4(OVERPASS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `data=${encodeURIComponent(query)}`,
-    timeout: (timeout + 60) * 1000,
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-  const data = await res.json();
+async function upsertElements(elements, layer) {
   const BATCH = 200;
   let batch = [];
   let count = 0;
 
-  for (const el of data.elements) {
+  for (const el of elements) {
     const tags = el.tags || {};
     const lat = el.lat ?? el.center?.lat;
     const lon = el.lon ?? el.center?.lon;
@@ -77,11 +76,50 @@ async function fetchLayer({ layer, query, timeout }) {
   return count;
 }
 
+async function fetchMastRegion(region) {
+  const query = `[out:json][timeout:180][bbox:${region.bbox}];(node["man_made"="mast"]["tower:type"~"communication|telecommunication"];node["man_made"="communications_tower"];);out body;`;
+
+  const res = await fetchIpv4(OVERPASS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `data=${encodeURIComponent(query)}`,
+    timeout: 240_000,
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+  const data = await res.json();
+  return upsertElements(data.elements, 'mast');
+}
+
+async function fetchLayer({ layer, query, timeout }) {
+  const res = await fetchIpv4(OVERPASS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `data=${encodeURIComponent(query)}`,
+    timeout: (timeout + 60) * 1000,
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+  const data = await res.json();
+  return upsertElements(data.elements, layer);
+}
+
 async function fetchTelecom() {
   console.log('[telecom] Fetching from Overpass API (sequential with retry)...');
   let total = 0;
 
-  for (const q of QUERIES) {
+  // Masts: fetch by region to avoid Overpass timeout
+  for (const region of MAST_REGIONS) {
+    const count = await withRetry(() => fetchMastRegion(region), { label: `telecom:mast:${region.name}` });
+    if (count != null) {
+      console.log(`[telecom] mast ${region.name}: ${count} points`);
+      total += count;
+    }
+    await sleep(BETWEEN_DELAY);
+  }
+
+  // Other layers: single global query each
+  for (const q of OTHER_LAYERS) {
     const count = await withRetry(() => fetchLayer(q), { label: `telecom:${q.layer}` });
     if (count != null) {
       console.log(`[telecom] ${q.layer}: ${count} points`);
