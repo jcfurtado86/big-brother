@@ -3,9 +3,9 @@ import { Cartesian3 } from 'cesium';
 import { deadReckon } from '../utils/geoMath';
 import { getSetting } from '../providers/settingsStore';
 
-export function useDeadReckoning(viewer, billboardsRef, stateRef) {
+export function useDeadReckoning(viewer, billboardsRef, stateRef, disabled = false) {
   useEffect(() => {
-    if (!viewer) return;
+    if (!viewer || disabled) return;
     const id = setInterval(() => {
       const billboards = billboardsRef.current;
       if (!billboards || billboards.isDestroyed()) return;
@@ -22,5 +22,5 @@ export function useDeadReckoning(viewer, billboardsRef, stateRef) {
       viewer.scene.requestRender();
     }, getSetting('DEAD_RECKONING_MS'));
     return () => clearInterval(id);
-  }, [viewer, billboardsRef, stateRef]);
+  }, [viewer, billboardsRef, stateRef, disabled]);
 }

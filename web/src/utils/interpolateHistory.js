@@ -10,6 +10,10 @@ export function groupByEntity(records, idField, timeField = 'recorded_at') {
     r._t = new Date(r[timeField]).getTime();
     map.get(id).push(r);
   }
+  // Ensure ascending time order for bisect
+  for (const points of map.values()) {
+    points.sort((a, b) => a._t - b._t);
+  }
   return map;
 }
 

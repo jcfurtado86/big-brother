@@ -1,2 +1,7 @@
 DEPOIS PENSAR COMO SERIA O HISTORICO DE CADA ITEM
 um slider de tempo. e em alguns pontos do slider uma bola ou icone pra identificar um acontecimento importante
+
+buffer de 2 minutos pra frente pra tras do tempo selecionado
+
+
+quando clica em um objeto centraliza no ponto atual dele. nao no ponto do historico

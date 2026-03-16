@@ -17,7 +17,7 @@ function resolveCategory(icao, adsbCat, velocity, altitude, military) {
   };
 }
 
-export function useFlightLayer(viewer, flightsMap, visibleTypes) {
+export function useFlightLayer(viewer, flightsMap, visibleTypes, { timelineActive = false } = {}) {
   const config = useMemo(() => ({
     batchSize: getSetting('PLANE_BATCH_SIZE'),
     labelBatchSize: getSetting('CALLSIGN_BATCH_SIZE'),
@@ -38,7 +38,7 @@ export function useFlightLayer(viewer, flightsMap, visibleTypes) {
         width: w,
         height: h,
         show,
-        rotation: -CesiumMath.toRadians(flight.heading),
+        rotation: -CesiumMath.toRadians(flight.heading ?? 0),
         alignedAxis: Cartesian3.UNIT_Z,
         color: FLIGHT_CATEGORY_COLOR[category] ?? FLIGHT_CATEGORY_COLOR.unknown,
       });
@@ -72,7 +72,7 @@ export function useFlightLayer(viewer, flightsMap, visibleTypes) {
       entry.velocity  = flight.velocity;
       entry.fetchedAt = flight.fetchedAt;
       entry._alt      = flight.altitude;
-      entry.billboard.rotation = -CesiumMath.toRadians(flight.heading);
+      entry.billboard.rotation = -CesiumMath.toRadians(flight.heading ?? 0);
 
       // Update callsign label + country flag if enriched by merge
       const newCountry = flight.country || '';
@@ -118,8 +118,8 @@ export function useFlightLayer(viewer, flightsMap, visibleTypes) {
     viewer, flightsMap, visibleTypes, config
   );
 
-  // Dead reckoning
-  useDeadReckoning(viewer, billboardsRef, stateRef);
+  // Dead reckoning — disabled during timeline (positions come from interpolation)
+  useDeadReckoning(viewer, billboardsRef, stateRef, timelineActive);
 
   return { stateRef, setSelected };
 }

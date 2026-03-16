@@ -64,7 +64,7 @@ export default function FlightManager({ bbox, onFlightSelect, flightStateRef: ex
     return filtered;
   }, [allFlights, bbox]);
 
-  const { stateRef: flightStateRef, setSelected } = useFlightLayer(viewer, flights, flightsCfg.types);
+  const { stateRef: flightStateRef, setSelected } = useFlightLayer(viewer, flights, flightsCfg.types, { timelineActive: !!timeline?.active });
 
   // Keep FlightCard in sync when flights Map refreshes (every 60s)
   useEffect(() => {
@@ -102,21 +102,27 @@ export default function FlightManager({ bbox, onFlightSelect, flightStateRef: ex
 
         const entry0 = flightStateRef?.current?.get(icao24);
         if (entry0) {
-          const dt0 = Date.now() - entry0.fetchedAt;
-          const { lat: lat0, lon: lon0 } = deadReckon(
-            entry0.lat, entry0.lon, entry0.heading, entry0.velocity, dt0
-          );
-          startFollow(Cartesian3.fromDegrees(lon0, lat0, (entry0._alt ?? 0) * getSetting('FLIGHT_ALT_SCALE')));
+          const pos0 = timeline?.active
+            ? entry0.billboard.position
+            : (() => {
+                const dt0 = Date.now() - entry0.fetchedAt;
+                const { lat: lat0, lon: lon0 } = deadReckon(entry0.lat, entry0.lon, entry0.heading, entry0.velocity, dt0);
+                return Cartesian3.fromDegrees(lon0, lat0, (entry0._alt ?? 0) * getSetting('FLIGHT_ALT_SCALE'));
+              })();
+          startFollow(pos0);
         }
 
         setLiveInterval(() => {
           const entry = flightStateRef?.current?.get(icao24);
           if (!entry) return;
-          const dt = Date.now() - entry.fetchedAt;
-          const { lat, lon } = deadReckon(
-            entry.lat, entry.lon, entry.heading, entry.velocity, dt
-          );
-          const pos = Cartesian3.fromDegrees(lon, lat, (entry._alt ?? 0) * getSetting('FLIGHT_ALT_SCALE'));
+          // During timeline, billboard position is already set by interpolation
+          const pos = timeline?.active
+            ? entry.billboard.position
+            : (() => {
+                const dt = Date.now() - entry.fetchedAt;
+                const { lat, lon } = deadReckon(entry.lat, entry.lon, entry.heading, entry.velocity, dt);
+                return Cartesian3.fromDegrees(lon, lat, (entry._alt ?? 0) * getSetting('FLIGHT_ALT_SCALE'));
+              })();
           liveEndRef.current = pos;
           updateFollow(pos);
         }, getSetting('TICK_INTERVAL_MS'));
