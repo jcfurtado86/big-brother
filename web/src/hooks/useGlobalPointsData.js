@@ -4,24 +4,25 @@ import { computeBboxFromViewer } from '../utils/bboxUtils';
 import { useLoading } from '../contexts/LoadingContext';
 
 /**
- * Shared hook for layers that do a single global fetch + viewport filtering.
- * Used by ATC, Military, and any future "fetch all → filter by bbox" layer.
+ * Shared hook for layers that fetch by viewport bbox.
+ * Re-fetches when camera moves. Only visible data kept in memory.
  *
  * @param {object}   viewer   - Cesium viewer instance
  * @param {boolean}  enabled  - whether the layer is toggled on
  * @param {object}   opts
- * @param {Function} opts.fetchFn      - (signal) => Promise<Array> — fetches all points
+ * @param {Function} opts.fetchFn      - (bbox, signal) => Promise<Array> — fetches points for bbox string
  * @param {string}   opts.maxAltKey    - settings key for max camera altitude
  * @param {string}   opts.debounceKey  - settings key for debounce interval (ms)
  */
 export function useGlobalPointsData(viewer, enabled, { fetchFn, maxAltKey, debounceKey }) {
   const [pointsMap, setPointsMap] = useState(new Map());
-  const allPointsRef = useRef(null);
   const debounceRef = useRef(null);
+  const abortRef = useRef(null);
+  const lastBboxRef = useRef(null);
   const { start: loadStart, done: loadDone } = useLoading();
 
-  const filterVisible = useCallback(() => {
-    if (!viewer || viewer.isDestroyed() || !allPointsRef.current) return;
+  const fetchVisible = useCallback(async () => {
+    if (!viewer || viewer.isDestroyed()) return;
     if (document.hidden) return;
 
     const carto = viewer.camera.positionCartographic;
@@ -34,40 +35,49 @@ export function useGlobalPointsData(viewer, enabled, { fetchFn, maxAltKey, debou
     const bbox = computeBboxFromViewer(viewer);
     if (!bbox) return;
 
-    const visible = new Map();
-    for (const p of allPointsRef.current) {
-      if (p.lat >= bbox.south && p.lat <= bbox.north &&
-          p.lon >= bbox.west  && p.lon <= bbox.east) {
-        visible.set(p.id, p);
-      }
+    // Skip if bbox hasn't changed significantly
+    const prev = lastBboxRef.current;
+    if (prev &&
+        Math.abs(prev.south - bbox.south) < 0.5 &&
+        Math.abs(prev.north - bbox.north) < 0.5 &&
+        Math.abs(prev.west - bbox.west) < 0.5 &&
+        Math.abs(prev.east - bbox.east) < 0.5) {
+      return;
     }
-    setPointsMap(prev => {
-      if (prev.size !== visible.size) return visible;
-      for (const k of prev.keys()) {
-        if (!visible.has(k)) return visible;
-      }
-      return prev;
-    });
-  }, [viewer, maxAltKey]);
+    lastBboxRef.current = bbox;
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      loadStart();
+      const bboxStr = `${bbox.south},${bbox.west},${bbox.north},${bbox.east}`;
+      const points = await fetchFn(bboxStr, controller.signal);
+      if (controller.signal.aborted || !points) return;
+
+      const map = new Map();
+      for (const p of points) map.set(p.id, p);
+      setPointsMap(map);
+    } catch (e) {
+      if (e.name !== 'AbortError') console.warn('[pointsData] fetch error:', e.message);
+    } finally {
+      loadDone();
+    }
+  }, [viewer, maxAltKey, fetchFn]);
 
   useEffect(() => {
     if (!viewer || !enabled) {
       setPointsMap(prev => prev.size === 0 ? prev : new Map());
+      lastBboxRef.current = null;
       return;
     }
 
-    const controller = new AbortController();
-    loadStart();
-
-    fetchFn(controller.signal).then(points => {
-      if (controller.signal.aborted || !points) return;
-      allPointsRef.current = points;
-      filterVisible();
-    }).finally(() => loadDone());
+    fetchVisible();
 
     function onCameraChange() {
       clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(filterVisible, getSetting(debounceKey));
+      debounceRef.current = setTimeout(fetchVisible, getSetting(debounceKey));
     }
 
     const removeListener = viewer.camera.changed.addEventListener(onCameraChange);
@@ -75,9 +85,9 @@ export function useGlobalPointsData(viewer, enabled, { fetchFn, maxAltKey, debou
     return () => {
       removeListener();
       clearTimeout(debounceRef.current);
-      controller.abort();
+      abortRef.current?.abort();
     };
-  }, [viewer, enabled, filterVisible, fetchFn, debounceKey]);
+  }, [viewer, enabled, fetchVisible, debounceKey]);
 
   return pointsMap;
 }

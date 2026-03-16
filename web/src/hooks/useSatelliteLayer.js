@@ -6,6 +6,8 @@ import { useBillboardLayer } from './useBillboardLayer';
 import { SELECTED_SATELLITE_COLOR } from '../providers/constants';
 import { getSetting } from '../providers/settingsStore';
 
+const toDeg = (r) => r * 180 / Math.PI;
+
 export function useSatelliteLayer(viewer, satellitesMap, visibleTypes) {
   const config = useMemo(() => ({
     batchSize: getSetting('SATELLITE_BATCH_SIZE'),
@@ -60,21 +62,50 @@ export function useSatelliteLayer(viewer, satellitesMap, visibleTypes) {
     viewer, satellitesMap, visibleTypes, config
   );
 
-  // Real-time position propagation
+  // Real-time position propagation — only for satellites visible in viewport
   const propagateRef = useRef(null);
   useEffect(() => {
     if (!viewer) return;
     function tick() {
       if (stateRef.current.size === 0) return;
       const now = new Date();
+
+      // Viewport bounds — skip propagation for off-screen sats
+      const cam = viewer.camera.positionCartographic;
+      let south = -90, north = 90, west = -180, east = 180;
+      if (cam) {
+        const lat = toDeg(cam.latitude);
+        const lon = toDeg(cam.longitude);
+        const span = Math.min(90, Math.max(20, cam.height / 50000));
+        south = lat - span;
+        north = lat + span;
+        west = lon - span;
+        east = lon + span;
+      }
+
       for (const [, entry] of stateRef.current) {
         const typeVisible = typesRef.current?.has(entry._category) ?? true;
-        if (!typeVisible) continue;
+
+        // Use last known position for viewport check before propagating
+        const nearView = entry.lat >= south - 10 && entry.lat <= north + 10 &&
+                         entry.lon >= west - 10 && entry.lon <= east + 10;
+
+        if (!typeVisible || !nearView) {
+          entry.billboard.show = false;
+          if (entry.label) entry.label.show = false;
+          continue;
+        }
+
         const pos = propagateSat(entry.tle, now);
         if (!pos) continue;
+
         const cart = Cartesian3.fromDegrees(pos.lon, pos.lat, pos.alt * 1000);
         entry.billboard.position = cart;
-        if (entry.label) entry.label.position = cart;
+        entry.billboard.show = true;
+        if (entry.label) {
+          entry.label.position = cart;
+          entry.label.show = true;
+        }
         entry.lat = pos.lat;
         entry.lon = pos.lon;
         entry.alt = pos.alt;

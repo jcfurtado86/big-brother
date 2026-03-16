@@ -9,7 +9,13 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 // Masts are too heavy for a single global query — split by region
 const MAST_REGIONS = [
-  { name: 'Europe',        bbox: '35,-25,72,45' },
+  // Europe subdivided — full bbox times out on Overpass
+  { name: 'Western Europe',     bbox: '36,-12,52,10' },
+  { name: 'Central Europe',     bbox: '45,10,55,25' },
+  { name: 'Eastern Europe',     bbox: '44,25,56,40' },
+  { name: 'Scandinavia',        bbox: '55,4,72,32' },
+  { name: 'Iberia+Italy+Balkans', bbox: '35,-10,46,30' },
+  { name: 'UK+Ireland',         bbox: '49,-11,61,2' },
   { name: 'Russia/CIS',    bbox: '40,45,75,180' },
   { name: 'East Asia',     bbox: '10,100,55,150' },
   { name: 'South Asia',    bbox: '5,60,40,100' },

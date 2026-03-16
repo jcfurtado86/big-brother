@@ -4,7 +4,6 @@ import { fetchTelecomTile, getTilesForBbox, loadAllCachedTiles } from '../provid
 import { getSetting } from '../providers/settingsStore';
 
 function zoomFromAltitude(alt) {
-  // Approximate: higher altitude = lower zoom
   if (alt > 5_000_000) return 3;
   if (alt > 2_000_000) return 5;
   if (alt > 1_000_000) return 6;
@@ -48,16 +47,29 @@ function computeBbox(viewer) {
 export function useTelecom(viewer, enabled = false) {
   const [pointsMap, setPointsMap] = useState(new Map());
   const [lines, setLines] = useState([]);
-  const loadedTilesRef = useRef(new Set());
   const abortRef = useRef(null);
   const debounceRef = useRef(null);
+
+  // Track data per tile: tileKey → { points: Map, lines: [] }
+  const tileDataRef = useRef(new Map());
 
   useEffect(() => {
     if (!viewer || !enabled) {
       setPointsMap(new Map());
       setLines([]);
-      loadedTilesRef.current.clear();
+      tileDataRef.current.clear();
       return;
+    }
+
+    function rebuildState() {
+      const allPoints = new Map();
+      const allLines = [];
+      for (const data of tileDataRef.current.values()) {
+        for (const [id, p] of data.points) allPoints.set(id, p);
+        for (const l of data.lines) allLines.push(l);
+      }
+      setPointsMap(allPoints);
+      setLines(allLines);
     }
 
     async function loadVisibleTiles() {
@@ -76,10 +88,24 @@ export function useTelecom(viewer, enabled = false) {
       const tiles = getTilesForBbox(bbox, zoom);
       if (tiles.length > getSetting('TELECOM_MAX_TILES')) return;
 
-      const newTileKeys = new Set(tiles.map(t => `${t.z}/${t.x}/${t.y}`));
-      const toFetch = tiles.filter(t => !loadedTilesRef.current.has(`${t.z}/${t.x}/${t.y}`));
+      const visibleKeys = new Set(tiles.map(t => `${t.z}/${t.x}/${t.y}`));
 
-      if (toFetch.length === 0) return;
+      // Evict tiles no longer visible (keep __cache__ until real tiles replace it)
+      let evicted = false;
+      for (const key of tileDataRef.current.keys()) {
+        if (key !== '__cache__' && !visibleKeys.has(key)) {
+          tileDataRef.current.delete(key);
+          evicted = true;
+        }
+      }
+
+      // Fetch new tiles
+      const toFetch = tiles.filter(t => !tileDataRef.current.has(`${t.z}/${t.x}/${t.y}`));
+
+      if (toFetch.length === 0) {
+        if (evicted) rebuildState();
+        return;
+      }
 
       const results = await Promise.all(
         toFetch.map(t =>
@@ -89,35 +115,23 @@ export function useTelecom(viewer, enabled = false) {
 
       if (controller.signal.aborted) return;
 
-      // Mark loaded
-      for (const t of toFetch) {
-        loadedTilesRef.current.add(`${t.z}/${t.x}/${t.y}`);
-      }
-
-      // Merge new data
-      const newPoints = new Map();
-      const newLines = [];
-
-      // Keep existing data from still-visible tiles
-      for (const key of loadedTilesRef.current) {
-        if (!newTileKeys.has(key)) {
-          loadedTilesRef.current.delete(key);
-        }
-      }
-
-      // Re-accumulate from cache
-      for (const result of results) {
+      // Store data per tile
+      for (let i = 0; i < toFetch.length; i++) {
+        const t = toFetch[i];
+        const result = results[i];
         if (!result) continue;
-        for (const p of result.points) newPoints.set(p.id, p);
-        newLines.push(...result.lines);
+
+        const key = `${t.z}/${t.x}/${t.y}`;
+        const points = new Map();
+        for (const p of result.points) points.set(p.id, p);
+
+        tileDataRef.current.set(key, { points, lines: result.lines });
       }
-      // Merge with existing
-      setPointsMap(prev => {
-        const merged = new Map(prev);
-        for (const [id, p] of newPoints) merged.set(id, p);
-        return merged;
-      });
-      setLines(prev => [...prev, ...newLines]);
+
+      // Remove IDB cache once real tiles are loaded
+      tileDataRef.current.delete('__cache__');
+
+      rebuildState();
     }
 
     function onCameraChange() {
@@ -125,17 +139,16 @@ export function useTelecom(viewer, enabled = false) {
       debounceRef.current = setTimeout(loadVisibleTiles, getSetting('TELECOM_DEBOUNCE_MS'));
     }
 
-    // Hydrate from IDB cache first (shows previously loaded data immediately)
+    // Hydrate from IDB cache first
     loadAllCachedTiles().then(({ points, lines: cachedLines }) => {
       if (points.size > 0) {
-        setPointsMap(points);
-        setLines(cachedLines);
+        // Store as a single "cache" tile entry
+        tileDataRef.current.set('__cache__', { points, lines: cachedLines });
+        rebuildState();
       }
-      // Then fetch fresh tiles for current viewport
       loadVisibleTiles();
     });
 
-    // Re-load on camera move
     const removeListener = viewer.camera.changed.addEventListener(onCameraChange);
 
     return () => {
