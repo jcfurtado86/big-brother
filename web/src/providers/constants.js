@@ -35,7 +35,7 @@ export const FLIGHT_CACHE_TTL_MS  = 5 * 60_000;
 
 // ── Flight providers ────────────────────────────────────────────────────────
 // Intervalo de polling do airplanes.live em milissegundos
-export const AL_POLL_MS           = 120_000;
+export const AL_POLL_MS           = 10_000;
 // Tempo de espera antes de tentar novamente após erro no airplanes.live
 export const AL_RETRY_MS          = 5_000;
 // Intervalo mínimo entre requisições ao airplanes.live (evita rate limiting)
