@@ -5,6 +5,7 @@ import { LABEL_VISIBLE } from '../providers/constants';
 import { getSetting } from '../providers/settingsStore';
 import AirportWorker from '../workers/airportWorker.js?worker';
 import { inBbox } from '../utils/bboxUtils';
+import { API_URL } from '../utils/api';
 
 function getCameraAlt(viewer) {
   if (!viewer) return Infinity;
@@ -62,7 +63,7 @@ export function useAirportLayer(viewer, activeTypes, bbox) {
       }
     };
 
-    worker.postMessage({ type: 'init' });
+    worker.postMessage({ type: 'init', apiUrl: API_URL });
 
     return () => {
       worker.terminate();

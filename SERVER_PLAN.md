@@ -194,7 +194,12 @@ server/
    - `satelliteService.js`: `fetch('/api/tle')` → idem
 5. **Remover vite-plugin-aisProxy.js** — servidor cuida do WebSocket
 6. **O FRONT DEVE CONTINUAR COM AS LOGICAS DE CACHE JÁ IMPLEMENTADAS PRA NAO PESAR NO MEU BACKEND**
-7. **PENSAR NA LOGICA DE ATUALIZACAO PARA ARQUIVOS ESTATICOS, DE QUANTO EM QUANTO TEMPO BUSCAR**
+7. **Lógica de atualização para dados estáticos no frontend:**
+   - Ao carregar a app, checar `Last-Modified` ou `ETag` via `HEAD` request ao servidor
+   - Se dado local (IDB) é mais antigo que o servidor, buscar nova versão
+   - Se igual, usar cache local sem fetch
+   - Intervalo de re-check: a cada 1h para dados que mudam semanalmente, a cada 24h para mensais
+   - Datasets grandes (ACLED ~6 CSVs, TLE ~2MB): só baixar diff ou timestamp novo
 
 ## Sequência de Implementação
 
@@ -257,12 +262,62 @@ server/
 
 
 
-AVALIAR DEPOIS (precisa key/registro ou parsing extra)
-Base	País	Cameras	Bloqueio
-Noruega Vegvesen	Noruega	~centenas	Registro por email obrigatório, DATEX II XML
-Taiwan TDX	Taiwan	muitas	OAuth2 + registro
-Coreia ITS	Coreia do Sul	muitas	Geo-restrito (só IPs coreanos)
-CET São Paulo	Brasil	dezenas	Sem API, scraping necessário, sem coordenadas
-DER-SP	Brasil	desconhecido	Dados em XLSX, imagens via scraping
+### Webcams (Multi-Provider)
 
-dificuldade de encontrar cameras. como fazer? card com lista de todas as cameras?
+Hoje o frontend faz fetch direto para cada provider de webcam. No servidor, centralizar:
+
+| Provider | Fonte | Cameras | Cache TTL | Endpoint |
+|----------|-------|---------|-----------|----------|
+| Windy | Windy Webcams API | ~65K | 1h | `GET /api/webcams/windy?bbox=S,W,N,E` |
+| OTCM | GitHub JSON estático | ~7.5K | 7 dias | `GET /api/webcams/otcm` |
+| DOT (Caltrans) | CWWP2 JSON (12 distritos) | ~2K+ | 24h | `GET /api/webcams/dot` |
+| DOT (IBI 511) | 511 APIs (10 estados) | varia | 24h | (merge no dot) |
+| DOT (OHGO) | OHGO API | ~200 | 24h | (merge no dot) |
+| DOT (WSDOT) | WSDOT API | ~500 | 24h | (merge no dot) |
+| Gov (Digitraffic) | Finlândia JSON | ~400 | 6h | `GET /api/webcams/gov` |
+| Gov (TfL) | Londres JSON | ~900 | 6h | (merge no gov) |
+| Gov (Singapore) | LTA JSON | ~90 | 6h | (merge no gov) |
+| Gov (USGS) | Vulcões JSON | ~40 | 6h | (merge no gov) |
+| Gov (DGT) | Espanha DATEX II XML | ~1.9K | 6h | (merge no gov) |
+| Gov (JMA) | Japão GeoJSON | ~93 | 6h | (merge no gov) |
+| **Total** | | **~90K+** | | `GET /api/webcams/all` |
+
+**Ganho:** API keys (Windy, 511, OHGO, WSDOT) ficam no servidor. Parsing de XML/GeoJSON roda 1x no servidor, N clientes recebem JSON pronto.
+
+**Nota sobre imagens:** As webcams snapshot (gov, dot, otcm timelapse) servem JPEGs que atualizam no servidor a cada poucos minutos. O frontend faz auto-refresh da `<img>` a cada 10s com cache-busting (`?_t=timestamp`). Clipes MP4 (TfL) refresh a cada 60s. Isso não muda com o backend — é lógica de apresentação do card.
+
+---
+
+## AVALIAR DEPOIS (precisa key/registro ou parsing extra)
+
+| Base | País | Cameras | Bloqueio |
+|------|------|---------|----------|
+| Noruega Vegvesen | Noruega | ~centenas | Registro por email, DATEX II XML |
+| Taiwan TDX | Taiwan | muitas | OAuth2 + registro |
+| Coreia ITS | Coreia do Sul | muitas | Geo-restrito (só IPs coreanos) |
+| CET São Paulo | Brasil | dezenas | Sem API, scraping, sem coordenadas |
+| DER-SP | Brasil | desconhecido | Dados em XLSX, imagens via scraping |
+
+**Descartados (pesquisados e inviáveis):**
+- Insecam — scraping, sem API, CORS, questionável legalmente
+- EarthCam — API comercial cara, sem tier gratuito
+- TrafficLand — API depreciada/offline
+- We4City — API sem dados reais, coordenadas aproximadas
+- Helios — sem API pública encontrada
+- Shodan — ~2K cameras com coordenadas mas a maioria offline/expirada, esforço alto vs retorno baixo
+
+---
+
+## Descoberta de Câmeras
+
+**Problema:** Com 90K+ câmeras no globo, é difícil o usuário encontrar uma câmera específica navegando pelo mapa.
+
+**Soluções possíveis:**
+
+1. **Busca por texto** — Campo de busca no ControlPanel que filtra por título, cidade, país, provider. Ao selecionar, voa até a câmera e abre o card. Simples e eficaz.
+
+2. **Lista/Painel lateral** — Sidebar com lista scrollável das câmeras visíveis no viewport atual, agrupadas por provider. Clicar numa centraliza e seleciona.
+
+3. **Busca por país/região** — Dropdown hierárquico: País → Região → Cidade → Câmeras disponíveis.
+
+**Recomendação:** Opção 1 (busca por texto) é a mais leve e útil. Pode ser um input no card de webcams do ControlPanel com autocomplete debounced. O dataset já está em memória (pointsMap), então a busca é instantânea sem chamadas extras.

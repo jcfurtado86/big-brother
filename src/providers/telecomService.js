@@ -1,14 +1,11 @@
-import Pbf from 'pbf';
-import { VectorTile } from '@mapbox/vector-tile';
 import { idbGet, idbSet, idbGetAllEntries, idbPurgeExpired } from '../utils/idbCache';
 import { TELECOM_TTL_MS } from './constants';
 import { getSetting } from './settingsStore';
+import { API_URL } from '../utils/api';
 
-const TELECOM_LAYERS = ['telecoms_mast', 'telecoms_data_center', 'telecoms_communication_line'];
-const TILE_URL = '/api/openinframap/tiles/{z}/{x}/{y}.pbf';
 const IDB_STORE = 'telecom';
 
-// ── Tile coordinate math ─────────────────────────────────────────────────────
+// ── Tile coordinate math (kept for viewport-based fetching) ──────────────────
 
 export function lonLatToTile(lon, lat, zoom) {
   const n = 1 << zoom;
@@ -30,7 +27,19 @@ export function getTilesForBbox(bbox, zoom) {
   return tiles;
 }
 
-// ── Fetch + decode ───────────────────────────────────────────────────────────
+// ── Tile bounds (reverse: tile coords → bbox) ───────────────────────────────
+
+function tileBounds(z, x, y) {
+  const n = 1 << z;
+  return {
+    west:  (x / n) * 360 - 180,
+    east:  ((x + 1) / n) * 360 - 180,
+    north: Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))) * (180 / Math.PI),
+    south: Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + 1) / n))) * (180 / Math.PI),
+  };
+}
+
+// ── Fetch + cache ────────────────────────────────────────────────────────────
 
 const tileCache = new Map();
 
@@ -47,13 +56,24 @@ export async function fetchTelecomTile(z, x, y, signal) {
     return cached.data;
   }
 
-  const url = TILE_URL.replace('{z}', z).replace('{x}', x).replace('{y}', y);
+  // Compute bbox for this tile and fetch from API
+  const b = tileBounds(z, x, y);
+  const url = `${API_URL}/api/telecom?bbox=${b.south},${b.west},${b.north},${b.east}`;
   const res = await fetch(url, { signal });
   if (!res.ok) return null;
 
-  const buf = await res.arrayBuffer();
-  const tile = new VectorTile(new Pbf(buf));
-  const features = parseTelecomTile(tile, z, x, y);
+  const rows = await res.json();
+  const points = rows.map(r => ({
+    id: r.id,
+    lat: r.lat,
+    lon: r.lon,
+    layer: r.layer,
+    name: r.name || r.operator || '',
+    operator: r.operator || '',
+    ...(r.meta || {}),
+  }));
+
+  const features = { points, lines: [] };
 
   memCachePut(key, features);
   idbSet(IDB_STORE, key, { ts: Date.now(), data: features });
@@ -79,88 +99,10 @@ export async function loadAllCachedTiles() {
   const lines = [];
 
   for (const [key, cached] of entries) {
-    if ((now - cached.ts) >= TELECOM_TTL_MS) continue; // skip any still in flight
+    if ((now - cached.ts) >= TELECOM_TTL_MS) continue;
     memCachePut(key, cached.data);
     for (const p of cached.data.points) points.set(p.id, p);
     lines.push(...cached.data.lines);
-  }
-
-  return { points, lines };
-}
-
-// ── Parse MVT features → normalized objects ──────────────────────────────────
-
-function tileToLonLat(tileX, tileY, zoom, extent, px, py) {
-  const n = 1 << zoom;
-  const lon = ((tileX + px / extent) / n) * 360 - 180;
-  const latRad = Math.atan(Math.sinh(Math.PI * (1 - (2 * (tileY + py / extent)) / n)));
-  const lat = (latRad * 180) / Math.PI;
-  return { lon, lat };
-}
-
-function parseTelecomTile(tile, z, x, y) {
-  const points = [];
-  const lines = [];
-
-  for (const layerName of TELECOM_LAYERS) {
-    const layer = tile.layers[layerName];
-    if (!layer) continue;
-
-    const isLine = layerName === 'telecoms_communication_line';
-
-    for (let i = 0; i < layer.length; i++) {
-      const feature = layer.feature(i);
-      const props = feature.properties;
-      const geomType = feature.type; // 1=point, 2=line, 3=polygon
-
-      if (geomType === 1) {
-        // Point feature (masts, data centers)
-        const coords = feature.loadGeometry()[0][0];
-        const { lon, lat } = tileToLonLat(x, y, z, layer.extent, coords.x, coords.y);
-        points.push({
-          id: `${layerName}_${z}_${x}_${y}_${i}`,
-          lon, lat,
-          layer: layerName,
-          name: props.name || props.operator || '',
-          operator: props.operator || '',
-          ...props,
-        });
-      } else if (geomType === 2 && isLine) {
-        // Line feature (communication lines)
-        const geometry = feature.loadGeometry();
-        for (const ring of geometry) {
-          const coords = ring.map(p => tileToLonLat(x, y, z, layer.extent, p.x, p.y));
-          if (coords.length >= 2) {
-            lines.push({
-              id: `${layerName}_${z}_${x}_${y}_${i}`,
-              coords,
-              layer: layerName,
-              name: props.name || props.operator || '',
-              operator: props.operator || '',
-              ...props,
-            });
-          }
-        }
-      } else if (geomType === 3 && !isLine) {
-        // Polygon feature (data centers as areas) — use centroid
-        const geometry = feature.loadGeometry()[0];
-        if (geometry.length > 0) {
-          let cx = 0, cy = 0;
-          for (const p of geometry) { cx += p.x; cy += p.y; }
-          cx /= geometry.length;
-          cy /= geometry.length;
-          const { lon, lat } = tileToLonLat(x, y, z, layer.extent, cx, cy);
-          points.push({
-            id: `${layerName}_${z}_${x}_${y}_${i}`,
-            lon, lat,
-            layer: layerName,
-            name: props.name || props.operator || '',
-            operator: props.operator || '',
-            ...props,
-          });
-        }
-      }
-    }
   }
 
   return { points, lines };

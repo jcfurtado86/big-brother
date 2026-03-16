@@ -1,0 +1,28 @@
+import { isTableEmpty, getLastUpdate, safeInterval } from '../../utils/scheduler.js';
+import config from '../../config.js';
+import { fetchWindyWebcams } from './windy.js';
+import { fetchDotWebcams } from './dot.js';
+import { fetchGovWebcams } from './gov.js';
+import { fetchOtcmWebcams } from './otcm.js';
+
+function startPoller(name, fetchFn, pollMs, metaKey) {
+  isTableEmpty('webcams').then(empty => {
+    if (empty) {
+      fetchFn();
+    } else {
+      getLastUpdate(metaKey).then(last => {
+        const age = last ? Date.now() - new Date(last).getTime() : Infinity;
+        if (age > pollMs) fetchFn();
+        else console.log(`[webcams:${name}] Fresh data (${Math.round(age / 3600000)}h old), skipping`);
+      });
+    }
+  });
+  safeInterval(fetchFn, pollMs);
+}
+
+export function startWebcamsPollers() {
+  startPoller('windy', fetchWindyWebcams, config.WEBCAMS_WINDY_POLL_MS, 'webcams_windy');
+  startPoller('dot', fetchDotWebcams, config.WEBCAMS_DOT_POLL_MS, 'webcams_dot');
+  startPoller('gov', fetchGovWebcams, config.WEBCAMS_GOV_POLL_MS, 'webcams_gov');
+  startPoller('otcm', fetchOtcmWebcams, config.WEBCAMS_OTCM_POLL_MS, 'webcams_otcm');
+}

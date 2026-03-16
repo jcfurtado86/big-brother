@@ -1,4 +1,4 @@
-// Worker: carrega airports.json, filtra por bbox/tipos e constrói
+// Worker: carrega aeroportos da API, filtra por bbox/tipos e constrói
 // os rótulos via OffscreenCanvas — tudo fora do thread principal.
 
 const FONT_SIZE = 14;
@@ -39,13 +39,26 @@ function inBbox(lat, lon, bbox) {
 
 let _airports    = null;
 let _currentGen  = -1;
+let _apiUrl      = '';
 
 self.onmessage = async ({ data }) => {
-  // ── Carrega airports.json ──────────────────────────────────────────────────
+  // ── Carrega aeroportos da API ────────────────────────────────────────────
   if (data.type === 'init') {
+    _apiUrl = data.apiUrl || '';
     try {
-      const res = await fetch('/airports.json');
-      _airports = await res.json();
+      const res = await fetch(`${_apiUrl}/api/airports?bbox=-90,-180,90,180`);
+      const rows = await res.json();
+      // Normalize field names from API (snake_case → camelCase)
+      _airports = rows.map(r => ({
+        icao: r.icao_code || r.ident || '',
+        iata: r.iata_code || '',
+        type: r.type || '',
+        name: r.name || '',
+        city: r.municipality || '',
+        country: r.iso_country || '',
+        lat: r.lat,
+        lon: r.lon,
+      }));
       self.postMessage({ type: 'ready', count: _airports.length });
     } catch (e) {
       self.postMessage({ type: 'error', message: String(e) });

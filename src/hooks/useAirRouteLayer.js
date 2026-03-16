@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Cartesian3, PolylineCollection, Material, Color } from 'cesium';
 import { AIR_ROUTE_CATEGORY_META } from '../providers/constants';
 import { getSetting } from '../providers/settingsStore';
+import { API_URL } from '../utils/api';
 
 /* ── Great-circle arc ──────────────────────────────────────── */
 
@@ -68,8 +69,8 @@ async function loadAirRoutes() {
   if (cachedRoutes) return cachedRoutes;
 
   const [airportsRes, routesRes] = await Promise.all([
-    fetch('/airports.json'),
-    fetch('/air-routes.json'),
+    fetch(`${API_URL}/api/airports?bbox=-90,-180,90,180`),
+    fetch(`${API_URL}/api/routes/air`),
   ]);
   if (!airportsRes.ok || !routesRes.ok) return null;
 
@@ -78,16 +79,17 @@ async function loadAirRoutes() {
 
   const byIata = new Map();
   for (const a of airports) {
-    if (a.iata && a.lat && a.lon) byIata.set(a.iata, a);
+    const iata = a.iata_code || a.iata;
+    if (iata && a.lat && a.lon) byIata.set(iata, a);
   }
 
   // 5 values per route: srcLat, srcLon, dstLat, dstLon, categoryIndex
   // categoryIndex: 0=short, 1=medium, 2=long
   const CAT_MAP = { short: 0, medium: 1, long: 2 };
   const routes = [];
-  for (const [srcIata, dstIata] of routePairs) {
-    const src = byIata.get(srcIata);
-    const dst = byIata.get(dstIata);
+  for (const r of routePairs) {
+    const src = byIata.get(r.src_iata);
+    const dst = byIata.get(r.dst_iata);
     if (!src || !dst) continue;
     const km = haversineKm(src.lat, src.lon, dst.lat, dst.lon);
     routes.push(src.lat, src.lon, dst.lat, dst.lon, CAT_MAP[distanceCategory(km)]);

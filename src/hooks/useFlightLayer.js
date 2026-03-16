@@ -1,7 +1,7 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Cartesian3, Math as CesiumMath } from 'cesium';
 import { getCategoryType, getCategoryFromTypeCode, getIconForTypeCode, CATEGORY_SIZE, FLIGHT_CATEGORY_COLOR } from '../providers/planeIcons';
-import { lookupAircraft, preloadAircraftDb } from '../providers/aircraftDb';
+import { lookupAircraft } from '../providers/aircraftDb';
 import { buildCallsignBillboard } from '../utils/callsignCanvas';
 import { useDeadReckoning } from './useDeadReckoning';
 import { useBillboardLayer } from './useBillboardLayer';
@@ -120,22 +120,6 @@ export function useFlightLayer(viewer, flightsMap, visibleTypes) {
 
   // Dead reckoning
   useDeadReckoning(viewer, billboardsRef, stateRef);
-
-  // Re-evaluate icons once aircraft DB finishes loading
-  useEffect(() => {
-    preloadAircraftDb().then(() => {
-      const billboards = billboardsRef.current;
-      if (!billboards || billboards.isDestroyed()) return;
-      for (const [icao, entry] of stateRef.current) {
-        const { category, typeCode } = resolveCategory(icao, entry._adsbCat, entry.velocity, entry._alt, entry._military);
-        const { w, h } = CATEGORY_SIZE[category] ?? CATEGORY_SIZE.unknown;
-        entry.billboard.image  = getIconForTypeCode(typeCode, category);
-        entry.billboard.width  = w;
-        entry.billboard.height = h;
-        entry._h = h;
-      }
-    }).catch(() => {});
-  }, [viewer]);
 
   return { stateRef, setSelected };
 }

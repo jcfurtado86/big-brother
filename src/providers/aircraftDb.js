@@ -1,47 +1,24 @@
-// Carrega aircraft-db.json uma única vez e expõe lookup síncrono.
-// O JSON tem formato: { [icao24]: [registration, model, manufacturername, operator, built] }
+// Aircraft metadata cache.
+// Previously loaded a 31MB JSON; now uses an in-memory cache populated
+// lazily via API calls from useAircraftMeta.
 
-let _db = null;
-let _loading = null;
-
-function loadDb() {
-  if (_db) return Promise.resolve(_db);
-  if (_loading) return _loading;
-  _loading = fetch('/aircraft-db.json')
-    .then(r => r.json())
-    .then(data => { _db = data; _loading = null; return _db; })
-    .catch(e => { _loading = null; throw e; });
-  return _loading;
-}
+const _cache = new Map();
 
 /**
- * Retorna metadados da aeronave a partir do banco local.
- * Retorna null se o arquivo ainda não carregou ou o icao24 não existe.
+ * Retorna metadados da aeronave a partir do cache em memória.
+ * Retorna null se o icao24 não está no cache.
  */
 export function lookupAircraft(icao24) {
-  if (!_db || !icao24) return null;
-  const row = _db[icao24.toLowerCase()];
-  if (!row) return null;
-  return {
-    registration: row[0] || null,
-    model:        row[1] || null,
-    manufacturer: row[2] || null,
-    operator:     row[3] || null,
-    built:        row[4] || null,
-    typeCode:     row[5] || null,
-    airlineIata:  row[6] || null,
-  };
-}
-
-/** Returns true if the local DB has finished loading. */
-export function isDbReady() {
-  return _db !== null;
+  if (!icao24) return null;
+  return _cache.get(icao24.toLowerCase()) ?? null;
 }
 
 /**
- * Garante que o banco está carregado antes de fazer lookups.
- * Chame no bootstrap da aplicação ou antes do primeiro uso.
+ * Armazena metadados de uma aeronave no cache.
+ * Chamado por useAircraftMeta após buscar da API.
  */
-export function preloadAircraftDb() {
-  return loadDb();
+export function cacheAircraft(icao24, meta) {
+  if (!icao24 || !meta) return;
+  _cache.set(icao24.toLowerCase(), meta);
 }
+

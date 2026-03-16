@@ -1,76 +1,14 @@
 /**
- * Serviço para buscar localizações de receptores/antenas ADS-B e AIS.
- *
- * ADS-B: Busca feeders do adsb.lol via mlat-server sync.json
- * AIS:   Coleta estações base via WebSocket (AIS Message Type 4)
+ * Serviço para buscar localizações de receptores/antenas ADS-B.
+ * Busca feeders do servidor API (que coleta do adsb.lol).
  */
 
 import { idbGet, idbSet, idbPurgeExpired } from '../utils/idbCache';
 import { RECEIVER_TTL_MS } from './constants';
+import { API_URL, WS_URL } from '../utils/api';
 
-// ── ADS-B Feeders (adsb.lol MLAT) ──────────────────────────────────────────
-
-const REGIONS_URL = '/api/mlat/syncmap/mirror_regions.json';
-const SYNC_URL    = (region) => `/api/mlat/api/0/mlat-server/${region}/sync.json`;
 const IDB_STORE   = 'receivers';
 const IDB_KEY     = 'adsb_all';
-
-/**
- * Busca regiões disponíveis no MLAT server.
- * @returns {Promise<string[]>} lista de nomes de região
- */
-async function fetchRegions(signal) {
-  const fallback = ['0A', '0B', '0C', '0D', '1A', '2A', '2B', '2C'];
-  try {
-    const res = await fetch(REGIONS_URL, { signal });
-    if (!res.ok) return fallback;
-    const data = await res.json();
-    // Format: { "0": { region: "0A", name: "...", enabled: true }, ... }
-    if (typeof data === 'object' && !Array.isArray(data)) {
-      return Object.values(data)
-        .filter(r => r.enabled !== false)
-        .map(r => r.region);
-    }
-    return fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-/**
- * Busca feeders de uma região.
- * @returns {Promise<Map<string, {lat, lon, user}>>}
- */
-async function fetchRegionSync(region, signal) {
-  const receivers = new Map();
-  try {
-    const res = await fetch(SYNC_URL(region), { signal });
-    if (!res.ok) return receivers;
-    const data = await res.json();
-
-    for (const [id, info] of Object.entries(data)) {
-      // Pula feeders com privacy ativada ou sem coordenadas
-      if (!info || info.privacy) continue;
-      const lat = info.lat ?? info.latitude;
-      const lon = info.lon ?? info.longitude;
-      if (lat == null || lon == null) continue;
-      if (lat === 0 && lon === 0) continue;
-
-      receivers.set(`${region}_${id}`, {
-        id:       `${region}_${id}`,
-        lat,
-        lon,
-        user:     info.user || id,
-        region,
-        badSyncs: info.bad_syncs ?? 0,
-        peers:    info.peers ? Object.keys(info.peers).length : 0,
-      });
-    }
-  } catch {
-    // Região indisponível — ignora
-  }
-  return receivers;
-}
 
 /**
  * Carrega receivers do cache IDB.
@@ -88,24 +26,29 @@ export async function loadCachedReceivers() {
 }
 
 /**
- * Busca todos os feeders ADS-B de todas as regiões.
+ * Busca todos os feeders ADS-B do servidor API.
  * Salva no IDB ao final.
  * @returns {Promise<Map<string, {id, lat, lon, user, region}>>}
  */
 export async function fetchAdsbReceivers(signal) {
-  const regions = await fetchRegions(signal);
+  const res = await fetch(`${API_URL}/api/receivers?bbox=-90,-180,90,180`, { signal });
+  if (!res.ok) {
+    console.warn('[receivers] API error:', res.status);
+    return new Map();
+  }
+
+  const rows = await res.json();
   const all = new Map();
 
-  const results = await Promise.allSettled(
-    regions.map(r => fetchRegionSync(r, signal))
-  );
-
-  for (const result of results) {
-    if (result.status === 'fulfilled') {
-      for (const [id, feeder] of result.value) {
-        all.set(id, feeder);
-      }
-    }
+  for (const r of rows) {
+    all.set(r.id, {
+      id:     r.id,
+      lat:    r.lat,
+      lon:    r.lon,
+      user:   r.user_name || r.id,
+      region: r.region || '',
+      peers:  r.peers ?? 0,
+    });
   }
 
   console.log(`[receivers] ADS-B feeders fetched: ${all.size}`);
@@ -119,7 +62,7 @@ export async function fetchAdsbReceivers(signal) {
 
 /**
  * Abre WebSocket para coletar AIS Base Station Reports (Message Type 4).
- * Estações base transmitem sua própria posição a cada ~10s.
+ * Conecta ao servidor API que faz fan-out do AISStream.
  *
  * @param {function} onStation - chamada com { mmsi, lat, lon, name }
  * @param {function} onError
@@ -132,12 +75,11 @@ export function connectAisStationStream(onStation, onError) {
   function connect() {
     if (closed) return;
 
-    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    ws = new WebSocket(`${protocol}//${location.host}/ws/ais-stations`);
+    ws = new WebSocket(`${WS_URL}/ws/vessels`);
 
     ws.onopen = () => {
-      console.log('[ais-stations] proxy connected');
-      // Subscribe to global bbox, only BaseStationReport
+      console.log('[ais-stations] connected');
+      // Subscribe to global bbox, server filters
       ws.send(JSON.stringify({
         BoundingBoxes: [[[-90, -180], [90, 180]]],
         FilterMessageTypes: ['BaseStationReport'],

@@ -1,49 +1,12 @@
 import { idbGet, idbSet } from '../utils/idbCache';
+import { API_URL } from '../utils/api';
+import { parseWebcam } from './webcamUtils';
 
 const IDB_STORE = 'webcams';
 const IDB_KEY = 'otcm:all';
-const DATA_URL = 'https://raw.githubusercontent.com/AidanWelch/OpenTrafficCamMap/master/cameras/USA.json';
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days (static dataset)
 
 let memoryCache = null;
-
-/**
- * Parse OTCM nested structure into flat array of normalized webcam objects.
- */
-function parseOtcm(data) {
-  const results = [];
-  for (const [state, cities] of Object.entries(data)) {
-    for (const [city, cameras] of Object.entries(cities)) {
-      for (const cam of cameras) {
-        if (cam.latitude == null || cam.longitude == null) continue;
-        const id = `webcam_otcm_${cam.latitude}_${cam.longitude}_${results.length}`;
-        const isStream = cam.format === 'M3U8';
-        results.push({
-          id,
-          webcamId: id,
-          lat: cam.latitude,
-          lon: cam.longitude,
-          category: isStream ? 'live' : 'timelapse',
-          title: cam.description || '',
-          city: city !== 'other' ? city : '',
-          region: state,
-          country: 'United States',
-          countryCode: 'US',
-          provider: 'OpenTrafficCam',
-          status: 'active',
-          playerUrl: null,
-          playerFallbackUrl: null,
-          imageUrl: cam.format === 'IMAGE_STREAM' ? cam.url : null,
-          streamUrl: cam.format === 'M3U8' ? cam.url : null,
-          thumbnailUrl: null,
-          direction: cam.direction ?? null,
-          format: cam.format,
-        });
-      }
-    }
-  }
-  return results;
-}
 
 /**
  * Fetch all OTCM cameras. Cached in IDB for 7 days.
@@ -59,16 +22,15 @@ export async function fetchOtcmCameras() {
     return memoryCache;
   }
 
-  // Fetch from GitHub
-  console.log('[otcm] Fetching from GitHub...');
+  console.log('[otcm] Fetching from API...');
   try {
-    const res = await fetch(DATA_URL);
+    const res = await fetch(`${API_URL}/api/webcams?bbox=-90,-180,90,180&providers=otcm`);
     if (!res.ok) {
-      console.warn('[otcm] fetch error:', res.status);
+      console.warn('[otcm] API error:', res.status);
       return memoryCache ?? [];
     }
-    const raw = await res.json();
-    const parsed = parseOtcm(raw);
+    const rows = await res.json();
+    const parsed = rows.map(parseWebcam);
 
     memoryCache = parsed;
     idbSet(IDB_STORE, IDB_KEY, { ts: Date.now(), data: parsed });

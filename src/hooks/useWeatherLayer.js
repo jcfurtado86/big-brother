@@ -1,9 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Rectangle as CesiumRectangle, ImageMaterialProperty, Color, CallbackProperty } from 'cesium';
-import { OWM_TILE_URL } from '../providers/constants';
 import { getSetting } from '../providers/settingsStore';
-
-const OWM_KEY = import.meta.env.VITE_OWM_API_KEY || '';
+import { API_URL } from '../utils/api';
 
 const LAYERS = [
   { layer: 'clouds_new', alt: 25_000 },
@@ -47,7 +45,7 @@ async function fetchTileBlob(layerName, x, y, zoom) {
     return cached.blobUrl;
   }
 
-  const url = `${OWM_TILE_URL}/${layerName}/${zoom}/${x}/${y}.png?appid=${OWM_KEY}`;
+  const url = `${API_URL}/api/weather/tile/${layerName}/${zoom}/${x}/${y}`;
   try {
     const res = await fetch(url);
     if (!res.ok) return cached?.blobUrl ?? url;
@@ -138,7 +136,7 @@ export function useWeatherLayer(viewer, active, opacity = 0.5) {
 
   // Rebuild tiles quando liga/desliga ou viewer muda
   useEffect(() => {
-    if (!viewer || !active || !OWM_KEY) return;
+    if (!viewer || !active) return;
 
     let cancelled = false;
 

@@ -1,6 +1,6 @@
 import { twoline2satrec, propagate, gstime, eciToGeodetic, degreesLong, degreesLat } from 'satellite.js';
-import { CELESTRAK_URL } from './constants';
 import { idbGet, idbSet } from '../utils/idbCache';
+import { API_URL } from '../utils/api';
 
 function parseTLEs(text) {
   const lines = text.trim().split('\n').map(l => l.trim()).filter(Boolean);
@@ -23,12 +23,10 @@ export async function fetchTLEs(signal, cacheTtlMs) {
     return parseTLEs(cached.text);
   }
 
-  const group = import.meta.env.VITE_SATELLITE_GROUP || 'active';
-  const url = `${CELESTRAK_URL}?GROUP=${group}&FORMAT=tle`;
-  console.log('[satellites] fetching TLEs from CelesTrak…');
+  console.log('[satellites] fetching TLEs from API…');
 
-  const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error(`CelesTrak ${res.status}`);
+  const res = await fetch(`${API_URL}/api/tle`, { signal });
+  if (!res.ok) throw new Error(`TLE API ${res.status}`);
   const text = await res.text();
   const sats = parseTLEs(text);
 

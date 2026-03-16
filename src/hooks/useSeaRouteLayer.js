@@ -2,15 +2,16 @@ import { useEffect, useRef } from 'react';
 import { Cartesian3, PolylineCollection, Material, Color } from 'cesium';
 import { SEA_ROUTE_CATEGORY_META } from '../providers/constants';
 import { getSetting } from '../providers/settingsStore';
+import { API_URL } from '../utils/api';
 
-let cachedGeoJSON = null;
+let cachedRoutes = null;
 
 async function loadSeaRoutes() {
-  if (cachedGeoJSON) return cachedGeoJSON;
-  const res = await fetch('/sea-routes.geojson');
+  if (cachedRoutes) return cachedRoutes;
+  const res = await fetch(`${API_URL}/api/routes/sea`);
   if (!res.ok) return null;
-  cachedGeoJSON = await res.json();
-  return cachedGeoJSON;
+  cachedRoutes = await res.json();
+  return cachedRoutes;
 }
 
 const TYPE_TO_CATEGORY = { Major: 'major', Middle: 'middle', Minor: 'minor' };
@@ -56,31 +57,29 @@ export function useSeaRouteLayer(viewer, active, visibleTypes) {
     let cancelled = false;
 
     (async () => {
-      const geojson = await loadSeaRoutes();
-      if (cancelled || !geojson) return;
+      const routes = await loadSeaRoutes();
+      if (cancelled || !routes) return;
 
       const collection = new PolylineCollection();
       const byCategory = { major: [], middle: [], minor: [] };
       const lineWidth = getSetting('ROUTE_LINE_WIDTH');
 
-      for (const feature of geojson.features) {
-        if (feature.geometry.type !== 'MultiLineString') continue;
-        const cat = TYPE_TO_CATEGORY[feature.properties?.Type] || 'minor';
+      for (const route of routes) {
+        const cat = TYPE_TO_CATEGORY[route.name] || 'minor';
         const show = visibleTypes?.has(cat) ?? true;
+        const coords = route.coordinates;
 
-        for (const line of feature.geometry.coordinates) {
-          if (line.length < 2) continue;
-          // Sample every 3rd point
-          const sampled = [];
-          for (let i = 0; i < line.length; i += 3) sampled.push(line[i]);
-          if (sampled[sampled.length - 1] !== line[line.length - 1]) {
-            sampled.push(line[line.length - 1]);
-          }
-
-          const positions = sampled.map(c => Cartesian3.fromDegrees(c[0], c[1], 0));
-          const polyline = collection.add({ positions, width: lineWidth, material: makeMaterial(cat), show });
-          byCategory[cat].push(polyline);
+        if (!coords || coords.length < 2) continue;
+        // Sample every 3rd point
+        const sampled = [];
+        for (let i = 0; i < coords.length; i += 3) sampled.push(coords[i]);
+        if (sampled[sampled.length - 1] !== coords[coords.length - 1]) {
+          sampled.push(coords[coords.length - 1]);
         }
+
+        const positions = sampled.map(c => Cartesian3.fromDegrees(c[0], c[1], 0));
+        const polyline = collection.add({ positions, width: lineWidth, material: makeMaterial(cat), show });
+        byCategory[cat].push(polyline);
       }
 
       if (cancelled) { collection.destroy(); return; }

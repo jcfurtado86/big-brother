@@ -1,9 +1,10 @@
-// Abstrai a conexão WebSocket com AISStream.io para dados de embarcações.
-// A conexão passa pelo proxy Vite em /ws/vessels — a API key é injetada
-// server-side pelo plugin vite-plugin-aisProxy.js.
+// Abstrai a conexão WebSocket com o servidor API para dados de embarcações.
+// A conexão vai diretamente ao servidor API via WS_URL.
+
+import { WS_URL } from '../utils/api';
 
 /**
- * Abre conexão WebSocket com o proxy local de AIS.
+ * Abre conexão WebSocket com o servidor API.
  * @param {object} bbox - { south, west, north, east }
  * @param {function} onMessage - chamada com objeto vessel normalizado
  * @param {function} onError - chamada em caso de erro
@@ -16,11 +17,10 @@ export function connectVesselStream(bbox, onMessage, onError) {
   function connect() {
     if (closed) return;
 
-    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    ws = new WebSocket(`${protocol}//${location.host}/ws/vessels`);
+    ws = new WebSocket(`${WS_URL}/ws/vessels`);
 
     ws.onopen = () => {
-      console.log('[vesselService] proxy connected');
+      console.log('[vesselService] connected');
       const subscribe = {
         BoundingBoxes: [
           [[bbox.south, bbox.west], [bbox.north, bbox.east]],
