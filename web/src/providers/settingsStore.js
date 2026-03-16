@@ -20,7 +20,7 @@ export const SETTINGS_SCHEMA = [
     { key: 'FETCH_PADDING',     label: 'Padding bbox (°)',       desc: 'Expansão proporcional da área de busca além do viewport visível', default: C.FETCH_PADDING,     min: 0,    max: 5,    step: 0.1 },
   ]},
   { section: 'Providers', items: [
-    { key: 'AL_POLL_MS',        label: 'Polling AL (ms)',        desc: 'Intervalo de polling do airplanes.live em milissegundos', default: C.AL_POLL_MS,        min: 2000, max: 60_000, step: 1000 },
+    { key: 'AL_POLL_MS',        label: 'Polling AL (ms)',        desc: 'Intervalo de polling do airplanes.live em milissegundos', default: C.AL_POLL_MS,        min: 2000, max: 300_000, step: 1000 },
     { key: 'AL_RETRY_MS',       label: 'Retry AL (ms)',          desc: 'Tempo de espera antes de tentar novamente após erro no airplanes.live', default: C.AL_RETRY_MS,       min: 1000, max: 30_000, step: 1000 },
     { key: 'AL_MIN_GAP_MS',     label: 'Gap mín AL (ms)',        desc: 'Intervalo mínimo entre requisições ao airplanes.live (evita rate limiting)', default: C.AL_MIN_GAP_MS,     min: 500,  max: 5000, step: 100 },
   ]},
