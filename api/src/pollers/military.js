@@ -1,9 +1,11 @@
 import db from '../db.js';
-import { updateMeta, isTableEmpty, getLastUpdate, safeInterval } from '../utils/scheduler.js';
+import { updateMeta, isTableEmpty, getLastUpdate, safeInterval, withRetry } from '../utils/scheduler.js';
 import { fetchIpv4 } from '../utils/fetchIpv4.js';
 import config from '../config.js';
 
 const { OVERPASS_URL } = config;
+const BETWEEN_DELAY = 5_000;
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 const WANTED_CATEGORIES = [
   'airfield', 'barracks', 'base', 'naval_base',
@@ -11,11 +13,6 @@ const WANTED_CATEGORIES = [
   'nuclear_explosion_site', 'office',
   'bunker', 'trench',
 ];
-
-const MAX_RETRIES = 10;
-const RETRY_DELAY = 15_000;
-const BETWEEN_DELAY = 5_000;
-const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 async function fetchCategory(category) {
   const query = `[out:json][timeout:120];nwr["military"="${category}"];out center body;`;
@@ -26,9 +23,7 @@ async function fetchCategory(category) {
     body: `data=${encodeURIComponent(query)}`,
   });
 
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`);
-  }
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
   const json = await res.json();
   const BATCH = 200;
@@ -86,27 +81,13 @@ async function fetchCategory(category) {
   return count;
 }
 
-async function fetchWithRetry(category) {
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      const count = await fetchCategory(category);
-      console.log(`[military] ${category}: ${count} points`);
-      return count;
-    } catch (e) {
-      console.warn(`[military] ${category}: ${e.message} (attempt ${attempt}/${MAX_RETRIES})`);
-      if (attempt < MAX_RETRIES) await sleep(RETRY_DELAY);
-    }
-  }
-  console.error(`[military] ${category}: failed after ${MAX_RETRIES} attempts`);
-  return 0;
-}
-
 async function fetchMilitary() {
   console.log('[military] Fetching from Overpass API (sequential with retry)...');
   let total = 0;
 
   for (const category of WANTED_CATEGORIES) {
-    const count = await fetchWithRetry(category);
+    const count = await withRetry(() => fetchCategory(category), { label: `military:${category}` }) ?? 0;
+    console.log(`[military] ${category}: ${count} points`);
     total += count;
     await sleep(BETWEEN_DELAY);
   }

@@ -1,18 +1,17 @@
 import db from '../db.js';
 import { parseCsvLine } from '../utils/csv.js';
-import { updateMeta, isTableEmpty, getLastUpdate, safeInterval } from '../utils/scheduler.js';
+import { updateMeta, isTableEmpty, getLastUpdate, safeInterval, withRetry } from '../utils/scheduler.js';
 import config from '../config.js';
 
 const CSV_URL = 'https://opensky-network.org/datasets/metadata/aircraftDatabase.csv';
 
 async function fetchAircraftDb() {
   console.log('[aircraft] Fetching from OpenSky Network (~100MB)...');
-  try {
+
+  const count = await withRetry(async () => {
     const res = await fetch(CSV_URL, { redirect: 'follow' });
-    if (!res.ok) {
-      console.warn('[aircraft] fetch error:', res.status);
-      return;
-    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
     const csv = await res.text();
     const lines = csv.split('\n');
     const header = parseCsvLine(lines[0]);
@@ -31,7 +30,7 @@ async function fetchAircraftDb() {
       airlineIata: idx['operatoriata'],
     };
 
-    let count = 0;
+    let n = 0;
     const BATCH = 1000;
     let batch = [];
 
@@ -71,7 +70,7 @@ async function fetchAircraftDb() {
           .onConflict('icao24')
           .merge(['registration', 'model', 'manufacturer', 'operator',
                   'built', 'type_code', 'airline_iata', 'updated_at']);
-        count += batch.length;
+        n += batch.length;
         batch = [];
       }
     }
@@ -82,13 +81,15 @@ async function fetchAircraftDb() {
         .onConflict('icao24')
         .merge(['registration', 'model', 'manufacturer', 'operator',
                 'built', 'type_code', 'airline_iata', 'updated_at']);
-      count += batch.length;
+      n += batch.length;
     }
 
+    return n;
+  }, { label: 'aircraft', delayMs: 30_000 });
+
+  if (count != null) {
     await updateMeta('aircraft', count);
     console.log('[aircraft] Upserted', count, 'aircraft');
-  } catch (e) {
-    console.error('[aircraft] error:', e.message);
   }
 }
 

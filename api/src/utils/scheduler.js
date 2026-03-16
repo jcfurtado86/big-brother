@@ -32,6 +32,23 @@ export async function isTableEmpty(table) {
 }
 
 /**
+ * Retry wrapper for poller fetch functions.
+ * Retries up to `maxRetries` times with `delayMs` between attempts.
+ * Logs each failure and returns the result on success, or undefined after all retries.
+ */
+export async function withRetry(fn, { label, maxRetries = 10, delayMs = 15_000 } = {}) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (e) {
+      console.warn(`[${label}] ${e.message} (attempt ${attempt}/${maxRetries})`);
+      if (attempt < maxRetries) await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+  console.error(`[${label}] failed after ${maxRetries} attempts`);
+}
+
+/**
  * Safe setInterval that handles values > 2^31-1 ms (≈24.8 days)
  * by using recursive setTimeout.
  */

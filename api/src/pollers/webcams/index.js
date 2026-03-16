@@ -1,23 +1,28 @@
-import { isTableEmpty, getLastUpdate, safeInterval } from '../../utils/scheduler.js';
+import { isTableEmpty, getLastUpdate, safeInterval, withRetry } from '../../utils/scheduler.js';
 import config from '../../config.js';
 import { fetchWindyWebcams } from './windy.js';
 import { fetchDotWebcams } from './dot.js';
 import { fetchGovWebcams } from './gov.js';
 import { fetchOtcmWebcams } from './otcm.js';
 
+function wrapWithRetry(name, fn) {
+  return () => withRetry(fn, { label: `webcams:${name}`, maxRetries: 5 });
+}
+
 function startPoller(name, fetchFn, pollMs, metaKey) {
+  const safeFn = wrapWithRetry(name, fetchFn);
   isTableEmpty('webcams').then(empty => {
     if (empty) {
-      fetchFn();
+      safeFn();
     } else {
       getLastUpdate(metaKey).then(last => {
         const age = last ? Date.now() - new Date(last).getTime() : Infinity;
-        if (age > pollMs) fetchFn();
+        if (age > pollMs) safeFn();
         else console.log(`[webcams:${name}] Fresh data (${Math.round(age / 3600000)}h old), skipping`);
       });
     }
   });
-  safeInterval(fetchFn, pollMs);
+  safeInterval(safeFn, pollMs);
 }
 
 export function startWebcamsPollers() {

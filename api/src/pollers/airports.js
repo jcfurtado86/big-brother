@@ -1,6 +1,6 @@
 import db from '../db.js';
 import { parseCsvLine } from '../utils/csv.js';
-import { updateMeta, isTableEmpty, getLastUpdate, safeInterval } from '../utils/scheduler.js';
+import { updateMeta, isTableEmpty, getLastUpdate, safeInterval, withRetry } from '../utils/scheduler.js';
 import config from '../config.js';
 
 const CSV_URL = 'https://davidmegginson.github.io/ourairports-data/airports.csv';
@@ -12,18 +12,17 @@ const KEEP_TYPES = new Set([
 
 async function fetchAirports() {
   console.log('[airports] Fetching from OurAirports...');
-  try {
+
+  const count = await withRetry(async () => {
     const res = await fetch(CSV_URL);
-    if (!res.ok) {
-      console.warn('[airports] fetch error:', res.status);
-      return;
-    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
     const csv = await res.text();
     const lines = csv.split('\n').filter(Boolean);
     const header = parseCsvLine(lines[0]);
     const idx = Object.fromEntries(header.map((h, i) => [h.trim(), i]));
 
-    let count = 0;
+    let n = 0;
     const BATCH = 500;
     let batch = [];
 
@@ -58,7 +57,7 @@ async function fetchAirports() {
           .onConflict('ident')
           .merge(['name', 'type', 'lat', 'lon', 'geom', 'elevation',
                   'iso_country', 'municipality', 'iata_code', 'updated_at']);
-        count += batch.length;
+        n += batch.length;
         batch = [];
       }
     }
@@ -69,18 +68,19 @@ async function fetchAirports() {
         .onConflict('ident')
         .merge(['name', 'type', 'lat', 'lon', 'geom', 'elevation',
                 'iso_country', 'municipality', 'iata_code', 'updated_at']);
-      count += batch.length;
+      n += batch.length;
     }
 
+    return n;
+  }, { label: 'airports' });
+
+  if (count != null) {
     await updateMeta('airports', count);
     console.log('[airports] Upserted', count, 'airports');
-  } catch (e) {
-    console.error('[airports] error:', e.message);
   }
 }
 
 export function startAirportsPoller() {
-  // Seed if empty, otherwise check staleness
   isTableEmpty('airports').then(empty => {
     if (empty) {
       fetchAirports();

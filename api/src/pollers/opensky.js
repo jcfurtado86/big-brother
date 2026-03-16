@@ -1,5 +1,6 @@
 import config from '../config.js';
 import { upsertFlights } from '../cache/flightCache.js';
+import { withRetry } from '../utils/scheduler.js';
 
 const AUTH_URL = 'https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token';
 const STATES_URL = 'https://opensky-network.org/api/states/all';
@@ -43,7 +44,8 @@ async function getToken() {
 
 async function fetchOpenSky() {
   console.log('[opensky] Fetching states...');
-  try {
+
+  await withRetry(async () => {
     const headers = {};
     const t = await getToken();
     if (t) headers['Authorization'] = `Bearer ${t}`;
@@ -55,18 +57,14 @@ async function fetchOpenSky() {
 
     if (res.status === 429) {
       console.warn('[opensky] rate limited, skipping cycle');
-      return;
+      return; // don't retry on rate limit
     }
     if (res.status === 401) {
       token = null;
       tokenExpiresAt = 0;
-      console.warn('[opensky] unauthorized, token invalidated');
-      return;
+      throw new Error('unauthorized, token invalidated');
     }
-    if (!res.ok) {
-      console.warn('[opensky] fetch error:', res.status);
-      return;
-    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const data = await res.json();
     if (!data.states) {
@@ -98,9 +96,7 @@ async function fetchOpenSky() {
 
     upsertFlights('opensky', flights);
     console.log(`[opensky] ${flights.length} aircraft cached`);
-  } catch (e) {
-    console.error('[opensky] error:', e.message);
-  }
+  }, { label: 'opensky', maxRetries: 3, delayMs: 10_000 });
 }
 
 export function startOpenSkyPoller() {

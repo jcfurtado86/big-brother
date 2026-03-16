@@ -1,5 +1,5 @@
 import db from '../db.js';
-import { updateMeta, isTableEmpty, getLastUpdate, safeInterval } from '../utils/scheduler.js';
+import { updateMeta, isTableEmpty, getLastUpdate, safeInterval, withRetry } from '../utils/scheduler.js';
 import { fetchIpv4 } from '../utils/fetchIpv4.js';
 import config from '../config.js';
 
@@ -7,18 +7,16 @@ const { OVERPASS_URL } = config;
 
 async function fetchAtc() {
   console.log('[atc] Fetching from Overpass API...');
-  try {
+
+  const count = await withRetry(async () => {
     const query = `[out:json][timeout:90];(node["aeroway"="control_tower"];node["man_made"="tower"]["tower:type"="radar"];);out body;`;
     const res = await fetchIpv4(`${OVERPASS_URL}?data=${encodeURIComponent(query)}`);
-    if (!res.ok) {
-      console.warn('[atc] fetch error:', res.status);
-      return;
-    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const json = await res.json();
     const BATCH = 200;
     let batch = [];
-    let count = 0;
+    let n = 0;
 
     for (const el of json.elements) {
       if (el.type !== 'node') continue;
@@ -45,20 +43,22 @@ async function fetchAtc() {
 
       if (batch.length >= BATCH) {
         await db('atc_points').insert(batch).onConflict('osm_id').merge();
-        count += batch.length;
+        n += batch.length;
         batch = [];
       }
     }
 
     if (batch.length > 0) {
       await db('atc_points').insert(batch).onConflict('osm_id').merge();
-      count += batch.length;
+      n += batch.length;
     }
 
+    return n;
+  }, { label: 'atc' });
+
+  if (count != null) {
     await updateMeta('atc', count);
     console.log('[atc] Upserted', count, 'ATC points');
-  } catch (e) {
-    console.error('[atc] error:', e.message);
   }
 }
 

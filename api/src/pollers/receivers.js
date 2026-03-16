@@ -1,5 +1,5 @@
 import db from '../db.js';
-import { updateMeta, isTableEmpty, getLastUpdate, safeInterval } from '../utils/scheduler.js';
+import { updateMeta, isTableEmpty, getLastUpdate, safeInterval, withRetry } from '../utils/scheduler.js';
 import { fetchIpv4 } from '../utils/fetchIpv4.js';
 import config from '../config.js';
 
@@ -26,9 +26,10 @@ async function fetchRegions() {
 
 async function fetchReceivers() {
   console.log('[receivers] Fetching ADS-B feeders from adsb.lol...');
-  try {
+
+  const count = await withRetry(async () => {
     const regions = await fetchRegions();
-    let count = 0;
+    let n = 0;
 
     for (const region of regions) {
       let data;
@@ -65,21 +66,23 @@ async function fetchReceivers() {
 
         if (batch.length >= BATCH) {
           await db('adsb_receivers').insert(batch).onConflict('id').merge();
-          count += batch.length;
+          n += batch.length;
           batch = [];
         }
       }
 
       if (batch.length > 0) {
         await db('adsb_receivers').insert(batch).onConflict('id').merge();
-        count += batch.length;
+        n += batch.length;
       }
     }
 
+    return n;
+  }, { label: 'receivers' });
+
+  if (count != null) {
     await updateMeta('receivers', count);
     console.log('[receivers] Upserted', count, 'ADS-B feeders');
-  } catch (e) {
-    console.error('[receivers] error:', e.message);
   }
 }
 

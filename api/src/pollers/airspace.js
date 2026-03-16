@@ -1,5 +1,5 @@
 import db from '../db.js';
-import { updateMeta, isTableEmpty, getLastUpdate, safeInterval } from '../utils/scheduler.js';
+import { updateMeta, isTableEmpty, getLastUpdate, safeInterval, withRetry } from '../utils/scheduler.js';
 import config from '../config.js';
 
 const API_BASE = 'https://api.core.openaip.net/api/airspaces';
@@ -15,18 +15,15 @@ async function fetchAirspaces() {
     return;
   }
 
-  try {
+  const count = await withRetry(async () => {
     let page = 1;
     let totalPages = 1;
-    let count = 0;
+    let n = 0;
 
     while (page <= totalPages) {
       const url = `${API_BASE}?type=${WANTED_TYPES.join(',')}&limit=${PAGE_LIMIT}&page=${page}&apiKey=${apiKey}`;
       const res = await fetch(url);
-      if (!res.ok) {
-        console.warn('[airspace] fetch error:', res.status, 'page:', page);
-        return;
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status} on page ${page}`);
 
       const json = await res.json();
       totalPages = json.totalPages || 1;
@@ -38,7 +35,7 @@ async function fetchAirspaces() {
         const geom = item.geometry;
         if (!geom || geom.type !== 'Polygon' || !geom.coordinates?.[0]?.length) continue;
 
-        const coords = geom.coordinates[0]; // outer ring [lon, lat]
+        const coords = geom.coordinates[0];
         const wkt = 'POLYGON((' + coords.map(c => `${c[0]} ${c[1]}`).join(',') + '))';
 
         batch.push({
@@ -58,24 +55,26 @@ async function fetchAirspaces() {
 
         if (batch.length >= BATCH) {
           await db('airspaces').insert(batch).onConflict('id').merge();
-          count += batch.length;
+          n += batch.length;
           batch = [];
         }
       }
 
       if (batch.length > 0) {
         await db('airspaces').insert(batch).onConflict('id').merge();
-        count += batch.length;
+        n += batch.length;
       }
 
-      console.log(`[airspace] Page ${page}/${totalPages}, accumulated: ${count}`);
+      console.log(`[airspace] Page ${page}/${totalPages}, accumulated: ${n}`);
       page++;
     }
 
+    return n;
+  }, { label: 'airspace' });
+
+  if (count != null) {
     await updateMeta('airspace', count);
     console.log('[airspace] Upserted', count, 'airspaces');
-  } catch (e) {
-    console.error('[airspace] error:', e.message);
   }
 }
 
