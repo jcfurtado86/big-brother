@@ -90,6 +90,7 @@ export function useTimelineData() {
             onGround: interp.on_ground,
             squawk: interp.squawk,
             category: interp.category ?? 0,
+            country: interp.country || '',
             fetchedAt: t,
           });
         }
@@ -112,7 +113,7 @@ export function useTimelineData() {
             heading: interp.heading,
             navStatus: interp.navStatus,
             shipType: interp.shipType,
-            country: mmsiToCountry(mmsi),
+            country: interp.country || mmsiToCountry(mmsi),
             fetchedAt: t,
           });
         }

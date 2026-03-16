@@ -26,6 +26,7 @@ async function takeSnapshot() {
         on_ground: f.onGround || false,
         squawk: f.squawk || null,
         category: f.category || 0,
+        country: f.country || null,
         provider: f.military != null ? 'airplaneslive' : 'opensky',
         recorded_at: now,
       }));

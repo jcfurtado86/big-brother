@@ -85,7 +85,7 @@ export default async function (app) {
     return db('flight_history')
       .select('icao24', 'callsign', 'lat', 'lon', 'altitude', 'heading',
               'velocity', 'vertical_rate', 'on_ground', 'squawk', 'category',
-              'recorded_at')
+              'country', 'recorded_at')
       .where('recorded_at', '>=', from)
       .andWhere('recorded_at', '<=', to)
       .orderBy('recorded_at', 'asc')

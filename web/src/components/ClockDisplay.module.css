@@ -1,6 +1,6 @@
 .wrapper {
   position: fixed;
-  bottom: 46px;
+  bottom: 45px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;

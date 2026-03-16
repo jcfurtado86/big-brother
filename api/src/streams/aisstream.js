@@ -201,6 +201,7 @@ async function takeHistorySnapshot() {
           heading: v.heading ?? null,
           nav_status: v.navStatus ?? -1,
           ship_type: v.shipType ?? 0,
+          country: v.country || null,
           recorded_at: now,
         }));
 

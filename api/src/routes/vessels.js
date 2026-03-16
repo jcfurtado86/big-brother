@@ -50,7 +50,7 @@ export default async function (app) {
       .select('mmsi', 'name', 'lat', 'lon', 'cog', 'sog', 'heading',
               db.raw('nav_status AS "navStatus"'),
               db.raw('ship_type AS "shipType"'),
-              'recorded_at')
+              'country', 'recorded_at')
       .where('recorded_at', '>=', from)
       .andWhere('recorded_at', '<=', to)
       .orderBy('recorded_at', 'asc')
