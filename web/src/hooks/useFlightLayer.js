@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { Cartesian3, Math as CesiumMath } from 'cesium';
 import { getCategoryType, getCategoryFromTypeCode, getIconForTypeCode, CATEGORY_SIZE, FLIGHT_CATEGORY_COLOR } from '../providers/planeIcons';
 import { lookupAircraft } from '../providers/aircraftDb';
@@ -18,6 +18,9 @@ function resolveCategory(icao, adsbCat, velocity, altitude, military) {
 }
 
 export function useFlightLayer(viewer, flightsMap, visibleTypes, { timelineActive = false } = {}) {
+  const timelineRef = useRef(timelineActive);
+  timelineRef.current = timelineActive;
+
   const config = useMemo(() => ({
     batchSize: getSetting('PLANE_BATCH_SIZE'),
     labelBatchSize: getSetting('CALLSIGN_BATCH_SIZE'),
@@ -72,6 +75,15 @@ export function useFlightLayer(viewer, flightsMap, visibleTypes, { timelineActiv
       entry.velocity  = flight.velocity;
       entry.fetchedAt = flight.fetchedAt;
       entry._alt      = flight.altitude;
+
+      // Only update billboard position during timeline (in live mode, dead reckoning handles it)
+      if (timelineRef.current) {
+        const alt = (flight.altitude ?? 0) * getSetting('FLIGHT_ALT_SCALE');
+        const pos = Cartesian3.fromDegrees(flight.lon, flight.lat, alt);
+        entry.billboard.position = pos;
+        entry._pos = pos;
+        if (entry.label) entry.label.position = pos;
+      }
       entry.billboard.rotation = -CesiumMath.toRadians(flight.heading ?? 0);
 
       // Update callsign label + country flag if enriched by merge
