@@ -84,8 +84,9 @@ function col(ev, ...keys) {
 async function fetchAcled() {
   console.log('[acled] Importing from CSV files...');
   try {
-    // Get last update date for incremental import
-    const lastUpdate = await getLastUpdate('acled');
+    // Get max event_date from DB for incremental import
+    const maxDateRow = await db('acled_events').max('event_date as max_date').first();
+    const lastEventDate = maxDateRow?.max_date ? new Date(maxDateRow.max_date) : null;
     let totalInserted = 0;
 
     const seenIds = new Set();
@@ -114,8 +115,8 @@ async function fetchAcled() {
         const dateStr = col(ev, 'WEEK', 'event_date');
         const eventDate = dateStr ? new Date(dateStr) : null;
 
-        // Incremental: skip events older than last update
-        if (lastUpdate && eventDate && eventDate <= new Date(lastUpdate)) continue;
+        // Incremental: skip events older than max event date in DB
+        if (lastEventDate && eventDate && eventDate <= lastEventDate) continue;
 
         const eventId = col(ev, 'event_id_cnty', 'ID') || null;
         if (!eventId) continue; // skip rows without event_id
