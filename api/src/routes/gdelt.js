@@ -42,7 +42,7 @@ async function fetchFromDocApi(eventType, country, date) {
   const url = `https://api.gdeltproject.org/api/v2/doc/doc?${params}`;
   console.log('[gdelt] Fetching related from DOC API:', url);
 
-  const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+  const res = await fetch(url, { signal: AbortSignal.timeout(30000) });
   if (!res.ok) {
     console.error('[gdelt] DOC API error:', res.status);
     return [];
