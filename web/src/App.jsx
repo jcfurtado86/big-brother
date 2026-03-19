@@ -16,6 +16,8 @@ import MilitaryCard from './components/MilitaryCard';
 import NuclearCard from './components/NuclearCard';
 import AirspaceCard from './components/AirspaceCard';
 import AcledCard from './components/AcledCard';
+import GdeltCard from './components/GdeltCard';
+import GdeltToast from './components/GdeltToast';
 import WebcamCard from './components/WebcamCard';
 import SettingsPanel from './components/SettingsPanel';
 import TimelineBar from './components/TimelineBar';
@@ -44,6 +46,7 @@ export default function App() {
   const [selectedNuclear, setSelectedNuclear] = useState(null);
   const [selectedAirspace, setSelectedAirspace] = useState(null);
   const [selectedAcled, setSelectedAcled] = useState(null);
+  const [selectedGdelt, setSelectedGdelt] = useState(null);
   const [selectedWebcam, setSelectedWebcam] = useState(null);
   const geoIP = useGeoIP();
 
@@ -85,6 +88,7 @@ export default function App() {
         onNuclearSelect={setSelectedNuclear}
         onAirspaceSelect={setSelectedAirspace}
         onAcledSelect={setSelectedAcled}
+        onGdeltSelect={setSelectedGdelt}
         onWebcamSelect={setSelectedWebcam}
       />
       <SearchBox onSelect={handleLocationSelect} />
@@ -103,8 +107,10 @@ export default function App() {
       <NuclearCard nuclear={selectedNuclear} onClose={() => setSelectedNuclear(null)} />
       <AirspaceCard airspace={selectedAirspace} onClose={() => setSelectedAirspace(null)} />
       <AcledCard acled={selectedAcled} onClose={() => setSelectedAcled(null)} />
+      <GdeltCard gdelt={selectedGdelt} onClose={() => setSelectedGdelt(null)} />
       <WebcamCard key={selectedWebcam?.id} webcam={selectedWebcam} onClose={() => setSelectedWebcam(null)} />
       <SettingsPanel />
+      <GdeltToast />
       <TimelineActivator />
       <TimelineBar />
       <LoadingSpinner />

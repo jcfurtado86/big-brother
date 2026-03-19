@@ -8,6 +8,7 @@ import { TELECOM_CATEGORIES, TELECOM_CATEGORY_META } from '../providers/telecomI
 import { ATC_CATEGORIES, ATC_CATEGORY_META } from '../providers/atcIcons';
 import { MILITARY_CATEGORIES, MILITARY_CATEGORY_META } from '../providers/militaryIcons';
 import { ACLED_CATEGORIES, ACLED_CATEGORY_META } from '../providers/acledIcons';
+import { GDELT_CATEGORIES, GDELT_CATEGORY_META } from '../providers/gdeltIcons';
 import { NUCLEAR_CATEGORIES, NUCLEAR_CATEGORY_META } from '../providers/nuclearIcons';
 import { AIRSPACE_CATEGORIES, AIRSPACE_CATEGORY_META } from '../providers/airspaceIcons';
 import { WEBCAM_CATEGORIES, WEBCAM_CATEGORY_META } from '../providers/webcamIcons';
@@ -106,6 +107,7 @@ export default function ControlPanel() {
   const atc        = useLayerState('atc');
   const military   = useLayerState('military');
   const acled      = useLayerState('acled');
+  const gdelt      = useLayerState('gdelt');
   const nuclear    = useLayerState('nuclear');
   const airspace   = useLayerState('airspace');
   const weather    = useLayerState('weather');
@@ -159,6 +161,9 @@ export default function ControlPanel() {
           </select>
         </div>
         <TypeFilter types={ACLED_CATEGORIES} activeSet={acled.types} onChange={t => setTypes('acled', t)} items={ACLED_CATEGORY_META} />
+        <Separator />
+        <Toggle label="GDELT Ao Vivo" active={gdelt.show} onToggle={() => toggle('gdelt')} />
+        <TypeFilter types={GDELT_CATEGORIES} activeSet={gdelt.types} onChange={t => setTypes('gdelt', t)} items={GDELT_CATEGORY_META} />
       </Card>
 
       {/* Cameras */}

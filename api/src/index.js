@@ -27,6 +27,7 @@ import { startAisStream } from './streams/aisstream.js';
 import webcamsRoutes from './routes/webcams.js';
 import weatherRoutes from './routes/weather.js';
 import geoipRoutes from './routes/geoip.js';
+import gdeltRoutes from './routes/gdelt.js';
 
 // Pollers
 import { startTlePoller } from './pollers/celestrak.js';
@@ -42,6 +43,7 @@ import { startOpenSkyPoller } from './pollers/opensky.js';
 import { startAirplanesLivePoller } from './pollers/airplaneslive.js';
 import { startFlightHistoryPoller } from './pollers/flightHistory.js';
 import { startWebcamsPollers } from './pollers/webcams/index.js';
+import { startGdeltPoller } from './pollers/gdeltPoller.js';
 
 const app = Fastify({ logger: true });
 
@@ -69,6 +71,7 @@ await app.register(aisStationsRoutes, { prefix: '/api' });
 await app.register(webcamsRoutes, { prefix: '/api' });
 await app.register(weatherRoutes, { prefix: '/api' });
 await app.register(geoipRoutes, { prefix: '/api' });
+await app.register(gdeltRoutes, { prefix: '/api' });
 
 // Verify DB connection
 try {
@@ -94,6 +97,7 @@ startAirplanesLivePoller();
 startFlightHistoryPoller();
 startAisStream();
 startWebcamsPollers();
+startGdeltPoller();
 
 // Start server
 try {
