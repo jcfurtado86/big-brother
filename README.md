@@ -1,6 +1,6 @@
 # Big Brother
 
-Dashboard de monitoramento global em tempo real com globo 3D interativo. Rastreia aeronaves, embarcacoes, satelites, infraestrutura de telecom, bases militares, usinas nucleares, conflitos (ACLED), cameras ao vivo, aeroportos, zonas de exclusao aerea, rotas aereas/maritimas e clima — tudo em uma unica interface com playback historico.
+Dashboard de monitoramento global em tempo real com globo 3D interativo. Rastreia aeronaves, embarcacoes, satelites, infraestrutura de telecom, bases militares, usinas nucleares, conflitos (ACLED), eventos geopoliticos (GDELT), cameras ao vivo, aeroportos, zonas de exclusao aerea, rotas aereas/maritimas, navios sancionados (OFAC) e clima — tudo em uma unica interface com playback historico e briefing regional.
 
 Arquitetura cliente-servidor: **API** (Fastify + PostgreSQL/PostGIS) e **Web** (React 19 + CesiumJS + Vite).
 
@@ -15,6 +15,7 @@ Arquitetura cliente-servidor: **API** (Fastify + PostgreSQL/PostGIS) e **Web** (
 - [APIs e fontes de dados](#apis-e-fontes-de-dados)
 - [Banco de dados](#banco-de-dados)
 - [Arquitetura](#arquitetura)
+- [Funcionalidades](#funcionalidades)
 - [Timeline (Historico)](#timeline-historico)
 - [Scripts](#scripts)
 - [Limitacoes dos dados](#limitacoes-dos-dados)
@@ -98,7 +99,7 @@ npm run dev            # com --watch (desenvolvimento)
 npm start              # producao
 ```
 
-A API inicia em `http://localhost:3001`. Os pollers comecam automaticamente: OpenSky (2min), Airplanes.live (10s), AISStream (WebSocket persistente), CelesTrak (24h), receptores (1h), ACLED/militar/ATC/telecom (7d), aeroportos/aircraft (30d).
+A API inicia em `http://localhost:3001`. Os pollers comecam automaticamente: OpenSky (2min), Airplanes.live (10s), AISStream (WebSocket persistente), CelesTrak (24h), GDELT (15min), OFAC SDN (24h), receptores (1h), ACLED/militar/ATC/telecom (7d), aeroportos/aircraft (30d).
 
 ### 3. Iniciar o frontend
 
@@ -143,6 +144,8 @@ npm run preview        # testa o build localmente
 | Infraestrutura telecom | Overpass API (OSM) | 7 dias |
 | Zonas de exclusao aerea | OpenAIP | 24 h |
 | Conflitos (ACLED) | ACLED CSV/XLSX | 7 dias |
+| Eventos geopoliticos | GDELT Event Export (CSV) | 15 min |
+| Navios sancionados | OFAC SDN (CSV) | 24 h |
 | Usinas nucleares | Overpass API (OSM) | 7 dias |
 | Cameras ao vivo | Windy, OTCM, GOV, DOT | 24 h |
 | Estacoes AIS | AISStream | 1 h |
@@ -151,6 +154,7 @@ npm run preview        # testa o build localmente
 
 | Servico | Fonte | Auth |
 |---------|-------|------|
+| Noticias relacionadas | GDELT DOC API | Nenhuma |
 | Terreno 3D | Cesium Ion | Token |
 | Busca de locais | Nominatim (OSM) | Nenhuma |
 | Geolocalizacao por IP | ip-api.com | Nenhuma |
@@ -165,12 +169,14 @@ PostgreSQL com PostGIS. Tabelas principais:
 |--------|-----------|-----------|
 | `airports` | ~40K | Aeroportos mundiais com geometria |
 | `acled_events` | ~900K | Eventos de conflito (Africa, Asia, Europa, Americas) |
+| `gdelt_events` | Crescente | Eventos geopoliticos do GDELT (conflitos, protestos, desastres) |
 | `telecom_points` | ~100K | Torres, data centers, infraestrutura |
 | `webcams` | ~90K | Cameras ao vivo (multi-provider) |
 | `adsb_receivers` | ~20K | Receptores ADS-B/MLAT |
 | `airspaces` | ~10K | Poligonos de zonas de exclusao |
 | `military_points` | ~8K | Bases militares (OSM) |
 | `atc_points` | ~5K | Radares e torres ATC |
+| `sanctioned_vessels` | ~1.5K | Navios sancionados OFAC SDN (IMO, MMSI, programa) |
 | `nuclear_plants` | ~400 | Usinas nucleares |
 | `aircraft` | ~300K | Metadados de aeronaves por ICAO24 |
 | `tle_data` | 1 | TLEs de ~15K satelites (atualizado diariamente) |
@@ -199,16 +205,23 @@ big-brother/
 │   │   ├── index.js               # Entrypoint: plugins, rotas, pollers
 │   │   ├── db.js                  # Conexao Knex + PostgreSQL
 │   │   ├── config.js              # Variaveis de ambiente
-│   │   ├── routes/                # 18 endpoints REST + WebSocket
+│   │   ├── routes/                # 20+ endpoints REST + WebSocket
 │   │   │   ├── flights.js         # Voos live + historico
-│   │   │   ├── vessels.js         # Embarcacoes live + historico
+│   │   │   ├── vessels.js         # Embarcacoes live + historico + check sancoes
 │   │   │   ├── satellites.js      # TLEs
 │   │   │   ├── acled.js           # Eventos com filtro de periodo/data
+│   │   │   ├── gdelt.js           # GDELT live + noticias relacionadas
+│   │   │   ├── heatmap.js         # Heatmap de tensao global (ACLED + GDELT)
+│   │   │   ├── briefing.js        # Briefing regional agregado
 │   │   │   ├── weather.js         # Proxy de tiles OWM (cache 10min)
 │   │   │   └── ...                # airports, military, atc, telecom, etc.
-│   │   ├── pollers/               # 12 pollers com intervalos configuraveis
+│   │   ├── pollers/               # 15 pollers com intervalos configuraveis
+│   │   │   ├── sanctions.js       # OFAC SDN — navios sancionados (diario)
+│   │   │   ├── gdeltPoller.js     # GDELT Event Export CSV (15min)
+│   │   │   └── ...
 │   │   ├── streams/               # AISStream WebSocket persistente
-│   │   ├── migrations/            # 7 migrations (schema completo)
+│   │   ├── cache/                 # Caches in-memory (voos, navios + flag sancoes)
+│   │   ├── migrations/            # 10 migrations (schema completo)
 │   │   └── utils/                 # Scheduler, spatial helpers
 │   └── scripts/
 │       └── update-acled.mjs       # Download ACLED (login + XLSX → CSV)
@@ -217,26 +230,30 @@ big-brother/
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── App.jsx            # Raiz: providers + layout
-│   │   │   ├── Globe.jsx          # Viewer Cesium + terreno
+│   │   │   ├── Globe.jsx          # Viewer Cesium + terreno + right-click
 │   │   │   ├── ControlPanel.jsx   # Toggles de camadas por categoria
 │   │   │   ├── SettingsPanel.jsx  # Configuracoes avancadas
 │   │   │   ├── SearchBox.jsx      # Busca Nominatim
+│   │   │   ├── BriefingPanel.jsx  # Briefing regional (right-click)
+│   │   │   ├── GdeltToast.jsx     # Notificacoes de eventos criticos
 │   │   │   ├── ClockDisplay.jsx   # Relogio (live ou historico)
 │   │   │   ├── InfoBar.jsx        # Lat/lon do cursor
 │   │   │   ├── TimelineBar.jsx    # Controles de playback historico
 │   │   │   ├── TimelineActivator.jsx # Botao de ativacao da timeline
-│   │   │   ├── *Card.jsx          # Cards de detalhe (Flight, Vessel, etc.)
-│   │   │   └── layers/            # 16 layer managers (renderizam null)
+│   │   │   ├── *Card.jsx          # Cards de detalhe (Flight, Vessel, Gdelt, etc.)
+│   │   │   └── layers/            # 17 layer managers (renderizam null)
 │   │   │       ├── FlightManager.jsx
 │   │   │       ├── VesselManager.jsx
 │   │   │       ├── SatelliteManager.jsx
 │   │   │       ├── AcledManager.jsx
+│   │   │       ├── GdeltLiveManager.jsx
+│   │   │       ├── TensionManager.jsx
 │   │   │       ├── WebcamManager.jsx
 │   │   │       └── ...
 │   │   ├── contexts/
 │   │   │   ├── LayerContext.jsx    # Estado de todas as camadas (useReducer)
 │   │   │   ├── ViewerContext.jsx   # Instancia do Cesium Viewer
-│   │   │   ├── SelectionContext.jsx # Registry de selecao de entidades
+│   │   │   ├── SelectionContext.jsx # Registry de selecao + right-click
 │   │   │   ├── TimelineContext.jsx # Estado global de tempo + playback
 │   │   │   └── LoadingContext.jsx  # Indicador de carregamento
 │   │   ├── hooks/                 # Hooks reutilizaveis (useBillboardLayer, etc.)
@@ -253,8 +270,34 @@ big-brother/
 - **Cada camada = 1 manager**: Novo layer = novo manager em `layers/` + toggle no `ControlPanel`
 - **Context-driven**: Estado via `LayerContext` (useReducer), sem prop drilling
 - **Selection registry**: Clique centralizado via `SelectionContext` — cada manager registra seu handler
+- **Right-click briefing**: Botao direito no globo gera briefing agregado da regiao (conflitos, midia, infraestrutura)
 - **Render on demand**: `requestRenderMode = true` — Cesium so re-renderiza quando necessario
 - **Pollers autonomos**: API coleta dados em background, frontend so consulta
+- **Sancoes em tempo real**: Navios cruzados contra lista OFAC SDN via Sets in-memory no cache
+
+---
+
+## Funcionalidades
+
+### Camadas de dados
+- **Trafego aereo**: Aeronaves em tempo real (OpenSky + Airplanes.live), aeroportos, rotas aereas, zonas de exclusao, receptores ADS-B
+- **Trafego maritimo**: Embarcacoes AIS em tempo real, rotas maritimas, antenas AIS, deteccao de navios sancionados (OFAC)
+- **Satelites**: ~15K satelites com propagacao SGP4 (LEO, MEO, GEO)
+- **Infraestrutura**: Telecom (torres, data centers), ATC (radares, torres), bases militares, usinas nucleares
+- **Eventos**: Conflitos ACLED (6 categorias), eventos GDELT ao vivo (5 categorias), heatmap de tensao global
+- **Cameras**: ~90K webcams ao vivo de multiplos provedores
+- **Ambiente**: 6 camadas de mapa base, relevo 3D, ciclo dia/noite, nuvens com opacidade
+
+### Interacao
+- **Clique esquerdo**: Seleciona entidade e abre card de detalhe
+- **Clique direito**: Gera briefing da regiao (raio 200km) com conflitos, midia, infraestrutura, alertas
+- **Busca**: Nominatim para locais, voar ate coordenadas
+- **Filtros**: Cada camada com subcategorias filtraveis, periodo configuravel
+
+### Alertas
+- **GDELT Toast**: Notificacoes em tempo real de eventos criticos (Goldstein <= -7 ou tom <= -15)
+- **Navios sancionados**: Cor roxa no mapa, badge "SANCIONADO" no card com programa de sancoes
+- **Heatmap de tensao**: Overlay visual combinando ACLED (70%) + GDELT (30%), com opacidade ajustavel
 
 ---
 
@@ -265,6 +308,7 @@ O app suporta playback historico global. Quando ativado:
 - **Voos e embarcacoes**: Posicoes interpoladas a partir de `flight_history` e `vessel_history` (snapshots a cada 5 min)
 - **Satelites**: Propagacao SGP4 com TLEs para qualquer data (sem necessidade de historico no banco)
 - **ACLED**: Filtro client-side por data, respeitando o periodo selecionado (1d/7d/30d) relativo ao tempo do playback
+- **Heatmap de tensao**: Calcula tensao a partir da data selecionada na timeline
 
 ### Controles
 
@@ -311,6 +355,16 @@ Requer `ACLED_USER` e `ACLED_PASS` no `.env`.
 ### ACLED
 - Dados agregados semanais. Atualizacao depende da publicacao da ACLED (geralmente segundas)
 - ~900K eventos historicos (2018-presente)
+
+### GDELT
+- Event Export atualizado a cada 15 min. Cobertura global de eventos geopoliticos
+- DOC API para noticias relacionadas (sem auth, rate limit leve)
+- Tom e escala Goldstein podem ter ruido em eventos ambiguos
+
+### OFAC SDN
+- Lista atualizada diariamente. ~1.5K navios sancionados
+- Cruzamento por MMSI e IMO extraidos do campo remarks do CSV
+- Cobertura depende da presenca de MMSI/IMO na lista (nem todos os navios tem)
 
 ### OpenWeatherMap
 - Tiles de zoom 2 (padrao) com baixa resolucao. Cache de 10 min no servidor
