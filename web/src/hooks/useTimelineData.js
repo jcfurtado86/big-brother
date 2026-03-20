@@ -216,17 +216,18 @@ export function useTimelineData() {
     }
   }, [tl.active, tl.timeRange, tl.currentTime, fetchWindow]);
 
-  // Interpolate during playback (~10fps throttle)
-  const lastInterpRef = useRef(0);
+  // Interpolate during playback — re-runs periodically to catch late data & layer toggles
   useEffect(() => {
     if (!tl.active) return;
-    if (!flightHistRef.current && !vesselHistRef.current) return;
 
-    const now = performance.now();
-    if (now - lastInterpRef.current < 100) return;
-    lastInterpRef.current = now;
+    function tryInterpolate() {
+      if (!flightHistRef.current && !vesselHistRef.current) return;
+      interpolate(tl.currentTime);
+    }
 
-    interpolate(tl.currentTime);
+    tryInterpolate();
+    const timer = setInterval(tryInterpolate, 500);
+    return () => clearInterval(timer);
   }, [tl.active, tl.currentTime, interpolate]);
 
   return { flights, vessels, active: tl.active };
