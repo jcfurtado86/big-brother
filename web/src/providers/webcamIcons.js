@@ -17,7 +17,7 @@ export const WEBCAM_CATEGORY_COLOR = {
 export const WEBCAM_CATEGORIES = ['live', 'timelapse', 'inactive'];
 
 export const WEBCAM_CATEGORY_META = {
-  live:      { label: 'Live',      color: '#00E676' },
-  timelapse: { label: 'Timelapse', color: '#448AFF' },
-  inactive:  { label: 'Inativas',  color: '#78909C' },
+  live:      { label: 'cat.webcam.live',      color: '#00E676' },
+  timelapse: { label: 'cat.webcam.timelapse', color: '#448AFF' },
+  inactive:  { label: 'cat.webcam.inactive',  color: '#78909C' },
 };

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { WEBCAM_CATEGORY_META } from '../providers/webcamIcons';
 import { Row, styles } from './DetailCardParts';
 
@@ -46,6 +47,7 @@ const FS_STYLE = {
 };
 
 export default function WebcamCard({ webcam, onClose }) {
+  const { t } = useTranslation();
   if (!webcam) return null;
 
   const [fullscreen, setFullscreen] = useState(false);
@@ -157,7 +159,7 @@ export default function WebcamCard({ webcam, onClose }) {
               <div className={styles.name} style={{ color: meta.color }}>
                 {webcam.title || 'Camera'}
               </div>
-              <div className={styles.sub}>{location || meta.label}</div>
+              <div className={styles.sub}>{location || t(meta.label)}</div>
             </div>
             <button className={styles.close} onClick={onClose}>×</button>
           </div>
@@ -229,7 +231,7 @@ export default function WebcamCard({ webcam, onClose }) {
               lineHeight: 1.4,
               pointerEvents: 'auto',
             }}
-            title={fullscreen ? 'Minimizar' : 'Tela cheia'}
+            title={fullscreen ? t('webcam.minimize') : t('webcam.fullscreen')}
           >
             ⛶
           </button>
@@ -259,14 +261,14 @@ export default function WebcamCard({ webcam, onClose }) {
                 letterSpacing: 0.5,
               }}
             >
-              ABRIR LIVE STREAM
+              {t('webcam.openLiveStream')}
             </a>
           )}
           <div className={styles.grid}>
-            <Row label="Status" value={meta.label} />
-            <Row label="Provedor" value={webcam.provider ?? 'Windy'} />
-            <Row label="Pais" value={webcam.country} />
-            <Row label="Posicao" value={
+            <Row label={t('card.status')} value={t(meta.label)} />
+            <Row label={t('control.provider')} value={webcam.provider ?? 'Windy'} />
+            <Row label={t('card.country')} value={webcam.country} />
+            <Row label={t('card.position')} value={
               webcam.lat != null
                 ? `${webcam.lat.toFixed(4)}°, ${webcam.lon.toFixed(4)}°`
                 : null

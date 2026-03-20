@@ -124,17 +124,17 @@ export const ROUTE_BATCH_SIZE     = 100;
 // Sea route categories
 export const SEA_ROUTE_CATEGORIES = ['major', 'middle', 'minor'];
 export const SEA_ROUTE_CATEGORY_META = {
-  major:  { label: 'Principais', color: '#00BCD4' },
-  middle: { label: 'Intermediárias', color: '#0097A7' },
-  minor:  { label: 'Secundárias', color: '#00796B' },
+  major:  { label: 'cat.seaRoute.major',  color: '#00BCD4' },
+  middle: { label: 'cat.seaRoute.middle', color: '#0097A7' },
+  minor:  { label: 'cat.seaRoute.minor',  color: '#00796B' },
 };
 
 // Air route categories (by distance)
 export const AIR_ROUTE_CATEGORIES = ['short', 'medium', 'long'];
 export const AIR_ROUTE_CATEGORY_META = {
-  short:  { label: 'Curta (<1500km)', color: '#FFD54F' },
-  medium: { label: 'Média (1500–5000km)', color: '#F2A800' },
-  long:   { label: 'Longa (>5000km)', color: '#E65100' },
+  short:  { label: 'cat.airRoute.short',  color: '#FFD54F' },
+  medium: { label: 'cat.airRoute.medium', color: '#F2A800' },
+  long:   { label: 'cat.airRoute.long',   color: '#E65100' },
 };
 
 // ── Receivers (antenas) ───────────────────────────────────────────────────────

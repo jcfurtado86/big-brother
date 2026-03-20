@@ -25,7 +25,7 @@ export const SATELLITE_CATEGORY_COLOR = {
 export const SATELLITE_CATEGORIES = ['leo', 'meo', 'geo'];
 
 export const SATELLITE_CATEGORY_META = {
-  leo: { label: 'Low Earth Orbit',      color: '#00E5FF' },
-  meo: { label: 'Medium Earth Orbit',   color: '#FF9800' },
-  geo: { label: 'Geostationary Orbit',  color: '#E040FB' },
+  leo: { label: 'cat.satellite.leo',      color: '#00E5FF' },
+  meo: { label: 'cat.satellite.meo',   color: '#FF9800' },
+  geo: { label: 'cat.satellite.geo',  color: '#E040FB' },
 };

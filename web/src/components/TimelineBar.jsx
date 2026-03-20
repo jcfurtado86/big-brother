@@ -1,4 +1,5 @@
 import React, { useCallback, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTimeline } from '../contexts/TimelineContext';
 import styles from './TimelineBar.module.css';
 
@@ -51,6 +52,7 @@ function buildCoverageSegments(buckets, start, end) {
 
 export default function TimelineBar() {
   const tl = useTimeline();
+  const { t } = useTranslation();
   const wasPlayingRef = useRef(false);
 
   const onSliderDown = useCallback(() => {
@@ -95,11 +97,11 @@ export default function TimelineBar() {
 
   return (
     <div className={styles.bar} onKeyDown={onKeyDown} tabIndex={0}>
-      <button className={styles.btn} onClick={tl.togglePlay} title={tl.playing ? 'Pausar' : 'Reproduzir'}>
+      <button className={styles.btn} onClick={tl.togglePlay} title={tl.playing ? t('timeline.pause') : t('timeline.play')}>
         {tl.playing ? '⏸' : '▶'}
       </button>
 
-      <button className={styles.speedBtn} onClick={tl.cycleSpeed} title="Velocidade">
+      <button className={styles.speedBtn} onClick={tl.cycleSpeed} title={t('timeline.speed')}>
         {tl.speed}×
       </button>
 
@@ -138,7 +140,7 @@ export default function TimelineBar() {
         onChange={onDateChange}
       />
 
-      <button className={styles.closeBtn} onClick={tl.deactivate} title="Voltar ao live">
+      <button className={styles.closeBtn} onClick={tl.deactivate} title={t('timeline.backToLive')}>
         ×
       </button>
     </div>

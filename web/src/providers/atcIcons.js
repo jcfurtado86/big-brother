@@ -20,6 +20,6 @@ export const ATC_CATEGORY_COLOR = {
 export const ATC_CATEGORIES = ['control_tower', 'radar'];
 
 export const ATC_CATEGORY_META = {
-  control_tower: { label: 'Torres de controle', color: '#FFA726' },
-  radar:         { label: 'Radares',            color: '#42A5F5' },
+  control_tower: { label: 'cat.atc.control_tower', color: '#FFA726' },
+  radar:         { label: 'cat.atc.radar',          color: '#42A5F5' },
 };

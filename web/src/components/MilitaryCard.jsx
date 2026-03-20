@@ -1,21 +1,23 @@
+import { useTranslation } from 'react-i18next';
 import { MILITARY_CATEGORY_META, MILITARY_SERVICE_LABELS } from '../providers/militaryIcons';
 import { Row, LinkRow, styles } from './DetailCardParts';
 
-function formatService(raw) {
+function formatService(raw, t) {
   if (!raw) return null;
-  return raw.split(';').map(s => MILITARY_SERVICE_LABELS[s.trim()] || s.trim()).join(', ');
+  return raw.split(';').map(s => {
+    const key = MILITARY_SERVICE_LABELS[s.trim()];
+    return key ? t(key) : s.trim();
+  }).join(', ');
 }
 
-function formatAccess(raw) {
+function formatAccess(raw, t) {
   if (!raw) return null;
-  const map = { private: 'Privado', military: 'Militar', no: 'Proibido', permissive: 'Permissivo', yes: 'Livre' };
-  return map[raw] || raw;
+  return t('military.accessLabels.' + raw) || raw;
 }
 
-function formatFunction(raw) {
+function formatFunction(raw, t) {
   if (!raw) return null;
-  const map = { Operational: 'Operacional', Headquarters: 'Quartel-general', Logistics: 'Logistica' };
-  return map[raw] || raw;
+  return t('military.functionLabels.' + raw) || raw;
 }
 
 function wikiUrl(wikipedia) {
@@ -26,6 +28,7 @@ function wikiUrl(wikipedia) {
 }
 
 export default function MilitaryCard({ military, onClose }) {
+  const { t } = useTranslation();
   if (!military) return null;
 
   const meta = MILITARY_CATEGORY_META[military.category] ?? { label: military.category, color: '#E91E63' };
@@ -35,9 +38,9 @@ export default function MilitaryCard({ military, onClose }) {
       <div className={styles.header}>
         <div>
           <div className={styles.name} style={{ color: meta.color }}>
-            {military.name || military.ref || meta.label}
+            {military.name || military.ref || t(meta.label)}
           </div>
-          <div className={styles.sub}>{meta.label}</div>
+          <div className={styles.sub}>{t(meta.label)}</div>
         </div>
         <button className={styles.close} onClick={onClose}>×</button>
       </div>
@@ -45,29 +48,29 @@ export default function MilitaryCard({ military, onClose }) {
       <div className={styles.divider} />
 
       <div className={styles.grid}>
-        <Row label="Ramo" value={formatService(military.militaryService)} />
-        <Row label="Unidade" value={military.serviceBranch} />
-        <Row label="Funcao" value={formatFunction(military.baseFunction)} />
-        <Row label="Operador" value={military.operator} />
-        <Row label="Pais" value={military.country} />
-        <Row label="Ref" value={military.ref} />
+        <Row label={t('military.branch')} value={formatService(military.militaryService, t)} />
+        <Row label={t('military.unit')} value={military.serviceBranch} />
+        <Row label={t('military.function')} value={formatFunction(military.baseFunction, t)} />
+        <Row label={t('card.operator')} value={military.operator} />
+        <Row label={t('card.country')} value={military.country} />
+        <Row label={t('card.ref')} value={military.ref} />
         <Row label="ICAO" value={military.icao} />
         <Row label="IATA" value={military.iata} />
-        <Row label="Acesso" value={formatAccess(military.access)} />
-        <Row label="Elevacao" value={military.ele ? `${military.ele} m` : null} />
-        <Row label="Fundacao" value={military.startDate} />
-        <Row label="Posicao" value={
+        <Row label={t('military.access')} value={formatAccess(military.access, t)} />
+        <Row label={t('card.elevation')} value={military.ele ? `${military.ele} m` : null} />
+        <Row label={t('military.founded')} value={military.startDate} />
+        <Row label={t('card.position')} value={
           military.lat != null
             ? `${military.lat.toFixed(4)}°, ${military.lon.toFixed(4)}°`
             : null
         } />
         {military.description && (
-          <Row label="Info" value={military.description} />
+          <Row label={t('card.info')} value={military.description} />
         )}
-        <LinkRow label="Website" url={military.website} text="Abrir" />
-        <LinkRow label="Wikipedia" url={wikiUrl(military.wikipedia)} text={military.wikipedia?.split(':').slice(1).join(':')} />
+        <LinkRow label={t('military.website')} url={military.website} text={t('card.open')} />
+        <LinkRow label={t('military.wikipedia')} url={wikiUrl(military.wikipedia)} text={military.wikipedia?.split(':').slice(1).join(':')} />
         {military.wikidata && (
-          <LinkRow label="Wikidata" url={`https://www.wikidata.org/wiki/${military.wikidata}`} text={military.wikidata} />
+          <LinkRow label={t('military.wikidata')} url={`https://www.wikidata.org/wiki/${military.wikidata}`} text={military.wikidata} />
         )}
       </div>
     </div>

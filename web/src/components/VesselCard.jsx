@@ -1,22 +1,9 @@
 import styles from './VesselCard.module.css';
+import { useTranslation } from 'react-i18next';
 import { getVesselCategory, VESSEL_CATEGORY_META } from '../providers/vesselIcons';
 import { getFlagImgByCode } from '../providers/countryFlags';
 import { mmsiToCountry } from '../providers/vesselService';
 import { toCompass } from '../utils/unitConversion';
-
-const NAV_STATUS = {
-  0: 'Em navegação (motor)',
-  1: 'Ancorado',
-  2: 'Sem comando',
-  3: 'Manobrabilidade restrita',
-  4: 'Restrito por calado',
-  5: 'Atracado',
-  6: 'Encalhado',
-  7: 'Em pesca',
-  8: 'Em navegação (vela)',
-  14: 'AIS-SART',
-  15: 'Não definido',
-};
 
 function formatEta(eta) {
   if (!eta || (!eta.month && !eta.day)) return null;
@@ -36,6 +23,7 @@ function Row({ label, value }) {
 }
 
 export default function VesselCard({ vessel, onClose }) {
+  const { t, i18n } = useTranslation();
   if (!vessel) return null;
 
   const baseCategory = getVesselCategory(vessel.shipType);
@@ -60,53 +48,53 @@ export default function VesselCard({ vessel, onClose }) {
 
       {vessel.sanctioned && (
         <div className={styles.sanctionBadge}>
-          SANCIONADO
+          {t('vessel.sanctioned')}
         </div>
       )}
 
       <div className={styles.divider} />
 
       <div className={styles.grid}>
-        <span className={styles.label}>País</span>
+        <span className={styles.label}>{t('card.country')}</span>
         <span className={styles.value}>
           {flagSrc && <img src={flagSrc} className={styles.flag} alt="" />}
           {mmsiToCountry(vessel.mmsi) || vessel.country || '—'}
         </span>
 
-        <span className={styles.label}>Tipo</span>
-        <span className={styles.value}>{meta.label} ({vessel.shipType})</span>
+        <span className={styles.label}>{t('card.type')}</span>
+        <span className={styles.value}>{t(meta.label)} ({vessel.shipType})</span>
 
-        <span className={styles.label}>Status</span>
-        <span className={styles.value}>{NAV_STATUS[vessel.navStatus] ?? '—'}</span>
+        <span className={styles.label}>{t('card.status')}</span>
+        <span className={styles.value}>{t('vessel.navStatus.' + vessel.navStatus) || '—'}</span>
 
-        <Row label="Velocidade" value={`${vessel.sog.toFixed(1)} kt`} />
+        <Row label={t('card.speed')} value={`${vessel.sog.toFixed(1)} kt`} />
 
-        <span className={styles.label}>Rumo (COG)</span>
+        <span className={styles.label}>{t('vessel.cog')}</span>
         <span className={styles.value}>
           {Math.round(vessel.cog)}° {toCompass(vessel.cog)}
         </span>
 
-        <span className={styles.label}>Proa</span>
+        <span className={styles.label}>{t('vessel.bow')}</span>
         <span className={styles.value}>
           {Math.round(vessel.heading)}° {toCompass(vessel.heading)}
         </span>
 
-        <Row label="Taxa de guinada" value={vessel.rateOfTurn != null ? `${vessel.rateOfTurn}°/min` : null} />
+        <Row label={t('vessel.rateOfTurn')} value={vessel.rateOfTurn != null ? `${vessel.rateOfTurn}°/min` : null} />
 
-        <Row label="Destino" value={vessel.destination} />
-        <Row label="ETA" value={etaStr} />
-        <Row label="Callsign" value={vessel.callsign} />
+        <Row label={t('vessel.destination')} value={vessel.destination} />
+        <Row label={t('vessel.eta')} value={etaStr} />
+        <Row label={t('vessel.callsign')} value={vessel.callsign} />
 
-        <Row label="Comprimento" value={vessel.length ? `${vessel.length} m` : null} />
-        <Row label="Boca" value={vessel.beam ? `${vessel.beam} m` : null} />
-        <Row label="Calado" value={vessel.draught ? `${vessel.draught} m` : null} />
+        <Row label={t('vessel.length')} value={vessel.length ? `${vessel.length} m` : null} />
+        <Row label={t('vessel.beam')} value={vessel.beam ? `${vessel.beam} m` : null} />
+        <Row label={t('vessel.draught')} value={vessel.draught ? `${vessel.draught} m` : null} />
 
-        <span className={styles.label}>Posição</span>
+        <span className={styles.label}>{t('card.position')}</span>
         <span className={styles.value}>
           {vessel.lat.toFixed(4)}°, {vessel.lon.toFixed(4)}°
         </span>
 
-        <Row label="Último sinal" value={vessel.timeUtc ? new Date(vessel.timeUtc).toLocaleTimeString('pt-BR') : null} />
+        <Row label={t('vessel.lastSignal')} value={vessel.timeUtc ? new Date(vessel.timeUtc).toLocaleTimeString(i18n.language === 'pt-BR' ? 'pt-BR' : 'en-US') : null} />
       </div>
 
     </div>

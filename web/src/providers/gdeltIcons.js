@@ -1,7 +1,7 @@
 import { Color } from 'cesium';
 
 export const TONE_COLORS = { negative: '#F44336', positive: '#4CAF50', neutral: '#888' };
-export const TONE_LABELS = { negative: 'Negativo', positive: 'Positivo', neutral: 'Neutro' };
+export const TONE_LABELS = { negative: 'tone.negative', positive: 'tone.positive', neutral: 'tone.neutral' };
 
 export const GDELT_CATEGORIES = [
   'conflict',
@@ -12,11 +12,11 @@ export const GDELT_CATEGORIES = [
 ];
 
 export const GDELT_CATEGORY_META = {
-  conflict:  { label: 'Conflitos', color: '#E53935' },
-  disaster:  { label: 'Desastres', color: '#FF9800' },
-  protest:   { label: 'Protestos', color: '#FDD835' },
-  terror:    { label: 'Ataques',   color: '#B71C1C' },
-  political: { label: 'Politico',  color: '#00BCD4' },
+  conflict:  { label: 'cat.gdelt.conflict',  color: '#E53935' },
+  disaster:  { label: 'cat.gdelt.disaster',  color: '#FF9800' },
+  protest:   { label: 'cat.gdelt.protest',   color: '#FDD835' },
+  terror:    { label: 'cat.gdelt.terror',    color: '#B71C1C' },
+  political: { label: 'cat.gdelt.political', color: '#00BCD4' },
 };
 
 export const GDELT_CATEGORY_COLOR = {

@@ -1,17 +1,10 @@
 import React from 'react';
 import styles from './AirportCard.module.css';
+import { useTranslation } from 'react-i18next';
 import { getFlagImgByCode } from '../providers/countryFlags';
 
-const TYPE_LABEL = {
-  large_airport:  'Aeroporto grande',
-  medium_airport: 'Aeroporto médio',
-  small_airport:  'Aeroporto pequeno',
-  heliport:       'Heliporto',
-  seaplane_base:  'Base de hidroavião',
-  balloonport:    'Porto de balões',
-};
-
 export default function AirportCard({ airport, onClose }) {
+  const { t } = useTranslation();
   if (!airport) return null;
 
   const flagImg = getFlagImgByCode(airport.country);
@@ -34,18 +27,18 @@ export default function AirportCard({ airport, onClose }) {
       <div className={styles.divider} />
 
       <div className={styles.grid}>
-        <span className={styles.label}>Tipo</span>
-        <span className={styles.value}>{TYPE_LABEL[airport.type] || airport.type}</span>
+        <span className={styles.label}>{t('card.type')}</span>
+        <span className={styles.value}>{t('airport.typeLabels.' + airport.type, { defaultValue: airport.type })}</span>
 
-        <span className={styles.label}>País</span>
+        <span className={styles.label}>{t('card.country')}</span>
         <span className={styles.value}>{airport.country || '—'}</span>
 
         {airport.city && <>
-          <span className={styles.label}>Cidade</span>
+          <span className={styles.label}>{t('airport.city')}</span>
           <span className={styles.value}>{airport.city}</span>
         </>}
 
-        <span className={styles.label}>Coordenadas</span>
+        <span className={styles.label}>{t('airport.coordinates')}</span>
         <span className={styles.value}>
           {airport.lat.toFixed(4)}, {airport.lon.toFixed(4)}
         </span>

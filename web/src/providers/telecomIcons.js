@@ -29,7 +29,7 @@ export const TELECOM_CATEGORY_COLOR = {
 export const TELECOM_CATEGORIES = ['mast', 'comm_line', 'data_center'];
 
 export const TELECOM_CATEGORY_META = {
-  mast:        { label: 'Torres',          color: '#FF5252' },
-  comm_line:   { label: 'Cabos de Comunicação',      color: '#448AFF' },
-  data_center: { label: 'Data Centers',   color: '#69F0AE' },
+  mast:        { label: 'cat.telecom.mast',        color: '#FF5252' },
+  comm_line:   { label: 'cat.telecom.comm_line',   color: '#448AFF' },
+  data_center: { label: 'cat.telecom.data_center', color: '#69F0AE' },
 };

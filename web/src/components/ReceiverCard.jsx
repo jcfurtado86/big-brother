@@ -1,4 +1,5 @@
 import styles from './ReceiverCard.module.css';
+import { useTranslation } from 'react-i18next';
 
 const TYPE_META = {
   adsb: { label: 'ADS-B Receiver', color: '#40C4FF' },
@@ -14,6 +15,7 @@ function Row({ label, value }) {
 }
 
 export default function ReceiverCard({ receiver, onClose }) {
+  const { t } = useTranslation();
   if (!receiver) return null;
 
   const meta = TYPE_META[receiver.type] ?? TYPE_META.adsb;
@@ -33,18 +35,18 @@ export default function ReceiverCard({ receiver, onClose }) {
       <div className={styles.divider} />
 
       <div className={styles.grid}>
-        <Row label="Tipo" value={meta.label} />
+        <Row label={t('card.type')} value={meta.label} />
         {receiver.type === 'adsb' && (
           <>
-            <Row label="Regiao" value={receiver.region} />
-            <Row label="Peers" value={receiver.peers} />
-            <Row label="Bad syncs" value={receiver.badSyncs} />
+            <Row label={t('acled.region')} value={receiver.region} />
+            <Row label={t('receiver.peers')} value={receiver.peers} />
+            <Row label={t('receiver.badSyncs')} value={receiver.badSyncs} />
           </>
         )}
         {receiver.type === 'ais' && (
           <Row label="MMSI" value={receiver.mmsi} />
         )}
-        <Row label="Posicao" value={
+        <Row label={t('card.position')} value={
           receiver.lat != null
             ? `${receiver.lat.toFixed(4)}°, ${receiver.lon.toFixed(4)}°`
             : null

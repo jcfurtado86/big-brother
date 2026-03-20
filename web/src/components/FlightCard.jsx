@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from './FlightCard.module.css';
+import { useTranslation } from 'react-i18next';
 import { getCategoryType } from '../providers/planeIcons';
 import { getFlagImg } from '../providers/countryFlags';
 import { useAircraftMeta } from '../hooks/useAircraftMeta';
@@ -8,18 +9,8 @@ import { getAirlineFromCallsign } from '../providers/airlineCodes';
 import { toKt, toFt, toCompass, toVs } from '../utils/unitConversion';
 import { useLayerState } from '../contexts/LayerContext';
 
-const TYPE_LABEL = {
-  heavy:      'Heavy (wide-body)',
-  large:      'Large jet',
-  regional:   'Regional / turboprop',
-  light:      'Light / GA',
-  helicopter: 'Helicopter',
-  uav:        'UAV / drone',
-  military:   'Militar',
-  unknown:    'Unknown',
-};
-
 export default function FlightCard({ flight, onClose }) {
+  const { t } = useTranslation();
   const { provider: flightProvider } = useLayerState('flights');
   const meta = useAircraftMeta(flight?.icao24 ?? null, flightProvider, flight);
 
@@ -67,49 +58,49 @@ export default function FlightCard({ flight, onClose }) {
       <div className={styles.divider} />
 
       <div className={styles.grid}>
-        <span className={styles.label}>País</span>
+        <span className={styles.label}>{t('card.country')}</span>
         <span className={styles.value}>
           {flagSrc && <img src={flagSrc} className={styles.flag} alt="" />}
           {flight.country || '—'}
         </span>
 
         {meta?.manufacturer && <>
-          <span className={styles.label}>Fabricante</span>
+          <span className={styles.label}>{t('flight.manufacturer')}</span>
           <span className={styles.value}>{meta.manufacturer}</span>
         </>}
 
         {meta?.model && <>
-          <span className={styles.label}>Modelo</span>
+          <span className={styles.label}>{t('card.model')}</span>
           <span className={styles.value}>{meta.model}</span>
         </>}
 
         {meta?.built && <>
-          <span className={styles.label}>Ano</span>
+          <span className={styles.label}>{t('flight.year')}</span>
           <span className={styles.value}>{meta.built}</span>
         </>}
 
-        <span className={styles.label}>Tipo</span>
-        <span className={styles.value}>{TYPE_LABEL[type]}</span>
+        <span className={styles.label}>{t('card.type')}</span>
+        <span className={styles.value}>{t('cat.flight.' + type)}</span>
 
-        <span className={styles.label}>Status</span>
-        <span className={styles.value}>{onGround ? 'No solo' : 'Em voo'}</span>
+        <span className={styles.label}>{t('card.status')}</span>
+        <span className={styles.value}>{onGround ? t('flight.onGround') : t('flight.inFlight')}</span>
 
-        <span className={styles.label}>Altitude</span>
+        <span className={styles.label}>{t('card.altitude')}</span>
         <span className={styles.value}>{toFt(flight.altitude)} ft</span>
 
         {vs && <>
-          <span className={styles.label}>V/S</span>
+          <span className={styles.label}>{t('flight.vs')}</span>
           <span className={styles.value}>{vs}</span>
         </>}
 
-        <span className={styles.label}>Velocidade</span>
+        <span className={styles.label}>{t('card.speed')}</span>
         <span className={styles.value}>{toKt(flight.velocity)} kt</span>
 
-        <span className={styles.label}>Rumo</span>
+        <span className={styles.label}>{t('card.heading')}</span>
         <span className={styles.value}>{Math.round(flight.heading)}° {toCompass(flight.heading)}</span>
 
         {squawk && <>
-          <span className={styles.label}>Squawk</span>
+          <span className={styles.label}>{t('flight.squawk')}</span>
           <span className={isEmergencySquawk ? styles.emergency : styles.value}>{squawk}</span>
         </>}
       </div>

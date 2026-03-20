@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import styles from './SettingsPanel.module.css';
 import {
   SETTINGS_SCHEMA, useSettings,
   setSetting, resetSetting, resetAll, isOverridden,
 } from '../providers/settingsStore';
 import { idbClearAll, idbEstimateSize, idbStoreCounts } from '../utils/idbCache';
+import { setLanguage, getLanguage } from '../i18n';
 
 function GearIcon() {
   return (
@@ -15,6 +17,7 @@ function GearIcon() {
 }
 
 function SettingRow({ item }) {
+  const { t } = useTranslation();
   const settings = useSettings();
   const value = settings[item.key];
   const modified = isOverridden(item.key);
@@ -26,8 +29,8 @@ function SettingRow({ item }) {
 
   return (
     <div className={styles.row}>
-      <span className={styles.label} title={item.key}>{item.label}</span>
-      {item.desc && <span className={styles.helpIcon} title={item.desc}>?</span>}
+      <span className={styles.label} title={item.key}>{t(item.label)}</span>
+      {item.desc && <span className={styles.helpIcon} title={t(item.desc)}>?</span>}
       <input
         type="number"
         className={`${styles.input} ${modified ? styles.inputModified : ''}`}
@@ -40,7 +43,7 @@ function SettingRow({ item }) {
       <button
         className={styles.resetBtn}
         onClick={() => resetSetting(item.key)}
-        title="Restaurar padrão"
+        title={t('settings.restoreDefault')}
       >
         ↺
       </button>
@@ -49,10 +52,11 @@ function SettingRow({ item }) {
 }
 
 function Section({ section, open, onToggle }) {
+  const { t } = useTranslation();
   return (
     <div className={styles.section}>
       <div className={styles.sectionHeader} onClick={onToggle}>
-        <span className={styles.sectionLabel}>{section.section}</span>
+        <span className={styles.sectionLabel}>{t(section.section)}</span>
         <span className={`${styles.chevron} ${open ? styles.chevronOpen : ''}`}>▼</span>
       </div>
       {open && (
@@ -75,6 +79,7 @@ function fmt(bytes) {
 }
 
 function CacheSection({ open, onToggle }) {
+  const { t } = useTranslation();
   const [idbInfo, setIdbInfo] = useState(null);
   const [clearing, setClearing] = useState(false);
 
@@ -95,25 +100,25 @@ function CacheSection({ open, onToggle }) {
   return (
     <div className={styles.section}>
       <div className={styles.sectionHeader} onClick={onToggle}>
-        <span className={styles.sectionLabel}>Cache Local (IDB)</span>
+        <span className={styles.sectionLabel}>{t('cache.title')}</span>
         <span className={`${styles.chevron} ${open ? styles.chevronOpen : ''}`}>▼</span>
       </div>
       {open && (
         <div className={styles.sectionBody}>
           {idbInfo?.estimate && (
             <div className={styles.row}>
-              <span className={styles.label}>Uso</span>
+              <span className={styles.label}>{t('cache.usage')}</span>
               <span className={styles.infoValue}>{fmt(idbInfo.estimate.usage)}</span>
             </div>
           )}
           {idbInfo?.counts && Object.entries(idbInfo.counts).map(([store, count]) => (
             <div className={styles.row} key={store}>
               <span className={styles.label}>{store}</span>
-              <span className={styles.infoValue}>{count} {count === 1 ? 'entrada' : 'entradas'}</span>
+              <span className={styles.infoValue}>{count} {count === 1 ? t('cache.entry') : t('cache.entries')}</span>
             </div>
           ))}
           <button className={styles.dangerBtn} onClick={handleClear} disabled={clearing}>
-            {clearing ? 'Limpando...' : 'Limpar todo cache IDB'}
+            {clearing ? t('cache.clearing') : t('cache.clearAll')}
           </button>
         </div>
       )}
@@ -122,6 +127,7 @@ function CacheSection({ open, onToggle }) {
 }
 
 function DbSizeSection({ open, onToggle }) {
+  const { t } = useTranslation();
   const [dbInfo, setDbInfo] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -139,27 +145,27 @@ function DbSizeSection({ open, onToggle }) {
   return (
     <div className={styles.section}>
       <div className={styles.sectionHeader} onClick={onToggle}>
-        <span className={styles.sectionLabel}>Banco de Dados</span>
+        <span className={styles.sectionLabel}>{t('db.title')}</span>
         <span className={`${styles.chevron} ${open ? styles.chevronOpen : ''}`}>▼</span>
       </div>
       {open && (
         <div className={styles.sectionBody}>
-          {loading && <span className={styles.label}>Carregando...</span>}
+          {loading && <span className={styles.label}>{t('db.loading')}</span>}
           {dbInfo && (
             <>
               <div className={styles.row}>
-                <span className={styles.label}>Total</span>
+                <span className={styles.label}>{t('db.total')}</span>
                 <span className={styles.infoValue}>{fmt(dbInfo.total)}</span>
               </div>
-              {dbInfo.tables?.map(t => (
-                <div className={styles.row} key={t.name}>
-                  <span className={styles.label}>{t.name}</span>
-                  <span className={styles.infoValue}>{fmt(t.size)}</span>
+              {dbInfo.tables?.map(tbl => (
+                <div className={styles.row} key={tbl.name}>
+                  <span className={styles.label}>{tbl.name}</span>
+                  <span className={styles.infoValue}>{fmt(tbl.size)}</span>
                 </div>
               ))}
             </>
           )}
-          {!loading && !dbInfo && <span className={styles.label}>Erro ao conectar</span>}
+          {!loading && !dbInfo && <span className={styles.label}>{t('db.connectionError')}</span>}
         </div>
       )}
     </div>
@@ -167,6 +173,7 @@ function DbSizeSection({ open, onToggle }) {
 }
 
 export default function SettingsPanel() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [openSection, setOpenSection] = useState(null);
 
@@ -175,7 +182,7 @@ export default function SettingsPanel() {
       <button
         className={`${styles.btn} ${open ? styles.btnActive : ''}`}
         onClick={() => setOpen(v => !v)}
-        title="Configurações"
+        title={t('settings.title')}
       >
         <GearIcon />
       </button>
@@ -185,12 +192,27 @@ export default function SettingsPanel() {
           <div className={styles.overlay} onClick={() => setOpen(false)} />
           <div className={styles.panel}>
             <div className={styles.header}>
-              <span className={styles.title}>Configurações</span>
+              <span className={styles.title}>{t('settings.title')}</span>
               <div className={styles.headerActions}>
                 <button className={styles.resetAll} onClick={resetAll}>Reset</button>
                 <button className={styles.close} onClick={() => setOpen(false)}>×</button>
               </div>
             </div>
+            <div className={styles.section}>
+              <div className={styles.row}>
+                <span className={styles.label}>{t('settings.language')}</span>
+                <select
+                  className={styles.input}
+                  value={getLanguage()}
+                  onChange={e => setLanguage(e.target.value)}
+                  style={{ width: 'auto', minWidth: 100 }}
+                >
+                  <option value="en">English</option>
+                  <option value="pt-BR">Português (BR)</option>
+                </select>
+              </div>
+            </div>
+            <div className={styles.divider} />
             {SETTINGS_SCHEMA.map((section, i) => (
               <React.Fragment key={section.section}>
                 {i > 0 && <div className={styles.divider} />}

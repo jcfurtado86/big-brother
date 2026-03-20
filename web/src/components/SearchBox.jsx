@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import styles from './SearchBox.module.css';
 import { NOMINATIM_URL } from '../providers/constants';
 import { getSetting } from '../providers/settingsStore';
 
 export default function SearchBox({ onSelect }) {
+  const { t, i18n } = useTranslation();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const timeoutRef = useRef(null);
@@ -38,7 +40,7 @@ export default function SearchBox({ onSelect }) {
     try {
       const limit = getSetting('SEARCH_LIMIT');
       const url = `${NOMINATIM_URL}?q=${encodeURIComponent(q)}&format=json&limit=${limit}`;
-      const res = await fetch(url, { headers: { 'Accept-Language': 'pt-BR,pt' } });
+      const res = await fetch(url, { headers: { 'Accept-Language': i18n.language === 'pt-BR' ? 'pt-BR,pt' : 'en-US,en' } });
       setResults(await res.json());
     } catch (e) {
       console.error(e);
@@ -57,7 +59,7 @@ export default function SearchBox({ onSelect }) {
       <input
         className={styles.input}
         type="text"
-        placeholder="Buscar local..."
+        placeholder={t('search.placeholder')}
         value={query}
         onChange={e => setQuery(e.target.value)}
         onKeyDown={e => e.key === 'Escape' && setResults([])}

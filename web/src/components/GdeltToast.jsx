@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { API_URL } from '../utils/api';
 import { GDELT_CATEGORY_META } from '../providers/gdeltIcons';
 import styles from './GdeltToast.module.css';
 
 const MAX_TOASTS = 5;
-const AUTO_DISMISS_MS = 15_000;
 const POLL_INTERVAL = 15 * 60 * 1000;
 const MAX_KNOWN_IDS = 2000;
 
@@ -15,6 +15,7 @@ function isCritical(r) {
 }
 
 export default function GdeltToast({ onFlyTo, onGdeltSelect }) {
+  const { t } = useTranslation();
   const [toasts, setToasts] = useState([]);
   const knownIdsRef = useRef(new Set());
   const timerRef = useRef(null);
@@ -88,69 +89,82 @@ export default function GdeltToast({ onFlyTo, onGdeltSelect }) {
     };
   }, [fetchNew]);
 
-  // Auto-dismiss
-  useEffect(() => {
-    if (toasts.length === 0) return;
-    const timer = setTimeout(() => {
-      setToasts(prev => prev.slice(0, -1));
-    }, AUTO_DISMISS_MS);
-    return () => clearTimeout(timer);
-  }, [toasts]);
-
-  const handleClick = (t) => {
-    if (t.lat != null && t.lng != null && onFlyTo) {
-      onFlyTo(t.lat, t.lng);
+  const handleClick = (toast) => {
+    if (toast.lat != null && toast.lng != null && onFlyTo) {
+      onFlyTo(toast.lat, toast.lng);
     }
     if (onGdeltSelect) {
       onGdeltSelect({
-        id: t.id,
-        title: t.title,
-        url: t.url,
-        domain: t.domain,
-        socialimage: t.socialimage,
-        event_type: t.eventType,
-        tone: t.tone,
-        tone_label: t.toneLabel,
-        goldstein_scale: t.goldstein,
-        lat: t.lat,
-        lng: t.lng,
-        country: t.country,
-        action_geo_name: t.actionGeo,
+        id: toast.id,
+        title: toast.title,
+        url: toast.url,
+        domain: toast.domain,
+        socialimage: toast.socialimage,
+        event_type: toast.eventType,
+        tone: toast.tone,
+        tone_label: toast.toneLabel,
+        goldstein_scale: toast.goldstein,
+        lat: toast.lat,
+        lng: toast.lng,
+        country: toast.country,
+        action_geo_name: toast.actionGeo,
       });
     }
-    setToasts(prev => prev.filter(x => x.id !== t.id));
+    setToasts(prev => prev.filter(x => x.id !== toast.id));
   };
 
   if (toasts.length === 0) return null;
 
   return (
     <div className={styles.container}>
-      {toasts.map(t => {
-        const meta = GDELT_CATEGORY_META[t.eventType] || GDELT_CATEGORY_META.conflict;
+      {toasts.map(toast => {
+        const meta = GDELT_CATEGORY_META[toast.eventType] || GDELT_CATEGORY_META.conflict;
         return (
           <div
-            key={t.id}
+            key={toast.id}
             className={styles.toast}
-            style={{ borderLeftColor: meta.color, cursor: 'pointer' }}
-            onClick={() => handleClick(t)}
+            style={{ borderLeftColor: meta.color, cursor: 'pointer', position: 'relative' }}
+            onClick={() => handleClick(toast)}
           >
-            {t.socialimage && (
+            <button
+              className={styles.closeBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                setToasts(prev => prev.filter(x => x.id !== toast.id));
+              }}
+              style={{
+                position: 'absolute',
+                top: 6,
+                right: 6,
+                background: 'rgba(0,0,0,0.5)',
+                border: 'none',
+                color: '#fff',
+                cursor: 'pointer',
+                borderRadius: '50%',
+                width: 20,
+                height: 20,
+                fontSize: 12,
+                lineHeight: '18px',
+                textAlign: 'center',
+                padding: 0,
+              }}
+            >
+              ×
+            </button>
+            {toast.socialimage && (
               <img
                 className={styles.thumb}
-                src={t.socialimage}
+                src={toast.socialimage}
                 alt=""
                 onError={e => { e.target.style.display = 'none'; }}
               />
             )}
             <div className={styles.content}>
               <div className={styles.badge} style={{ background: meta.color }}>
-                {meta.label}
+                {t(meta.label)}
               </div>
-              <div className={styles.title}>{t.title}</div>
-              <div className={styles.domain}>{t.domain}</div>
-            </div>
-            <div className={styles.progressBar}>
-              <div className={styles.progress} />
+              <div className={styles.title}>{toast.title}</div>
+              <div className={styles.domain}>{toast.domain}</div>
             </div>
           </div>
         );

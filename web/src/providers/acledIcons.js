@@ -27,10 +27,10 @@ export const ACLED_CATEGORIES = [
 ];
 
 export const ACLED_CATEGORY_META = {
-  battles:                    { label: 'Batalhas',               color: '#F44336' },
-  explosions_remote_violence: { label: 'Explosoes / Violencia remota', color: '#FF5722' },
-  violence_against_civilians: { label: 'Violencia contra civis', color: '#E91E63' },
-  protests:                   { label: 'Protestos',              color: '#FFC107' },
-  riots:                      { label: 'Tumultos',               color: '#FF9800' },
-  strategic_developments:     { label: 'Desenvolvimentos estrategicos', color: '#2196F3' },
+  battles:                    { label: 'cat.acled.battles',                    color: '#F44336' },
+  explosions_remote_violence: { label: 'cat.acled.explosions_remote_violence', color: '#FF5722' },
+  violence_against_civilians: { label: 'cat.acled.violence_against_civilians', color: '#E91E63' },
+  protests:                   { label: 'cat.acled.protests',                   color: '#FFC107' },
+  riots:                      { label: 'cat.acled.riots',                      color: '#FF9800' },
+  strategic_developments:     { label: 'cat.acled.strategic_developments',     color: '#2196F3' },
 };

@@ -37,16 +37,16 @@ export const VESSEL_CATEGORY_SIZE = {
 export const VESSEL_CATEGORIES = ['cargo', 'tanker', 'passenger', 'fishing', 'sailing', 'tug', 'military', 'sar', 'dark'];
 
 export const VESSEL_CATEGORY_META = {
-  cargo:     { label: 'Carga',      color: '#2196F3' },   // azul
-  tanker:    { label: 'Tanque',     color: '#F44336' },   // vermelho
-  passenger: { label: 'Passageiro', color: '#4CAF50' },   // verde
-  fishing:   { label: 'Pesca',      color: '#FF9800' },   // laranja
-  sailing:   { label: 'Veleiro',    color: '#FFFFFF' },   // branco
-  tug:       { label: 'Rebocador',  color: '#FFEB3B' },   // amarelo
-  military:  { label: 'Militar',    color: '#2E7D32' },   // verde escuro
-  sar:       { label: 'SAR',        color: '#F44336' },   // vermelho
-  unknown:   { label: 'Outro',      color: '#9E9E9E' },   // cinza
-  dark:      { label: 'Sancionado', color: '#9C27B0' },   // roxo
+  cargo:     { label: 'cat.vessel.cargo',      color: '#2196F3' },   // azul
+  tanker:    { label: 'cat.vessel.tanker',     color: '#F44336' },   // vermelho
+  passenger: { label: 'cat.vessel.passenger', color: '#4CAF50' },   // verde
+  fishing:   { label: 'cat.vessel.fishing',      color: '#FF9800' },   // laranja
+  sailing:   { label: 'cat.vessel.sailing',    color: '#FFFFFF' },   // branco
+  tug:       { label: 'cat.vessel.tug',  color: '#FFEB3B' },   // amarelo
+  military:  { label: 'cat.vessel.military',    color: '#2E7D32' },   // verde escuro
+  sar:       { label: 'cat.vessel.sar',        color: '#F44336' },   // vermelho
+  unknown:   { label: 'cat.vessel.unknown',      color: '#9E9E9E' },   // cinza
+  dark:      { label: 'cat.vessel.sanctioned', color: '#9C27B0' },   // roxo
 };
 
 // Cesium Color por categoria (para billboard.color)

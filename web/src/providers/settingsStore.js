@@ -4,101 +4,101 @@ import * as C from './constants';
 /* ── Schema ──────────────────────────────────────────────────────────────── */
 
 export const SETTINGS_SCHEMA = [
-  { section: 'Câmera', items: [
-    { key: 'ZOOM_SENSITIVITY',  label: 'Sensibilidade do zoom',  desc: 'Multiplicador da velocidade de zoom com a roda do mouse', default: C.ZOOM_SENSITIVITY,  min: 0.01, max: 0.3,  step: 0.01 },
-    { key: 'ZOOM_MIN',          label: 'Zoom mín (m)',           desc: 'Altitude mínima da câmera em metros (limite de aproximação)', default: C.ZOOM_MIN,          min: 10,   max: 1000, step: 10 },
-    { key: 'ZOOM_MAX',          label: 'Zoom máx (m)',           desc: 'Altitude máxima da câmera em metros (limite de afastamento)', default: C.ZOOM_MAX,          min: 10_000_000, max: 100_000_000, step: 5_000_000 },
-    { key: 'FLY_DURATION',      label: 'Duração do voo (s)',     desc: 'Duração da animação ao voar até um ponto com duplo-clique', default: C.FLY_DURATION,      min: 0.2,  max: 5,    step: 0.1 },
-    { key: 'FLY_ZOOM_FACTOR',   label: 'Fator de zoom (voo)',    desc: 'Divisor da altitude ao voar com duplo-clique (maior = mais perto)', default: C.FLY_ZOOM_FACTOR,   min: 1,    max: 10,   step: 1 },
-    { key: 'FLY_MIN_ALT',       label: 'Altitude mín voo (m)',   desc: 'Altitude mínima atingida ao voar com duplo-clique', default: C.FLY_MIN_ALT,       min: 500,  max: 10_000, step: 500 },
+  { section: 'settings.section.camera', items: [
+    { key: 'ZOOM_SENSITIVITY',  label: 'settings.ZOOM_SENSITIVITY',  desc: 'settings.ZOOM_SENSITIVITY_desc', default: C.ZOOM_SENSITIVITY,  min: 0.01, max: 0.3,  step: 0.01 },
+    { key: 'ZOOM_MIN',          label: 'settings.ZOOM_MIN',          desc: 'settings.ZOOM_MIN_desc', default: C.ZOOM_MIN,          min: 10,   max: 1000, step: 10 },
+    { key: 'ZOOM_MAX',          label: 'settings.ZOOM_MAX',          desc: 'settings.ZOOM_MAX_desc', default: C.ZOOM_MAX,          min: 10_000_000, max: 100_000_000, step: 5_000_000 },
+    { key: 'FLY_DURATION',      label: 'settings.FLY_DURATION',      desc: 'settings.FLY_DURATION_desc', default: C.FLY_DURATION,      min: 0.2,  max: 5,    step: 0.1 },
+    { key: 'FLY_ZOOM_FACTOR',   label: 'settings.FLY_ZOOM_FACTOR',   desc: 'settings.FLY_ZOOM_FACTOR_desc', default: C.FLY_ZOOM_FACTOR,   min: 1,    max: 10,   step: 1 },
+    { key: 'FLY_MIN_ALT',       label: 'settings.FLY_MIN_ALT',       desc: 'settings.FLY_MIN_ALT_desc', default: C.FLY_MIN_ALT,       min: 500,  max: 10_000, step: 500 },
   ]},
-  { section: 'Aeronaves', items: [
-    { key: 'FLIGHT_ALT_SCALE',  label: 'Escala de altitude',     desc: 'Fator estético que exagera a altitude dos aviões no globo para melhor visualização', default: C.FLIGHT_ALT_SCALE,  min: 1,    max: 15,   step: 0.5 },
-    { key: 'DEAD_RECKONING_MS', label: 'Dead reckoning (ms)',    desc: 'Intervalo de interpolação de posição entre atualizações da API (animação suave)', default: C.DEAD_RECKONING_MS, min: 100,  max: 5000, step: 100 },
-    { key: 'PLANE_BATCH_SIZE',  label: 'Batch size (billboards)',desc: 'Quantidade de ícones de avião renderizados por frame (maior = mais rápido, mais CPU)', default: C.PLANE_BATCH_SIZE,  min: 5,    max: 200,  step: 5 },
-    { key: 'CALLSIGN_BATCH_SIZE',label:'Batch size (labels)',    desc: 'Quantidade de labels de callsign processados por idle slice', default: C.CALLSIGN_BATCH_SIZE, min: 5,  max: 200,  step: 5 },
-    { key: 'FETCH_PADDING',     label: 'Padding bbox (°)',       desc: 'Expansão proporcional da área de busca além do viewport visível', default: C.FETCH_PADDING,     min: 0,    max: 5,    step: 0.1 },
+  { section: 'settings.section.aircraft', items: [
+    { key: 'FLIGHT_ALT_SCALE',  label: 'settings.FLIGHT_ALT_SCALE',  desc: 'settings.FLIGHT_ALT_SCALE_desc', default: C.FLIGHT_ALT_SCALE,  min: 1,    max: 15,   step: 0.5 },
+    { key: 'DEAD_RECKONING_MS', label: 'settings.DEAD_RECKONING_MS', desc: 'settings.DEAD_RECKONING_MS_desc', default: C.DEAD_RECKONING_MS, min: 100,  max: 5000, step: 100 },
+    { key: 'PLANE_BATCH_SIZE',  label: 'settings.PLANE_BATCH_SIZE',  desc: 'settings.PLANE_BATCH_SIZE_desc', default: C.PLANE_BATCH_SIZE,  min: 5,    max: 200,  step: 5 },
+    { key: 'CALLSIGN_BATCH_SIZE',label:'settings.CALLSIGN_BATCH_SIZE',desc: 'settings.CALLSIGN_BATCH_SIZE_desc', default: C.CALLSIGN_BATCH_SIZE, min: 5,  max: 200,  step: 5 },
+    { key: 'FETCH_PADDING',     label: 'settings.FETCH_PADDING',     desc: 'settings.FETCH_PADDING_desc', default: C.FETCH_PADDING,     min: 0,    max: 5,    step: 0.1 },
   ]},
-  { section: 'Providers', items: [
-    { key: 'AL_POLL_MS',        label: 'Polling AL (ms)',        desc: 'Intervalo de polling do airplanes.live em milissegundos', default: C.AL_POLL_MS,        min: 2000, max: 300_000, step: 1000 },
-    { key: 'AL_RETRY_MS',       label: 'Retry AL (ms)',          desc: 'Tempo de espera antes de tentar novamente após erro no airplanes.live', default: C.AL_RETRY_MS,       min: 1000, max: 30_000, step: 1000 },
-    { key: 'AL_MIN_GAP_MS',     label: 'Gap mín AL (ms)',        desc: 'Intervalo mínimo entre requisições ao airplanes.live (evita rate limiting)', default: C.AL_MIN_GAP_MS,     min: 500,  max: 5000, step: 100 },
+  { section: 'settings.section.providers', items: [
+    { key: 'AL_POLL_MS',        label: 'settings.AL_POLL_MS',        desc: 'settings.AL_POLL_MS_desc', default: C.AL_POLL_MS,        min: 2000, max: 300_000, step: 1000 },
+    { key: 'AL_RETRY_MS',       label: 'settings.AL_RETRY_MS',       desc: 'settings.AL_RETRY_MS_desc', default: C.AL_RETRY_MS,       min: 1000, max: 30_000, step: 1000 },
+    { key: 'AL_MIN_GAP_MS',     label: 'settings.AL_MIN_GAP_MS',     desc: 'settings.AL_MIN_GAP_MS_desc', default: C.AL_MIN_GAP_MS,     min: 500,  max: 5000, step: 100 },
   ]},
-  { section: 'Labels', items: [
-    { key: 'LABEL_NEAR',        label: 'Visível abaixo (m)',     desc: 'Altitude da câmera abaixo da qual os labels ficam 100% visíveis', default: C.LABEL_NEAR,        min: 500_000, max: 10_000_000, step: 500_000 },
-    { key: 'LABEL_FAR',         label: 'Invisível acima (m)',    desc: 'Altitude da câmera acima da qual os labels ficam invisíveis', default: C.LABEL_FAR,         min: 1_000_000, max: 20_000_000, step: 500_000 },
+  { section: 'settings.section.labels', items: [
+    { key: 'LABEL_NEAR',        label: 'settings.LABEL_NEAR',        desc: 'settings.LABEL_NEAR_desc', default: C.LABEL_NEAR,        min: 500_000, max: 10_000_000, step: 500_000 },
+    { key: 'LABEL_FAR',         label: 'settings.LABEL_FAR',         desc: 'settings.LABEL_FAR_desc', default: C.LABEL_FAR,         min: 1_000_000, max: 20_000_000, step: 500_000 },
   ]},
-  { section: 'Embarcações', items: [
-    { key: 'VESSEL_BATCH_SIZE', label: 'Batch size',             desc: 'Quantidade de ícones de embarcação renderizados por frame', default: C.VESSEL_BATCH_SIZE, min: 5,    max: 200,  step: 5 },
-    { key: 'VESSEL_LABEL_BATCH',label: 'Batch labels',           desc: 'Quantidade de labels de embarcação processados por idle slice', default: C.VESSEL_LABEL_BATCH,min: 5,    max: 200,  step: 5 },
-    { key: 'VESSEL_STALE_MS',   label: 'Eviction (ms)',          desc: 'Tempo sem atualização após o qual a embarcação é removida do mapa', default: C.VESSEL_STALE_MS,   min: 60_000, max: 3_600_000, step: 60_000 },
-    { key: 'VESSEL_FLUSH_MS',   label: 'Flush WS (ms)',          desc: 'Intervalo de transferência dos dados do WebSocket para o estado React', default: C.VESSEL_FLUSH_MS,   min: 500,  max: 10_000, step: 500 },
-    { key: 'VESSEL_BBOX_DEBOUNCE',label:'Debounce bbox (ms)',    desc: 'Tempo de espera antes de atualizar a área de busca ao mover o mapa', default: C.VESSEL_BBOX_DEBOUNCE, min: 500, max: 10_000, step: 500 },
-    { key: 'VESSEL_MIN_PX',     label: 'Ícone mín (px)',         desc: 'Tamanho mínimo do ícone de embarcação em pixels', default: C.VESSEL_MIN_PX,     min: 10,   max: 64,   step: 2 },
-    { key: 'VESSEL_MAX_PX',     label: 'Ícone máx (px)',         desc: 'Tamanho máximo do ícone de embarcação em pixels', default: C.VESSEL_MAX_PX,     min: 20,   max: 128,  step: 2 },
+  { section: 'settings.section.vessels', items: [
+    { key: 'VESSEL_BATCH_SIZE', label: 'settings.VESSEL_BATCH_SIZE', desc: 'settings.VESSEL_BATCH_SIZE_desc', default: C.VESSEL_BATCH_SIZE, min: 5,    max: 200,  step: 5 },
+    { key: 'VESSEL_LABEL_BATCH',label: 'settings.VESSEL_LABEL_BATCH',desc: 'settings.VESSEL_LABEL_BATCH_desc', default: C.VESSEL_LABEL_BATCH,min: 5,    max: 200,  step: 5 },
+    { key: 'VESSEL_STALE_MS',   label: 'settings.VESSEL_STALE_MS',   desc: 'settings.VESSEL_STALE_MS_desc', default: C.VESSEL_STALE_MS,   min: 60_000, max: 3_600_000, step: 60_000 },
+    { key: 'VESSEL_FLUSH_MS',   label: 'settings.VESSEL_FLUSH_MS',   desc: 'settings.VESSEL_FLUSH_MS_desc', default: C.VESSEL_FLUSH_MS,   min: 500,  max: 10_000, step: 500 },
+    { key: 'VESSEL_BBOX_DEBOUNCE',label:'settings.VESSEL_BBOX_DEBOUNCE',desc: 'settings.VESSEL_BBOX_DEBOUNCE_desc', default: C.VESSEL_BBOX_DEBOUNCE, min: 500, max: 10_000, step: 500 },
+    { key: 'VESSEL_MIN_PX',     label: 'settings.VESSEL_MIN_PX',     desc: 'settings.VESSEL_MIN_PX_desc', default: C.VESSEL_MIN_PX,     min: 10,   max: 64,   step: 2 },
+    { key: 'VESSEL_MAX_PX',     label: 'settings.VESSEL_MAX_PX',     desc: 'settings.VESSEL_MAX_PX_desc', default: C.VESSEL_MAX_PX,     min: 20,   max: 128,  step: 2 },
   ]},
-  { section: 'Satélites', items: [
-    { key: 'SAT_ICON_SIZE',     label: 'Ícone (px)',             desc: 'Tamanho do ícone de satélite em pixels', default: C.SAT_ICON_SIZE,     min: 8,    max: 64,   step: 2 },
-    { key: 'SATELLITE_BATCH_SIZE',label:'Batch size',            desc: 'Quantidade de satélites renderizados por frame', default: C.SATELLITE_BATCH_SIZE, min: 10, max: 500, step: 10 },
-    { key: 'SATELLITE_LABEL_BATCH',label:'Batch labels',         desc: 'Quantidade de labels de satélite processados por idle slice', default: C.SATELLITE_LABEL_BATCH,min: 5, max: 200, step: 5 },
-    { key: 'TICK_INTERVAL_MS',  label: 'Tick interval (ms)',     desc: 'Intervalo de propagação orbital e atualização de posição dos satélites', default: C.TICK_INTERVAL_MS,  min: 100,  max: 5000, step: 100 },
+  { section: 'settings.section.satellites', items: [
+    { key: 'SAT_ICON_SIZE',     label: 'settings.SAT_ICON_SIZE',     desc: 'settings.SAT_ICON_SIZE_desc', default: C.SAT_ICON_SIZE,     min: 8,    max: 64,   step: 2 },
+    { key: 'SATELLITE_BATCH_SIZE',label:'settings.SATELLITE_BATCH_SIZE',desc: 'settings.SATELLITE_BATCH_SIZE_desc', default: C.SATELLITE_BATCH_SIZE, min: 10, max: 500, step: 10 },
+    { key: 'SATELLITE_LABEL_BATCH',label:'settings.SATELLITE_LABEL_BATCH',desc: 'settings.SATELLITE_LABEL_BATCH_desc', default: C.SATELLITE_LABEL_BATCH,min: 5, max: 200, step: 5 },
+    { key: 'TICK_INTERVAL_MS',  label: 'settings.TICK_INTERVAL_MS',  desc: 'settings.TICK_INTERVAL_MS_desc', default: C.TICK_INTERVAL_MS,  min: 100,  max: 5000, step: 100 },
   ]},
-  { section: 'Telecom', items: [
-    { key: 'TELECOM_DEBOUNCE_MS',label:'Debounce (ms)',          desc: 'Tempo de espera antes de carregar novos tiles de telecom ao mover o mapa', default: C.TELECOM_DEBOUNCE_MS,min: 100, max: 5000, step: 100 },
-    { key: 'TELECOM_MIN_ZOOM',  label: 'Zoom mín',              desc: 'Nível de zoom mínimo para carregar dados de telecom (menor = mais distante)', default: C.TELECOM_MIN_ZOOM,  min: 1,    max: 10,   step: 1 },
-    { key: 'TELECOM_MAX_ZOOM',  label: 'Zoom máx',              desc: 'Nível de zoom máximo para tiles de telecom (maior = mais detalhe)', default: C.TELECOM_MAX_ZOOM,  min: 8,    max: 20,   step: 1 },
-    { key: 'TELECOM_MAX_TILES', label: 'Max tiles',              desc: 'Número máximo de tiles de telecom carregados por viewport', default: C.TELECOM_MAX_TILES, min: 10,   max: 200,  step: 10 },
-    { key: 'TELECOM_MAST_SIZE', label: 'Torre (px)',             desc: 'Tamanho do ícone de torre de telecom em pixels', default: C.TELECOM_MAST_SIZE, min: 8,    max: 64,   step: 2 },
-    { key: 'TELECOM_DC_SIZE',   label: 'Data center (px)',       desc: 'Tamanho do ícone de data center em pixels', default: C.TELECOM_DC_SIZE,   min: 8,    max: 64,   step: 2 },
-    { key: 'TELECOM_MAX_CACHE', label: 'Max cache (tiles)',      desc: 'Número máximo de tiles mantidos em cache na memória', default: C.TELECOM_MAX_CACHE, min: 50,   max: 1000, step: 50 },
+  { section: 'settings.section.telecom', items: [
+    { key: 'TELECOM_DEBOUNCE_MS',label:'settings.TELECOM_DEBOUNCE_MS',desc: 'settings.TELECOM_DEBOUNCE_MS_desc', default: C.TELECOM_DEBOUNCE_MS,min: 100, max: 5000, step: 100 },
+    { key: 'TELECOM_MIN_ZOOM',  label: 'settings.TELECOM_MIN_ZOOM',  desc: 'settings.TELECOM_MIN_ZOOM_desc', default: C.TELECOM_MIN_ZOOM,  min: 1,    max: 10,   step: 1 },
+    { key: 'TELECOM_MAX_ZOOM',  label: 'settings.TELECOM_MAX_ZOOM',  desc: 'settings.TELECOM_MAX_ZOOM_desc', default: C.TELECOM_MAX_ZOOM,  min: 8,    max: 20,   step: 1 },
+    { key: 'TELECOM_MAX_TILES', label: 'settings.TELECOM_MAX_TILES', desc: 'settings.TELECOM_MAX_TILES_desc', default: C.TELECOM_MAX_TILES, min: 10,   max: 200,  step: 10 },
+    { key: 'TELECOM_MAST_SIZE', label: 'settings.TELECOM_MAST_SIZE', desc: 'settings.TELECOM_MAST_SIZE_desc', default: C.TELECOM_MAST_SIZE, min: 8,    max: 64,   step: 2 },
+    { key: 'TELECOM_DC_SIZE',   label: 'settings.TELECOM_DC_SIZE',   desc: 'settings.TELECOM_DC_SIZE_desc', default: C.TELECOM_DC_SIZE,   min: 8,    max: 64,   step: 2 },
+    { key: 'TELECOM_MAX_CACHE', label: 'settings.TELECOM_MAX_CACHE', desc: 'settings.TELECOM_MAX_CACHE_desc', default: C.TELECOM_MAX_CACHE, min: 50,   max: 1000, step: 50 },
   ]},
-  { section: 'Clima', items: [
-    { key: 'WEATHER_ZOOM',      label: 'Tile zoom',              desc: 'Nível de zoom dos tiles de clima (maior = mais detalhe, mais requisições)', default: C.WEATHER_ZOOM,      min: 1,    max: 6,    step: 1 },
-    { key: 'WEATHER_REFRESH_MS',label: 'Refresh (ms)',            desc: 'Intervalo de atualização dos tiles de clima em milissegundos', default: C.WEATHER_REFRESH_MS,min: 60_000, max: 3_600_000, step: 60_000 },
+  { section: 'settings.section.weather', items: [
+    { key: 'WEATHER_ZOOM',      label: 'settings.WEATHER_ZOOM',      desc: 'settings.WEATHER_ZOOM_desc', default: C.WEATHER_ZOOM,      min: 1,    max: 6,    step: 1 },
+    { key: 'WEATHER_REFRESH_MS',label: 'settings.WEATHER_REFRESH_MS',desc: 'settings.WEATHER_REFRESH_MS_desc', default: C.WEATHER_REFRESH_MS,min: 60_000, max: 3_600_000, step: 60_000 },
   ]},
-  { section: 'Rotas', items: [
-    { key: 'AIR_ROUTE_ALT',     label: 'Altitude aérea (m)',     desc: 'Altitude de renderização das rotas aéreas no globo em metros', default: C.AIR_ROUTE_ALT,     min: 1000, max: 50_000, step: 1000 },
-    { key: 'ROUTE_LINE_WIDTH',  label: 'Espessura da linha',     desc: 'Espessura das linhas de rota em pixels', default: C.ROUTE_LINE_WIDTH,  min: 1,    max: 10,   step: 0.5 },
-    { key: 'ROUTE_BBOX_PADDING',label: 'Padding bbox (°)',       desc: 'Graus de expansão da área visível para pré-carregar rotas além do viewport', default: C.ROUTE_BBOX_PADDING,min: 0,    max: 20,   step: 1 },
-    { key: 'ROUTE_BATCH_SIZE',  label: 'Batch size',             desc: 'Quantidade de polylines de rota renderizadas por frame', default: C.ROUTE_BATCH_SIZE,  min: 10,   max: 500,  step: 10 },
+  { section: 'settings.section.routes', items: [
+    { key: 'AIR_ROUTE_ALT',     label: 'settings.AIR_ROUTE_ALT',     desc: 'settings.AIR_ROUTE_ALT_desc', default: C.AIR_ROUTE_ALT,     min: 1000, max: 50_000, step: 1000 },
+    { key: 'ROUTE_LINE_WIDTH',  label: 'settings.ROUTE_LINE_WIDTH',  desc: 'settings.ROUTE_LINE_WIDTH_desc', default: C.ROUTE_LINE_WIDTH,  min: 1,    max: 10,   step: 0.5 },
+    { key: 'ROUTE_BBOX_PADDING',label: 'settings.ROUTE_BBOX_PADDING',desc: 'settings.ROUTE_BBOX_PADDING_desc', default: C.ROUTE_BBOX_PADDING,min: 0,    max: 20,   step: 1 },
+    { key: 'ROUTE_BATCH_SIZE',  label: 'settings.ROUTE_BATCH_SIZE',  desc: 'settings.ROUTE_BATCH_SIZE_desc', default: C.ROUTE_BATCH_SIZE,  min: 10,   max: 500,  step: 10 },
   ]},
-  { section: 'Antenas', items: [
-    { key: 'RECEIVER_ICON_SIZE',       label: 'Ícone (px)',             desc: 'Tamanho do ícone de antena/receptor em pixels', default: C.RECEIVER_ICON_SIZE,       min: 10,   max: 128,  step: 2 },
-    { key: 'RECEIVER_MAX_ALT',         label: 'Alt máx visível (m)',    desc: 'Altitude da câmera acima da qual as antenas ficam ocultas', default: C.RECEIVER_MAX_ALT,         min: 1_000_000, max: 200_000_000, step: 10_000_000 },
-    { key: 'RECEIVER_VIEWPORT_PAD',    label: 'Padding viewport (°)',   desc: 'Graus de expansão do viewport para carregar antenas além da área visível', default: C.RECEIVER_VIEWPORT_PAD,    min: 0,    max: 10,   step: 1 },
-    { key: 'ADSB_RECEIVERS_POLL_MS',   label: 'Polling ADS-B (ms)',     desc: 'Intervalo de polling das antenas ADS-B em milissegundos', default: C.ADSB_RECEIVERS_POLL_MS,   min: 60_000, max: 7_200_000, step: 60_000 },
-    { key: 'AIS_STATION_FLUSH_MS',     label: 'Flush AIS (ms)',         desc: 'Intervalo de transferência dos dados AIS do WebSocket para o estado React', default: C.AIS_STATION_FLUSH_MS,     min: 500,  max: 30_000, step: 500 },
+  { section: 'settings.section.antennas', items: [
+    { key: 'RECEIVER_ICON_SIZE',       label: 'settings.RECEIVER_ICON_SIZE',       desc: 'settings.RECEIVER_ICON_SIZE_desc', default: C.RECEIVER_ICON_SIZE,       min: 10,   max: 128,  step: 2 },
+    { key: 'RECEIVER_MAX_ALT',         label: 'settings.RECEIVER_MAX_ALT',         desc: 'settings.RECEIVER_MAX_ALT_desc', default: C.RECEIVER_MAX_ALT,         min: 1_000_000, max: 200_000_000, step: 10_000_000 },
+    { key: 'RECEIVER_VIEWPORT_PAD',    label: 'settings.RECEIVER_VIEWPORT_PAD',    desc: 'settings.RECEIVER_VIEWPORT_PAD_desc', default: C.RECEIVER_VIEWPORT_PAD,    min: 0,    max: 10,   step: 1 },
+    { key: 'ADSB_RECEIVERS_POLL_MS',   label: 'settings.ADSB_RECEIVERS_POLL_MS',   desc: 'settings.ADSB_RECEIVERS_POLL_MS_desc', default: C.ADSB_RECEIVERS_POLL_MS,   min: 60_000, max: 7_200_000, step: 60_000 },
+    { key: 'AIS_STATION_FLUSH_MS',     label: 'settings.AIS_STATION_FLUSH_MS',     desc: 'settings.AIS_STATION_FLUSH_MS_desc', default: C.AIS_STATION_FLUSH_MS,     min: 500,  max: 30_000, step: 500 },
   ]},
-  { section: 'Radares / ATC', items: [
-    { key: 'ATC_DEBOUNCE_MS',  label: 'Debounce câmera (ms)',   desc: 'Tempo de espera antes de buscar novos dados ATC ao mover o mapa', default: C.ATC_DEBOUNCE_MS,  min: 500,  max: 10_000, step: 500 },
-    { key: 'ATC_MAX_ALT',      label: 'Alt máx visível (m)',    desc: 'Altitude máxima da câmera para exibir dados ATC', default: C.ATC_MAX_ALT,      min: 100_000, max: 200_000_000, step: 10_000_000 },
-    { key: 'ATC_TOWER_SIZE',   label: 'Ícone torre (px)',       desc: 'Tamanho do ícone de torre de controle em pixels', default: C.ATC_TOWER_SIZE,   min: 10, max: 64, step: 2 },
-    { key: 'ATC_RADAR_SIZE',   label: 'Ícone radar (px)',       desc: 'Tamanho do ícone de radar em pixels', default: C.ATC_RADAR_SIZE,   min: 10, max: 64, step: 2 },
+  { section: 'settings.section.radarAtc', items: [
+    { key: 'ATC_DEBOUNCE_MS',  label: 'settings.ATC_DEBOUNCE_MS',  desc: 'settings.ATC_DEBOUNCE_MS_desc', default: C.ATC_DEBOUNCE_MS,  min: 500,  max: 10_000, step: 500 },
+    { key: 'ATC_MAX_ALT',      label: 'settings.ATC_MAX_ALT',      desc: 'settings.ATC_MAX_ALT_desc', default: C.ATC_MAX_ALT,      min: 100_000, max: 200_000_000, step: 10_000_000 },
+    { key: 'ATC_TOWER_SIZE',   label: 'settings.ATC_TOWER_SIZE',   desc: 'settings.ATC_TOWER_SIZE_desc', default: C.ATC_TOWER_SIZE,   min: 10, max: 64, step: 2 },
+    { key: 'ATC_RADAR_SIZE',   label: 'settings.ATC_RADAR_SIZE',   desc: 'settings.ATC_RADAR_SIZE_desc', default: C.ATC_RADAR_SIZE,   min: 10, max: 64, step: 2 },
   ]},
-  { section: 'Militar', items: [
-    { key: 'MILITARY_ICON_SIZE',   label: 'Ícone (px)',             desc: 'Tamanho do ícone de instalação militar em pixels', default: C.MILITARY_ICON_SIZE,   min: 10, max: 64, step: 2 },
-    { key: 'MILITARY_DEBOUNCE_MS', label: 'Debounce câmera (ms)',   desc: 'Tempo de espera antes de filtrar dados militares ao mover o mapa', default: C.MILITARY_DEBOUNCE_MS, min: 500, max: 10_000, step: 500 },
-    { key: 'MILITARY_MAX_ALT',     label: 'Alt máx visível (m)',    desc: 'Altitude máxima da câmera para exibir instalações militares', default: C.MILITARY_MAX_ALT,     min: 100_000, max: 200_000_000, step: 10_000_000 },
+  { section: 'settings.section.military', items: [
+    { key: 'MILITARY_ICON_SIZE',   label: 'settings.MILITARY_ICON_SIZE',   desc: 'settings.MILITARY_ICON_SIZE_desc', default: C.MILITARY_ICON_SIZE,   min: 10, max: 64, step: 2 },
+    { key: 'MILITARY_DEBOUNCE_MS', label: 'settings.MILITARY_DEBOUNCE_MS', desc: 'settings.MILITARY_DEBOUNCE_MS_desc', default: C.MILITARY_DEBOUNCE_MS, min: 500, max: 10_000, step: 500 },
+    { key: 'MILITARY_MAX_ALT',     label: 'settings.MILITARY_MAX_ALT',     desc: 'settings.MILITARY_MAX_ALT_desc', default: C.MILITARY_MAX_ALT,     min: 100_000, max: 200_000_000, step: 10_000_000 },
   ]},
-  { section: 'Conflitos (ACLED)', items: [
-    { key: 'ACLED_ICON_SIZE',     label: 'Icone (px)',             desc: 'Tamanho do icone de evento ACLED em pixels', default: C.ACLED_ICON_SIZE,     min: 10, max: 64, step: 2 },
-    { key: 'ACLED_DEBOUNCE_MS',   label: 'Debounce camera (ms)',   desc: 'Tempo de espera antes de filtrar eventos ao mover o mapa', default: C.ACLED_DEBOUNCE_MS, min: 500, max: 10_000, step: 500 },
-    { key: 'ACLED_MAX_ALT',       label: 'Alt max visivel (m)',    desc: 'Altitude maxima da camera para exibir eventos ACLED', default: C.ACLED_MAX_ALT,     min: 100_000, max: 200_000_000, step: 10_000_000 },
+  { section: 'settings.section.conflictsAcled', items: [
+    { key: 'ACLED_ICON_SIZE',     label: 'settings.ACLED_ICON_SIZE',     desc: 'settings.ACLED_ICON_SIZE_desc', default: C.ACLED_ICON_SIZE,     min: 10, max: 64, step: 2 },
+    { key: 'ACLED_DEBOUNCE_MS',   label: 'settings.ACLED_DEBOUNCE_MS',   desc: 'settings.ACLED_DEBOUNCE_MS_desc', default: C.ACLED_DEBOUNCE_MS, min: 500, max: 10_000, step: 500 },
+    { key: 'ACLED_MAX_ALT',       label: 'settings.ACLED_MAX_ALT',       desc: 'settings.ACLED_MAX_ALT_desc', default: C.ACLED_MAX_ALT,     min: 100_000, max: 200_000_000, step: 10_000_000 },
   ]},
-  { section: 'Webcams', items: [
-    { key: 'WEBCAM_ICON_SIZE',     label: 'Icone (px)',             desc: 'Tamanho do icone de webcam em pixels', default: C.WEBCAM_ICON_SIZE,     min: 10, max: 64, step: 2 },
-    { key: 'WEBCAM_DEBOUNCE_MS',   label: 'Debounce camera (ms)',   desc: 'Tempo de espera antes de buscar webcams ao mover o mapa', default: C.WEBCAM_DEBOUNCE_MS, min: 500, max: 10_000, step: 500 },
-    { key: 'WEBCAM_MAX_ALT',       label: 'Alt max visivel (m)',    desc: 'Altitude maxima da camera para exibir webcams', default: C.WEBCAM_MAX_ALT,     min: 10_000, max: 200_000, step: 10_000 },
+  { section: 'settings.section.webcams', items: [
+    { key: 'WEBCAM_ICON_SIZE',     label: 'settings.WEBCAM_ICON_SIZE',     desc: 'settings.WEBCAM_ICON_SIZE_desc', default: C.WEBCAM_ICON_SIZE,     min: 10, max: 64, step: 2 },
+    { key: 'WEBCAM_DEBOUNCE_MS',   label: 'settings.WEBCAM_DEBOUNCE_MS',   desc: 'settings.WEBCAM_DEBOUNCE_MS_desc', default: C.WEBCAM_DEBOUNCE_MS, min: 500, max: 10_000, step: 500 },
+    { key: 'WEBCAM_MAX_ALT',       label: 'settings.WEBCAM_MAX_ALT',       desc: 'settings.WEBCAM_MAX_ALT_desc', default: C.WEBCAM_MAX_ALT,     min: 10_000, max: 200_000, step: 10_000 },
   ]},
-  { section: 'Nuclear', items: [
-    { key: 'NUCLEAR_ICON_SIZE',    label: 'Ícone (px)',             desc: 'Tamanho do ícone de usina nuclear em pixels', default: C.NUCLEAR_ICON_SIZE,    min: 10, max: 64, step: 2 },
+  { section: 'settings.section.nuclear', items: [
+    { key: 'NUCLEAR_ICON_SIZE',    label: 'settings.NUCLEAR_ICON_SIZE',    desc: 'settings.NUCLEAR_ICON_SIZE_desc', default: C.NUCLEAR_ICON_SIZE,    min: 10, max: 64, step: 2 },
   ]},
-  { section: 'Espaço Aéreo', items: [
-    { key: 'AIRSPACE_DEBOUNCE_MS', label: 'Debounce câmera (ms)',   desc: 'Tempo de espera antes de filtrar zonas de exclusão ao mover o mapa', default: C.AIRSPACE_DEBOUNCE_MS, min: 500, max: 10_000, step: 500 },
-    { key: 'AIRSPACE_MAX_ALT',     label: 'Alt máx visível (m)',    desc: 'Altitude máxima da câmera para exibir zonas de exclusão aérea', default: C.AIRSPACE_MAX_ALT,     min: 100_000, max: 200_000_000, step: 10_000_000 },
+  { section: 'settings.section.airspace', items: [
+    { key: 'AIRSPACE_DEBOUNCE_MS', label: 'settings.AIRSPACE_DEBOUNCE_MS', desc: 'settings.AIRSPACE_DEBOUNCE_MS_desc', default: C.AIRSPACE_DEBOUNCE_MS, min: 500, max: 10_000, step: 500 },
+    { key: 'AIRSPACE_MAX_ALT',     label: 'settings.AIRSPACE_MAX_ALT',     desc: 'settings.AIRSPACE_MAX_ALT_desc', default: C.AIRSPACE_MAX_ALT,     min: 100_000, max: 200_000_000, step: 10_000_000 },
   ]},
-  { section: 'Busca', items: [
-    { key: 'SEARCH_LIMIT',      label: 'Resultados máx',         desc: 'Número máximo de resultados exibidos na busca', default: C.SEARCH_LIMIT,      min: 1,    max: 20,   step: 1 },
+  { section: 'settings.section.search', items: [
+    { key: 'SEARCH_LIMIT',      label: 'settings.SEARCH_LIMIT',      desc: 'settings.SEARCH_LIMIT_desc', default: C.SEARCH_LIMIT,      min: 1,    max: 20,   step: 1 },
   ]},
 ];
 

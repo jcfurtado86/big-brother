@@ -26,11 +26,11 @@ export const NUCLEAR_CATEGORIES = [
 ];
 
 export const NUCLEAR_CATEGORY_META = {
-  operational:            { label: 'Operacionais',      color: '#4CAF50' },
-  under_construction:     { label: 'Em construcao',     color: '#2196F3' },
-  planned:                { label: 'Planejadas',        color: '#FFC107' },
-  shutdown:               { label: 'Desativadas',       color: '#9E9E9E' },
-  suspended_operation:    { label: 'Suspensas',         color: '#FF9800' },
+  operational:            { label: 'cat.nuclear.operational',          color: '#4CAF50' },
+  under_construction:     { label: 'cat.nuclear.under_construction',  color: '#2196F3' },
+  planned:                { label: 'cat.nuclear.planned',             color: '#FFC107' },
+  shutdown:               { label: 'cat.nuclear.shutdown',            color: '#9E9E9E' },
+  suspended_operation:    { label: 'cat.nuclear.suspended_operation', color: '#FF9800' },
 };
 
 export const REACTOR_TYPE_LABELS = {

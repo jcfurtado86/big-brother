@@ -1,7 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { AIRSPACE_CATEGORY_META } from '../providers/airspaceIcons';
 import { Row, styles } from './DetailCardParts';
 
 export default function AirspaceCard({ airspace, onClose }) {
+  const { t } = useTranslation();
   if (!airspace) return null;
 
   const meta = AIRSPACE_CATEGORY_META[airspace.category] ?? { label: airspace.category, color: '#FF5722' };
@@ -11,9 +13,9 @@ export default function AirspaceCard({ airspace, onClose }) {
       <div className={styles.header}>
         <div>
           <div className={styles.name} style={{ color: meta.color }}>
-            {airspace.name || meta.label}
+            {airspace.name || t(meta.label)}
           </div>
-          <div className={styles.sub}>{meta.label}</div>
+          <div className={styles.sub}>{t(meta.label)}</div>
         </div>
         <button className={styles.close} onClick={onClose}>×</button>
       </div>
@@ -21,10 +23,10 @@ export default function AirspaceCard({ airspace, onClose }) {
       <div className={styles.divider} />
 
       <div className={styles.grid}>
-        <Row label="Pais" value={airspace.country} />
-        <Row label="Teto" value={airspace.upperLimit} />
-        <Row label="Piso" value={airspace.lowerLimit} />
-        <Row label="Centro" value={
+        <Row label={t('card.country')} value={airspace.country} />
+        <Row label={t('card.ceiling')} value={airspace.upperLimit} />
+        <Row label={t('card.floor')} value={airspace.lowerLimit} />
+        <Row label={t('card.center')} value={
           airspace.lat != null
             ? `${airspace.lat.toFixed(4)}°, ${airspace.lon.toFixed(4)}°`
             : null

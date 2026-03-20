@@ -14,6 +14,6 @@ const osm = new OpenStreetMapImageryProvider({
 });
 
 export const layers = [
-  { id: 'satellite', label: 'Satélite', base: esri, overlay: reference },
-  { id: 'street',    label: 'Mapa',     base: osm,  overlay: null },
+  { id: 'satellite', label: 'cat.layer.satellite', base: esri, overlay: reference },
+  { id: 'street',    label: 'cat.layer.street',    base: osm,  overlay: null },
 ];
