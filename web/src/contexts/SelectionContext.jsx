@@ -3,6 +3,8 @@ import {
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
   Cartesian3,
+  Cartographic,
+  Math as CesiumMath,
   ColorMaterialProperty,
   CallbackProperty,
   defined,
@@ -13,7 +15,7 @@ import { TRACK_COLOR } from '../providers/constants';
 
 const SelectionContext = createContext(null);
 
-export function SelectionProvider({ children }) {
+export function SelectionProvider({ onRightClick, children }) {
   const viewer = useViewer();
   const registryRef = useRef(new Map());
   const selectionRef = useRef(null);     // { entity, key }
@@ -94,6 +96,10 @@ export function SelectionProvider({ children }) {
     };
     canvas.addEventListener('mousedown', onMouseDown);
 
+    // Prevent native context menu on right-click
+    const preventContextMenu = (e) => e.preventDefault();
+    canvas.addEventListener('contextmenu', preventContextMenu);
+
     // Pointer cursor on hoverable entities
     const hoverHandler = new ScreenSpaceEventHandler(canvas);
     hoverHandler.setInputAction((movement) => {
@@ -128,14 +134,28 @@ export function SelectionProvider({ children }) {
       if (!rawId) clearAll();
     }, ScreenSpaceEventType.LEFT_CLICK);
 
+    // Right-click — briefing
+    const rightClickHandler = new ScreenSpaceEventHandler(canvas);
+    rightClickHandler.setInputAction((click) => {
+      if (viewer.isDestroyed()) return;
+      const cartesian = viewer.camera.pickEllipsoid(click.position, viewer.scene.globe.ellipsoid);
+      if (!cartesian) return;
+      const carto = Cartographic.fromCartesian(cartesian);
+      const lat = CesiumMath.toDegrees(carto.latitude);
+      const lon = CesiumMath.toDegrees(carto.longitude);
+      onRightClick?.({ lat, lon });
+    }, ScreenSpaceEventType.RIGHT_CLICK);
+
     return () => {
       handler.destroy();
       hoverHandler.destroy();
+      rightClickHandler.destroy();
       canvas.style.cursor = 'default';
       canvas.removeEventListener('mousedown', onMouseDown);
+      canvas.removeEventListener('contextmenu', preventContextMenu);
       clearTrack();
     };
-  }, [viewer, stopFollow, clearAll, clearTrack]);
+  }, [viewer, stopFollow, clearAll, clearTrack, onRightClick]);
 
   const register = useCallback((name, handler) => {
     registryRef.current.set(name, handler);

@@ -28,7 +28,7 @@ import TensionManager from './layers/TensionManager';
 import VisibilityManager from './layers/VisibilityManager';
 import { useTimelineData } from '../hooks/useTimelineData';
 
-export default function Globe({ initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, onSatelliteSelect, onTelecomSelect, onReceiverSelect, onAtcSelect, onMilitarySelect, onNuclearSelect, onAirspaceSelect, onAcledSelect, onGdeltSelect, onWebcamSelect }) {
+export default function Globe({ initialView, flyTarget, resetKey, onCameraChange, onMouseMove, onFlightSelect, onAirportSelect, onVesselSelect, onSatelliteSelect, onTelecomSelect, onReceiverSelect, onAtcSelect, onMilitarySelect, onNuclearSelect, onAirspaceSelect, onAcledSelect, onGdeltSelect, onWebcamSelect, onRightClick }) {
   const envCfg = useLayerState('environment');
 
   const viewerRef = useRef(null);
@@ -209,7 +209,7 @@ export default function Globe({ initialView, flyTarget, resetKey, onCameraChange
       ))}
     </Viewer>
     <ViewerProvider value={viewer}>
-      <SelectionProvider>
+      <SelectionProvider onRightClick={onRightClick}>
         <SceneManager onCameraChange={onCameraChange} onMouseMove={onMouseMove} />
         <WeatherManager />
         <RouteManager bbox={bbox} />

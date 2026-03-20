@@ -29,6 +29,7 @@ import weatherRoutes from './routes/weather.js';
 import geoipRoutes from './routes/geoip.js';
 import gdeltRoutes from './routes/gdelt.js';
 import heatmapRoutes from './routes/heatmap.js';
+import briefingRoutes from './routes/briefing.js';
 
 // Pollers
 import { startTlePoller } from './pollers/celestrak.js';
@@ -75,6 +76,7 @@ await app.register(weatherRoutes, { prefix: '/api' });
 await app.register(geoipRoutes, { prefix: '/api' });
 await app.register(gdeltRoutes, { prefix: '/api' });
 await app.register(heatmapRoutes, { prefix: '/api' });
+await app.register(briefingRoutes, { prefix: '/api' });
 
 // Verify DB connection
 try {

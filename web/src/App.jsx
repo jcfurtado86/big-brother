@@ -19,6 +19,7 @@ import AcledCard from './components/AcledCard';
 import GdeltCard from './components/GdeltCard';
 import GdeltToast from './components/GdeltToast';
 import WebcamCard from './components/WebcamCard';
+import BriefingPanel from './components/BriefingPanel';
 import SettingsPanel from './components/SettingsPanel';
 import TimelineBar from './components/TimelineBar';
 import TimelineActivator from './components/TimelineActivator';
@@ -27,6 +28,7 @@ import { LayerProvider } from './contexts/LayerContext';
 import { LoadingProvider } from './contexts/LoadingContext';
 import { TimelineProvider } from './contexts/TimelineContext';
 import { useGeoIP } from './hooks/useGeoIP';
+import { useBriefing } from './hooks/useBriefing';
 import { DEFAULT_ALT, DEFAULT_PITCH } from './providers/constants';
 
 export default function App() {
@@ -48,6 +50,7 @@ export default function App() {
   const [selectedAcled, setSelectedAcled] = useState(null);
   const [selectedGdelt, setSelectedGdelt] = useState(null);
   const [selectedWebcam, setSelectedWebcam] = useState(null);
+  const { data: briefing, loading: briefingLoading, fetchBriefing, clear: clearBriefing } = useBriefing();
   const geoIP = useGeoIP();
 
   useEffect(() => {
@@ -90,6 +93,7 @@ export default function App() {
         onAcledSelect={setSelectedAcled}
         onGdeltSelect={setSelectedGdelt}
         onWebcamSelect={setSelectedWebcam}
+        onRightClick={({ lat, lon }) => fetchBriefing(lat, lon)}
       />
       <SearchBox onSelect={handleLocationSelect} />
       <InfoBar coords={coords} mouseCoords={mouseCoords} />
@@ -109,6 +113,7 @@ export default function App() {
       <AcledCard acled={selectedAcled} onClose={() => setSelectedAcled(null)} />
       <GdeltCard gdelt={selectedGdelt} onClose={() => setSelectedGdelt(null)} />
       <WebcamCard key={selectedWebcam?.id} webcam={selectedWebcam} onClose={() => setSelectedWebcam(null)} />
+      <BriefingPanel briefing={briefing} loading={briefingLoading} onClose={clearBriefing} />
       <SettingsPanel />
       <GdeltToast onFlyTo={(lat, lng) => setFlyTarget({ lat, lon: lng, ts: Date.now() })} onGdeltSelect={setSelectedGdelt} />
       <TimelineActivator />
