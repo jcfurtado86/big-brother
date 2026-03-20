@@ -4,13 +4,13 @@ import { groupByEntity, interpolateAt } from '../utils/interpolateHistory';
 import { mmsiToCountry } from '../providers/vesselService';
 import { API_URL } from '../utils/api';
 
-const WINDOW = 5 * 60_000; // ±5 minutes
-const PREFETCH_MARGIN = 2 * 60_000; // prefetch when within 2 min of buffer edge
+const WINDOW = 10 * 60_000; // ±10 minutes
+const PREFETCH_MARGIN = 4 * 60_000; // prefetch when within 4 min of buffer edge
 const FETCH_COOLDOWN = 3_000; // min ms between fetches
 
 /**
  * Sliding-window timeline data hook.
- * Fetches ±5 min around currentTime, re-fetches as playback advances.
+ * Fetches ±10 min around currentTime, re-fetches as playback advances.
  * Coverage is fetched once (lightweight) when timeline activates.
  */
 export function useTimelineData() {
@@ -24,6 +24,17 @@ export function useTimelineData() {
   const fetchingRef = useRef(false);
   const lastFetchRef = useRef(0);
   const abortRef = useRef(null);
+  const prevRangeStartRef = useRef(null);
+
+  function clearAll() {
+    flightHistRef.current = null;
+    vesselHistRef.current = null;
+    bufferRef.current = null;
+    fetchingRef.current = false;
+    if (abortRef.current) abortRef.current.abort();
+    setFlights(new Map());
+    setVessels(new Map());
+  }
 
   // Merge new data into existing history refs (accumulate across windows)
   const mergeData = useCallback((fData, vData) => {
@@ -114,6 +125,7 @@ export function useTimelineData() {
             navStatus: interp.navStatus,
             shipType: interp.shipType,
             country: interp.country || mmsiToCountry(mmsi),
+            sanctioned: interp.sanctioned || false,
             fetchedAt: t,
           });
         }
@@ -192,14 +204,23 @@ export function useTimelineData() {
     return () => ac.abort();
   }, [tl.active, tl.timeRange?.start]);
 
-  // Initial fetch + re-fetch when approaching buffer edges
+  // Initial fetch + re-fetch when approaching buffer edges + clear on date change
   useEffect(() => {
     if (!tl.active || !tl.timeRange) {
-      flightHistRef.current = null;
-      vesselHistRef.current = null;
-      bufferRef.current = null;
-      setFlights(new Map());
-      setVessels(new Map());
+      clearAll();
+      prevRangeStartRef.current = null;
+      return;
+    }
+
+    // Detect date change — clear old data and force fresh fetch
+    const rangeChanged = prevRangeStartRef.current !== null &&
+      prevRangeStartRef.current !== tl.timeRange.start;
+    prevRangeStartRef.current = tl.timeRange.start;
+
+    if (rangeChanged) {
+      clearAll();
+      // Force fetch for new date after clearing
+      fetchWindow(tl.currentTime, true);
       return;
     }
 

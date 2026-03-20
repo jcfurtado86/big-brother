@@ -1,7 +1,7 @@
 import { Cartesian2 } from 'cesium';
 import { LABEL_VISIBLE } from '../providers/constants';
 import { getSetting } from '../providers/settingsStore';
-import { getFlagImg } from '../providers/countryFlags';
+import { getFlagImg, getFlagImgByCode } from '../providers/countryFlags';
 
 const FONT_SIZE = 14;
 const FLAG_W = 34, FLAG_H = 23;
@@ -49,7 +49,8 @@ function getOrCreateImage(callsign, country) {
   const cached = _cache.get(key);
   if (cached) return cached;
 
-  const flagImg = getFlagImg(country);
+  // Try ISO code first (vessels use "BR"), then full name (flights use "Brazil")
+  const flagImg = (country?.length === 2 ? getFlagImgByCode(country) : null) || getFlagImg(country);
   const hasFlag = !!flagImg;
   const { W, H } = measure(callsign, hasFlag);
 

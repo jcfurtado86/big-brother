@@ -1,6 +1,7 @@
 import db from '../db.js';
 import { getVessels, getVesselCount } from '../cache/vesselCache.js';
 import { parseBbox } from '../utils/spatial.js';
+import { sanctionedMMSI, sanctionedIMO } from '../pollers/sanctions.js';
 
 export default async function vesselsRoutes(app) {
   // REST endpoint: current vessel positions (from in-memory cache)
@@ -46,7 +47,7 @@ export default async function vesselsRoutes(app) {
     const to = req.query.to;
     if (!from || !to) return reply.code(400).send({ error: 'from and to required' });
 
-    return db('vessel_history')
+    const rows = await db('vessel_history')
       .select('mmsi', 'name', 'lat', 'lon', 'cog', 'sog', 'heading',
               db.raw('nav_status AS "navStatus"'),
               db.raw('ship_type AS "shipType"'),
@@ -55,6 +56,12 @@ export default async function vesselsRoutes(app) {
       .andWhere('recorded_at', '<=', to)
       .orderBy('recorded_at', 'asc')
       .limit(50000);
+
+    // Flag sanctioned vessels
+    for (const r of rows) {
+      r.sanctioned = sanctionedMMSI.has(r.mmsi) || sanctionedIMO.has(String(r.imo || ''));
+    }
+    return rows;
   });
 
   // GET /vessels/check/:mmsi — check if vessel is sanctioned

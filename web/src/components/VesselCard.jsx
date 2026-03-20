@@ -1,6 +1,7 @@
 import styles from './VesselCard.module.css';
 import { getVesselCategory, VESSEL_CATEGORY_META } from '../providers/vesselIcons';
-import { getFlagImg } from '../providers/countryFlags';
+import { getFlagImgByCode } from '../providers/countryFlags';
+import { mmsiToCountry } from '../providers/vesselService';
 import { toCompass } from '../utils/unitConversion';
 
 const NAV_STATUS = {
@@ -40,7 +41,7 @@ export default function VesselCard({ vessel, onClose }) {
   const baseCategory = getVesselCategory(vessel.shipType);
   const category = vessel.sanctioned ? 'dark' : baseCategory;
   const meta     = VESSEL_CATEGORY_META[category];
-  const flagImg  = getFlagImg(vessel.country);
+  const flagImg  = getFlagImgByCode(vessel.country);
   const flagSrc  = flagImg?.src ?? null;
   const etaStr   = formatEta(vessel.eta);
 
@@ -69,7 +70,7 @@ export default function VesselCard({ vessel, onClose }) {
         <span className={styles.label}>País</span>
         <span className={styles.value}>
           {flagSrc && <img src={flagSrc} className={styles.flag} alt="" />}
-          {vessel.country || '—'}
+          {mmsiToCountry(vessel.mmsi) || vessel.country || '—'}
         </span>
 
         <span className={styles.label}>Tipo</span>
