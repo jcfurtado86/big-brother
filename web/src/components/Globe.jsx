@@ -24,6 +24,7 @@ import AirspaceManager from './layers/AirspaceManager';
 import AcledManager from './layers/AcledManager';
 import GdeltLiveManager from './layers/GdeltLiveManager';
 import WebcamManager from './layers/WebcamManager';
+import TensionManager from './layers/TensionManager';
 import VisibilityManager from './layers/VisibilityManager';
 import { useTimelineData } from '../hooks/useTimelineData';
 
@@ -220,6 +221,7 @@ export default function Globe({ initialView, flyTarget, resetKey, onCameraChange
         <AirspaceManager onAirspaceSelect={onAirspaceSelect} />
         <AcledManager onAcledSelect={onAcledSelect} />
         <GdeltLiveManager onGdeltSelect={onGdeltSelect} />
+        <TensionManager />
         <WebcamManager onWebcamSelect={onWebcamSelect} />
         <TelecomManager cameraAltitude={cameraAltitude} telecomStateRef={telecomExtRef} onTelecomSelect={onTelecomSelect} />
         <SatelliteManager satelliteStateRef={satelliteStateRef} onSatelliteSelect={onSatelliteSelect} />

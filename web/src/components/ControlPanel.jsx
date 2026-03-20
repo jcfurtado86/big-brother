@@ -108,6 +108,7 @@ export default function ControlPanel() {
   const military   = useLayerState('military');
   const acled      = useLayerState('acled');
   const gdelt      = useLayerState('gdelt');
+  const tension    = useLayerState('tension');
   const nuclear    = useLayerState('nuclear');
   const airspace   = useLayerState('airspace');
   const weather    = useLayerState('weather');
@@ -164,6 +165,25 @@ export default function ControlPanel() {
         <Separator />
         <Toggle label="GDELT Ao Vivo" active={gdelt.show} onToggle={() => toggle('gdelt')} />
         <TypeFilter types={GDELT_CATEGORIES} activeSet={gdelt.types} onChange={t => setTypes('gdelt', t)} items={GDELT_CATEGORY_META} />
+        <Separator />
+        <Toggle label="Heatmap de Tensao" active={tension.show} onToggle={() => toggle('tension')} />
+        {tension.show && (
+          <>
+            <OpacitySlider label="Opacidade heatmap" value={tension.opacity} onChange={v => setField('tension', 'opacity', v)} />
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Periodo</span>
+              <select
+                className={styles.select}
+                value={tension.period}
+                onChange={e => setField('tension', 'period', e.target.value)}
+              >
+                <option value="1d">Ultimo dia</option>
+                <option value="7d">Ultima semana</option>
+                <option value="30d">Ultimos 30 dias</option>
+              </select>
+            </div>
+          </>
+        )}
       </Card>
 
       {/* Cameras */}

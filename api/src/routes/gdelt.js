@@ -3,30 +3,30 @@ import { parseBbox } from '../utils/spatial.js';
 import crypto from 'node:crypto';
 
 const EVENT_TYPE_KEYWORDS = {
-  'Battles':                    '(battle OR clashes OR fighting OR armed)',
-  'Explosions/Remote violence': '(explosion OR bombing OR airstrike OR missile)',
-  'Violence against civilians': '(attack civilians OR massacre OR violence)',
-  'Protests':                   '(protest OR demonstration OR rally)',
-  'Riots':                      '(riot OR unrest OR looting)',
-  'Strategic developments':     '(strategic OR military OR ceasefire)',
+  'Battles':                    'battle conflict military',
+  'Explosions/Remote violence': 'explosion bombing airstrike missile',
+  'Violence against civilians': 'attack violence civilians killed',
+  'Protests':                   'protest demonstration rally',
+  'Riots':                      'riot unrest looting',
+  'Strategic developments':     'military ceasefire negotiations troops',
 };
 
 // Fallback: search GDELT DOC API for articles (no coordinates, just news)
-async function fetchFromDocApi(eventType, country, date) {
-  const keywords = EVENT_TYPE_KEYWORDS[eventType] || '(conflict OR crisis)';
+async function fetchFromDocApi(eventType, country, date, location) {
+  const keywords = EVENT_TYPE_KEYWORDS[eventType] || 'conflict crisis';
 
   const d = new Date(date);
   const start = new Date(d);
-  start.setUTCDate(start.getUTCDate() - 3);
+  start.setUTCDate(start.getUTCDate() - 14);
   const end = new Date(d);
-  end.setUTCDate(end.getUTCDate() + 1);
+  end.setUTCDate(end.getUTCDate() + 3);
 
   const fmt = (dt) => dt.toISOString().replace(/[-T:]/g, '').slice(0, 14);
 
-  // Build query: keywords + country if available
+  // Build query: keywords + country (location omitted to avoid over-filtering)
   let query = keywords;
   if (country) {
-    query += ` sourcecountry:${country.toLowerCase()}`;
+    query += ` ${country}`;
   }
 
   const params = new URLSearchParams({
@@ -72,23 +72,25 @@ export default async function (app) {
     const date = req.query.date;
     const eventType = req.query.event_type || '';
     const country = req.query.country || '';
-    const radiusKm = parseInt(req.query.radius, 10) || 100;
+    const location = req.query.location || '';
+    const radiusKm = parseInt(req.query.radius, 10) || 250;
 
     if (isNaN(lat) || isNaN(lng) || !date) {
       return reply.code(400).send({ error: 'lat, lng, date required' });
     }
 
-    // 1. Buscar no banco local primeiro (Event Export data com coordenadas)
+    // 1. Buscar no banco local primeiro (Event Export data com coordenadas + source_url)
     const d = new Date(date);
     const start = new Date(d);
-    start.setUTCDate(start.getUTCDate() - 3);
+    start.setUTCDate(start.getUTCDate() - 7);
     const end = new Date(d);
-    end.setUTCDate(end.getUTCDate() + 1);
+    end.setUTCDate(end.getUTCDate() + 2);
 
     const local = await db('gdelt_events')
       .select('id', 'title', 'url', 'domain', 'socialimage', 'tone', 'tone_label',
               'lat', 'lng', 'country', 'event_type', 'source_date', 'seen_at',
-              'actor1_name', 'actor2_name', 'action_geo_name', 'goldstein_scale')
+              'actor1_name', 'actor2_name', 'action_geo_name', 'goldstein_scale',
+              'source_url')
       .whereRaw(`
         geom && ST_Expand(ST_MakePoint(?, ?)::geometry, ? / 111.0)
         AND ST_DWithin(geom::geography, ST_MakePoint(?, ?)::geography, ?)
@@ -96,7 +98,7 @@ export default async function (app) {
       .where('source_date', '>=', start.toISOString())
       .where('source_date', '<=', end.toISOString())
       .orderBy('source_date', 'desc')
-      .limit(10);
+      .limit(20);
 
     if (local.length > 0) {
       return local;
@@ -104,7 +106,7 @@ export default async function (app) {
 
     // 2. Fallback: buscar artigos no DOC API (sem coordenadas, apenas noticias)
     try {
-      const articles = await fetchFromDocApi(eventType, country, date);
+      const articles = await fetchFromDocApi(eventType, country, date, location);
       return articles;
     } catch (e) {
       console.error('[gdelt] DOC API fallback error:', e.message);

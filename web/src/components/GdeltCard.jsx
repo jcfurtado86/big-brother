@@ -64,7 +64,7 @@ export default function GdeltCard({ gdelt, onClose }) {
         <Row label="Data" value={dateStr} />
         <Row label="Posicao" value={
           gdelt.lat != null
-            ? `${gdelt.lat.toFixed(4)}, ${gdelt.lon.toFixed(4)}`
+            ? `${gdelt.lat.toFixed(4)}, ${(gdelt.lon ?? gdelt.lng).toFixed(4)}`
             : null
         } />
         {gdelt.url && <LinkRow label="Artigo" url={gdelt.url} text="Abrir" />}

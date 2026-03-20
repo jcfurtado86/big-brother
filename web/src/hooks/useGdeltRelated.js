@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { API_URL } from '../utils/api';
 
-export function useGdeltRelated(lat, lng, date, eventType, country) {
+export function useGdeltRelated(lat, lng, date, eventType, country, location) {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -27,6 +27,7 @@ export function useGdeltRelated(lat, lng, date, eventType, country) {
       date: dateStr,
       event_type: eventType || '',
       country: country || '',
+      location: location || '',
     });
 
     fetch(`${API_URL}/api/gdelt/related?${params}`, { signal: ac.signal })
@@ -48,7 +49,7 @@ export function useGdeltRelated(lat, lng, date, eventType, country) {
       });
 
     return () => ac.abort();
-  }, [lat, lng, date, eventType, country]);
+  }, [lat, lng, date, eventType, country, location]);
 
   return { articles, loading, error };
 }

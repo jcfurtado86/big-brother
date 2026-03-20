@@ -5,7 +5,7 @@ import { TONE_COLORS } from '../providers/gdeltIcons';
 
 export default function AcledCard({ acled, onClose }) {
   // Hook must be called before any early return (Rules of Hooks)
-  const { articles, loading } = useGdeltRelated(acled?.lat, acled?.lon, acled?.date, acled?.eventType, acled?.country);
+  const { articles, loading } = useGdeltRelated(acled?.lat, acled?.lon, acled?.date, acled?.eventType, acled?.country, acled?.location);
 
   if (!acled) return null;
 

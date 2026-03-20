@@ -110,7 +110,7 @@ export default function App() {
       <GdeltCard gdelt={selectedGdelt} onClose={() => setSelectedGdelt(null)} />
       <WebcamCard key={selectedWebcam?.id} webcam={selectedWebcam} onClose={() => setSelectedWebcam(null)} />
       <SettingsPanel />
-      <GdeltToast />
+      <GdeltToast onFlyTo={(lat, lng) => setFlyTarget({ lat, lon: lng, ts: Date.now() })} onGdeltSelect={setSelectedGdelt} />
       <TimelineActivator />
       <TimelineBar />
       <LoadingSpinner />

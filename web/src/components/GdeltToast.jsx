@@ -4,11 +4,17 @@ import { GDELT_CATEGORY_META } from '../providers/gdeltIcons';
 import styles from './GdeltToast.module.css';
 
 const MAX_TOASTS = 5;
-const AUTO_DISMISS_MS = 10_000;
+const AUTO_DISMISS_MS = 15_000;
 const POLL_INTERVAL = 15 * 60 * 1000;
 const MAX_KNOWN_IDS = 2000;
 
-export default function GdeltToast() {
+// Only show toasts for extremely critical events
+function isCritical(r) {
+  return (r.goldstein_scale != null && r.goldstein_scale <= -7)
+      || (r.tone != null && r.tone <= -15);
+}
+
+export default function GdeltToast({ onFlyTo, onGdeltSelect }) {
   const [toasts, setToasts] = useState([]);
   const knownIdsRef = useRef(new Set());
   const timerRef = useRef(null);
@@ -32,14 +38,21 @@ export default function GdeltToast() {
         const id = r.id;
         if (knownIdsRef.current.has(id)) continue;
         knownIdsRef.current.add(id);
+        if (!isCritical(r)) continue;
         fresh.push({
           id,
           title: r.title || '',
+          url: r.url || '',
           domain: r.domain || '',
           socialimage: r.socialimage || '',
           eventType: r.event_type || 'conflict',
           toneLabel: r.tone_label || 'neutral',
           tone: r.tone ?? 0,
+          goldstein: r.goldstein_scale ?? 0,
+          lat: r.lat,
+          lng: r.lng,
+          country: r.country || '',
+          actionGeo: r.action_geo_name || '',
           ts: Date.now(),
         });
       }
@@ -84,8 +97,28 @@ export default function GdeltToast() {
     return () => clearTimeout(timer);
   }, [toasts]);
 
-  const dismiss = (id) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
+  const handleClick = (t) => {
+    if (t.lat != null && t.lng != null && onFlyTo) {
+      onFlyTo(t.lat, t.lng);
+    }
+    if (onGdeltSelect) {
+      onGdeltSelect({
+        id: t.id,
+        title: t.title,
+        url: t.url,
+        domain: t.domain,
+        socialimage: t.socialimage,
+        event_type: t.eventType,
+        tone: t.tone,
+        tone_label: t.toneLabel,
+        goldstein_scale: t.goldstein,
+        lat: t.lat,
+        lng: t.lng,
+        country: t.country,
+        action_geo_name: t.actionGeo,
+      });
+    }
+    setToasts(prev => prev.filter(x => x.id !== t.id));
   };
 
   if (toasts.length === 0) return null;
@@ -98,8 +131,8 @@ export default function GdeltToast() {
           <div
             key={t.id}
             className={styles.toast}
-            style={{ borderLeftColor: meta.color }}
-            onClick={() => dismiss(t.id)}
+            style={{ borderLeftColor: meta.color, cursor: 'pointer' }}
+            onClick={() => handleClick(t)}
           >
             {t.socialimage && (
               <img

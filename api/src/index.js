@@ -28,6 +28,7 @@ import webcamsRoutes from './routes/webcams.js';
 import weatherRoutes from './routes/weather.js';
 import geoipRoutes from './routes/geoip.js';
 import gdeltRoutes from './routes/gdelt.js';
+import heatmapRoutes from './routes/heatmap.js';
 
 // Pollers
 import { startTlePoller } from './pollers/celestrak.js';
@@ -72,6 +73,7 @@ await app.register(webcamsRoutes, { prefix: '/api' });
 await app.register(weatherRoutes, { prefix: '/api' });
 await app.register(geoipRoutes, { prefix: '/api' });
 await app.register(gdeltRoutes, { prefix: '/api' });
+await app.register(heatmapRoutes, { prefix: '/api' });
 
 // Verify DB connection
 try {
