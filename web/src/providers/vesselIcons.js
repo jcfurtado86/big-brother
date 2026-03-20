@@ -31,9 +31,10 @@ export const VESSEL_CATEGORY_SIZE = {
   military:  { w: 30, h: 30 },
   sar:       { w: 28, h: 28 },
   unknown:   { w: 26, h: 26 },
+  dark:      { w: 32, h: 32 },
 };
 
-export const VESSEL_CATEGORIES = ['cargo', 'tanker', 'passenger', 'fishing', 'sailing', 'tug', 'military', 'sar'];
+export const VESSEL_CATEGORIES = ['cargo', 'tanker', 'passenger', 'fishing', 'sailing', 'tug', 'military', 'sar', 'dark'];
 
 export const VESSEL_CATEGORY_META = {
   cargo:     { label: 'Carga',      color: '#2196F3' },   // azul
@@ -45,6 +46,7 @@ export const VESSEL_CATEGORY_META = {
   military:  { label: 'Militar',    color: '#2E7D32' },   // verde escuro
   sar:       { label: 'SAR',        color: '#F44336' },   // vermelho
   unknown:   { label: 'Outro',      color: '#9E9E9E' },   // cinza
+  dark:      { label: 'Sancionado', color: '#9C27B0' },   // roxo
 };
 
 // Cesium Color por categoria (para billboard.color)
@@ -58,6 +60,7 @@ export const VESSEL_CATEGORY_COLOR = {
   military:  Color.fromCssColorString('#2E7D32'),
   sar:       Color.fromCssColorString('#F44336'),
   unknown:   Color.fromCssColorString('#9E9E9E'),
+  dark:      Color.fromCssColorString('#9C27B0'),
 };
 
 export const VESSEL_TYPES = Object.keys(VESSEL_CATEGORY_META);

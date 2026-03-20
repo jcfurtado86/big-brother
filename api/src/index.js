@@ -45,6 +45,7 @@ import { startAirplanesLivePoller } from './pollers/airplaneslive.js';
 import { startFlightHistoryPoller } from './pollers/flightHistory.js';
 import { startWebcamsPollers } from './pollers/webcams/index.js';
 import { startGdeltPoller } from './pollers/gdeltPoller.js';
+import { startSanctionsPoller } from './pollers/sanctions.js';
 
 const app = Fastify({ logger: true });
 
@@ -100,6 +101,7 @@ startFlightHistoryPoller();
 startAisStream();
 startWebcamsPollers();
 startGdeltPoller();
+startSanctionsPoller();
 
 // Start server
 try {

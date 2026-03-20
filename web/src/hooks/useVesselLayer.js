@@ -20,7 +20,7 @@ export function useVesselLayer(viewer, vesselsMap, visibleTypes) {
     selectedColor: SELECTED_VESSEL_COLOR,
 
     createBillboard(billboards, mmsi, vessel, typesRef) {
-      const category = getVesselCategory(vessel.shipType);
+      const category = vessel.sanctioned ? 'dark' : getVesselCategory(vessel.shipType);
       const sz  = vesselSize(vessel.length);
       const pos = Cartesian3.fromDegrees(vessel.lon, vessel.lat, 0);
       const show = typesRef.current?.has(category) ?? true;
@@ -58,6 +58,12 @@ export function useVesselLayer(viewer, vesselsMap, visibleTypes) {
       const pos = Cartesian3.fromDegrees(vessel.lon, vessel.lat, 0);
       entry.billboard.position = pos;
       entry.billboard.rotation = -CesiumMath.toRadians(vessel.heading ?? 0);
+      // Update category if sanction status changed
+      const newCat = vessel.sanctioned ? 'dark' : getVesselCategory(vessel.shipType);
+      if (newCat !== entry._category) {
+        entry._category = newCat;
+        entry.billboard.color = VESSEL_CATEGORY_COLOR[newCat];
+      }
       if (entry.label) entry.label.position = pos;
       entry.vessel = vessel;
       entry.lat = vessel.lat;

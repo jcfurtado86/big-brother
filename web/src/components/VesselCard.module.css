@@ -90,3 +90,16 @@
   flex-shrink: 0;
 }
 
+.sanctionBadge {
+  background: rgba(156, 39, 176, 0.25);
+  border: 1px solid #9C27B0;
+  color: #CE93D8;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+  margin-top: 8px;
+}
+

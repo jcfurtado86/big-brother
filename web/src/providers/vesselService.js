@@ -47,6 +47,8 @@ export async function fetchVessels(bbox = null, signal = undefined) {
       eta: v.eta || null,
       country: v.country || '',
       timeUtc: v.timeUtc || null,
+      sanctioned: v.sanctioned || false,
+      sanctionProgram: v.sanctionProgram || null,
       fetchedAt: v.fetchedAt ? new Date(v.fetchedAt).getTime() : Date.now(),
     });
   }

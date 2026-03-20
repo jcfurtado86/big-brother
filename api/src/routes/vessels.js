@@ -2,7 +2,7 @@ import db from '../db.js';
 import { getVessels, getVesselCount } from '../cache/vesselCache.js';
 import { parseBbox } from '../utils/spatial.js';
 
-export default async function (app) {
+export default async function vesselsRoutes(app) {
   // REST endpoint: current vessel positions (from in-memory cache)
   app.get('/vessels', async (req, reply) => {
     const bbox = parseBbox(req.query);
@@ -55,5 +55,25 @@ export default async function (app) {
       .andWhere('recorded_at', '<=', to)
       .orderBy('recorded_at', 'asc')
       .limit(50000);
+  });
+
+  // GET /vessels/check/:mmsi — check if vessel is sanctioned
+  app.get('/vessels/check/:mmsi', async (req, reply) => {
+    const { mmsi } = req.params;
+    const rows = await db('sanctioned_vessels')
+      .where('mmsi', mmsi)
+      .orWhere('imo', mmsi)
+      .select('sdn_name', 'program', 'flag', 'imo', 'mmsi');
+
+    if (rows.length === 0) {
+      return { sanctioned: false };
+    }
+
+    return {
+      sanctioned: true,
+      sdn_name: rows[0].sdn_name,
+      programs: [...new Set(rows.map(r => r.program).filter(Boolean))],
+      matches: rows,
+    };
   });
 }

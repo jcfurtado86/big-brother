@@ -1,15 +1,18 @@
+import { sanctionedMMSI, sanctionedIMO } from '../pollers/sanctions.js';
+
 const STALE_MS = 10 * 60_000; // evict vessels not seen for 10 min
 
 const vessels = new Map(); // mmsi → vessel data
 
 export function upsertVessel(vessel) {
   const existing = vessels.get(vessel.mmsi);
+  const sanctioned = sanctionedMMSI.has(vessel.mmsi) ||
+    (vessel.imo && sanctionedIMO.has(String(vessel.imo)));
+
   if (existing) {
-    // Merge: position updates (PositionReport) and static data (ShipStaticData)
-    // may arrive separately
-    vessels.set(vessel.mmsi, { ...existing, ...vessel, _seenAt: Date.now() });
+    vessels.set(vessel.mmsi, { ...existing, ...vessel, sanctioned, _seenAt: Date.now() });
   } else {
-    vessels.set(vessel.mmsi, { ...vessel, _seenAt: Date.now() });
+    vessels.set(vessel.mmsi, { ...vessel, sanctioned, _seenAt: Date.now() });
   }
 }
 

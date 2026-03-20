@@ -37,7 +37,8 @@ function Row({ label, value }) {
 export default function VesselCard({ vessel, onClose }) {
   if (!vessel) return null;
 
-  const category = getVesselCategory(vessel.shipType);
+  const baseCategory = getVesselCategory(vessel.shipType);
+  const category = vessel.sanctioned ? 'dark' : baseCategory;
   const meta     = VESSEL_CATEGORY_META[category];
   const flagImg  = getFlagImg(vessel.country);
   const flagSrc  = flagImg?.src ?? null;
@@ -47,7 +48,7 @@ export default function VesselCard({ vessel, onClose }) {
     <div className={styles.card}>
       <div className={styles.header}>
         <div>
-          <div className={styles.name}>{vessel.name}</div>
+          <div className={styles.name} style={vessel.sanctioned ? { color: '#9C27B0' } : undefined}>{vessel.name}</div>
           <div className={styles.mmsi}>
             MMSI {vessel.mmsi}
             {vessel.imo ? ` · IMO ${vessel.imo}` : ''}
@@ -55,6 +56,12 @@ export default function VesselCard({ vessel, onClose }) {
         </div>
         <button className={styles.close} onClick={onClose}>×</button>
       </div>
+
+      {vessel.sanctioned && (
+        <div className={styles.sanctionBadge}>
+          SANCIONADO
+        </div>
+      )}
 
       <div className={styles.divider} />
 

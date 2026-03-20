@@ -2,7 +2,7 @@ import React, { createContext, useContext, useReducer, useMemo } from 'react';
 
 const INITIAL_STATE = {
   flights:     { show: false, types: new Set(['heavy', 'large', 'regional', 'light', 'helicopter', 'uav', 'military', 'unknown']), provider: 'all' },
-  vessels:     { show: false, types: new Set(['cargo', 'tanker', 'passenger', 'fishing', 'sailing', 'tug', 'military', 'sar']) },
+  vessels:     { show: false, types: new Set(['cargo', 'tanker', 'passenger', 'fishing', 'sailing', 'tug', 'military', 'sar', 'dark']) },
   satellites:  { show: false, types: new Set(['leo', 'meo', 'geo']) },
   airports:    { show: false, types: new Set(['large_airport', 'medium_airport']) },
   telecom:     { show: false, types: new Set(['mast', 'comm_line', 'data_center']) },
