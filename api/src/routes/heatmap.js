@@ -6,7 +6,9 @@ export default async function (app) {
   app.get('/heatmap/tension', async (req, reply) => {
     const period = req.query.period || '7d';
     const days = period === '1d' ? 1 : period === '30d' ? 30 : 7;
-    const since = new Date(Date.now() - days * 86400000).toISOString();
+    const refDate = req.query.refDate ? new Date(req.query.refDate) : new Date();
+    const since = new Date(refDate.getTime() - days * 86400000).toISOString();
+    const until = refDate.toISOString();
 
     // ACLED: event count + fatalities per grid cell
     const acledQuery = db('acled_events')
@@ -17,6 +19,7 @@ export default async function (app) {
         db.raw('COALESCE(SUM(fatalities), 0)::int as total_fatalities'),
       )
       .where('event_date', '>=', since)
+      .where('event_date', '<=', until)
       .whereNotNull('geom')
       .groupByRaw(`ST_SnapToGrid(geom, ${GRID_SIZE})`)
       .as('acled');
@@ -31,6 +34,7 @@ export default async function (app) {
         db.raw('COUNT(*)::int as article_count'),
       )
       .where('seen_at', '>=', since)
+      .where('seen_at', '<=', until)
       .whereNotNull('geom')
       .groupByRaw(`ST_SnapToGrid(geom, ${GRID_SIZE})`)
       .as('gdelt');
